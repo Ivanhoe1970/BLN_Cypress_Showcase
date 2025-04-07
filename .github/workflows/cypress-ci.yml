@@ -1,4 +1,4 @@
-name: Cypress Tests
+name: Run Cypress tests
 
 on:
   push:
@@ -11,16 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🟢 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: 18
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🧪 Run Cypress tests
+      - name: Install live-server globally
+        run: npm install -g live-server
+
+      - name: Start live-server in background
+        run: |
+          npx live-server --port=5500 --quiet &
+          sleep 5
+
+      - name: Run Cypress tests
         run: npx cypress run
