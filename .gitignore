@@ -1,0 +1,8 @@
+# macOS system files
+.DS_Store
+
+# Node.js modules
+node_modules/
+
+# Cypress environment file
+cypress.env.json
