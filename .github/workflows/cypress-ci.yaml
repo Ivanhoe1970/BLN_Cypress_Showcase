@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CYPRESS_emailAddress: ${{ secrets.EMAILADDRESS }}
-      CYPRESS_password: ${{ secrets.PASSWORD }}
+      CYPRESS_emailAddress: ${{ secrets.emailAddress }}
+      CYPRESS_password: ${{ secrets.password }}
 
     steps:
       - name: Checkout code
