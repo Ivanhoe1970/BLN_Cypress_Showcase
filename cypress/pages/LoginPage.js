@@ -28,22 +28,6 @@ class LoginPage {
     cy.visit('/ng/alerts');
     this.validateLogin();
   };
-
-  loginViaAPI() {
-    cy.session('api-login', () => {
-      cy.request({
-        method: 'POST',
-        url: 'https://live.blacklinesafety.com/api/auth/login',
-        body: {
-          username: Cypress.env('emailAddress'),
-          password: Cypress.env('password'),
-        },
-      }).then((res) => {
-        expect(res.status).to.eq(200);
-        window.localStorage.setItem('auth_token', res.body.token);
-      });
-    });
-  };
 }
 
 export default new LoginPage();
