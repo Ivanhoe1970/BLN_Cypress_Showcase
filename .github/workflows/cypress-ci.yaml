@@ -10,6 +10,10 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
 
+    env:  # 👈 Inject GitHub Secrets into Cypress env
+      CYPRESS_emailAddress: ${{ secrets.emailAddress }}
+      CYPRESS_password: ${{ secrets.password }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
