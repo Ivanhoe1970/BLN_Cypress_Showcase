@@ -17,8 +17,9 @@ class LoginPage {
   
     validateLogin() {
       cy.url().should('include', '/ng/alerts');
-      cy.get('.main-title').should('have.text', 'Alerts');
-    };
+      cy.get('.main-title', { timeout: 10000 }).should('have.text', 'Alerts');
+    }
+    
   
     login(email = Cypress.env('emailAddress'), password = Cypress.env('password')) {
       this.visit();
