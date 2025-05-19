@@ -21,10 +21,6 @@ class LoginPage {
   };
 
   login(email = Cypress.env('emailAddress'), password = Cypress.env('password')) {
-    // ✅ DEBUG LOGS
-    console.log('✅ ENV email:', email);
-    console.log('✅ ENV password:', password);
-
     this.visit();
     this.enterEmail(email);
     this.enterPassword(password);
