@@ -111,3 +111,21 @@ jobs:
 
 ✅ CI status updates with every push or PR to main.
 
+🐳 Optional: Docker Support
+This Cypress test suite was designed to be CI-ready and lightweight for review. All tests run locally and in GitHub Actions without any special dependencies.
+
+However, for cross-environment consistency or team-wide use, Docker support can easily be added. This would allow anyone to run the full test suite using:
+
+bash
+Copy
+Edit
+docker-compose up --build
+Benefits of Dockerizing:
+
+Consistent test environment across machines
+
+Easier onboarding for new QA/dev team members
+
+CI/CD parity with production containers
+
+🔧 Docker setup instructions can be added upon request or if the team decides to standardize automation containers.
