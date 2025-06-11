@@ -3,7 +3,9 @@ class AlertsPage {
   get statusOption() { return cy.get('.mdc-list-item__primary-text') };
   get statusCells() { return cy.get(':nth-child(1) > .cdk-column-status > .ng-star-inserted') };
 
-  visitAlertsPage() { cy.visit('/ng/alerts') };
+  visitAlertsPage() {cy.visit(`${Cypress.env('blnUrl')}/ng/alerts`);
+  }
+  
 
   selectStatus(status) {
     this.statusFilterDropdown.click();

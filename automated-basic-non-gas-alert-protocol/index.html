@@ -1,0 +1,745 @@
+<!-- Save as: automated-basic-non-gas-alert-protocol/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+
+
+  <title>Protocol Workflow</title>
+  <style>
+    /* Base font and background */
+    body {
+  font-family: 'Rubik', "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f9fbfd;
+  font-size: 16px;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Optional: balance width between columns */
+#log-container {
+  width: 35%;
+}
+
+#steps-container {
+  width: 65%;
+}
+
+/* Step container */
+.step {
+  background-color: #f2f7fc;
+  border: 1px solid #d0dbe5;
+  border-left: 4px solid #0075c9;  /* BLN blue accent */
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Step titles like "STEP 1", "STEP 2", etc. */
+.step strong {
+  font-family: 'Poppins', "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Subsections like EC blocks */
+.step-subsection {
+  background-color: white;
+  border: 1px solid #ccd9e3;
+  border-left: 4px solid #a0bacc;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+/* Buttons */
+.step-button,
+.post-note-button {
+  background-color: #0075c9;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;              /* increased padding */
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 15px;                 /* increased font size */
+  font-family: 'Rubik', "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.step-button:hover,
+.post-note-button:hover {
+  background-color: #005f9e;
+}
+
+/* Textarea */
+.step-textarea,
+textarea {
+  width: 100%;
+  height: 60px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 8px;
+  padding: 10px;                   /* more padding */
+  font-family: 'Rubik', "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;                 /* increased font size */
+}
+
+/* Select dropdowns */
+select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* Timer box */
+.timer-box {
+  background-color: #fff8e1;
+  border: 1px solid #ffcc80;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 12px;
+  color: #795548;
+  font-weight: 500;
+}
+
+  </style>
+</head>
+<audio id="step-2-alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+<body>
+  <h1>Non-Gas Alert Protocol</h1>
+  <div class="container">
+    <!-- LEFT COLUMN -->
+    <div id="log-container">
+      <h2>Logs</h2>
+    
+      <!-- Log List -->
+      <div id="log-list" data-cy="log-list" class="step">
+        <!-- Logs will appear here dynamically -->
+        <span style="color: #666;">No logs yet.</span>
+      </div>
+    
+      <!-- ✅ Resolution Block -->
+      <div id="resolution-section" class="step" data-cy="resolution-section" style="margin-top: 24px;">
+        <strong>RESOLUTION</strong><br><br>
+    
+        <label for="resolution-reason">Reason for resolving alert:</label>
+        <select id="resolution-reason" data-cy="resolution-reason">
+          <option value="">-- Select reason --</option>
+          <option value="false-alert-with-dispatch">False alert with dispatch</option>
+          <option value="false-alert-without-dispatch">False alert without dispatch</option>
+          <option value="incident-with-dispatch">Incident with dispatch</option>
+          <option value="incident-without-dispatch">Incident without dispatch</option>
+          <option value="training">Demo / Training</option>
+          <option value="system-test">System Test</option>
+        </select>
+        
+    
+        <div style="margin-top: 12px;">
+          <button class="post-note-button" onclick="resolveAlert()">Resolve Alert</button>
+          <button class="step-button" onclick="cancelResolution()" style="margin-left: 8px;">Cancel Resolution</button>
+        </div>
+      </div>
+    </div>
+
+      <!-- RIGHT: Steps column -->
+      <div id="steps-container">
+        <h2>Steps</h2>
+
+      <!-- Step 1 -->
+<div id="step-1" class="step" data-cy="step-1">
+    <strong>STEP 1: Call the G7c device and validate the need for assistance.</strong><br><br>
+  
+    <button
+      class="step-button"
+      data-cy="step-1-action"
+      data-phone="+1-403-123-4567"
+      onclick="prefillDeviceCallNote()"
+    >
+      Call G7c Device
+    </button>
+  
+    <textarea id="step-1-note" data-cy="step-1-note" placeholder="Document the result..." style="margin-top: 8px;"></textarea>
+  
+    <button class="post-note-button" data-cy="step-1-post" onclick="postNote(1)" style="margin-top: 8px;">
+      Post Note
+    </button>
+  </div>
+  
+      <!-- Step 2 -->
+      <div id="step-2" class="step" data-cy="step-2">
+        <strong>STEP 2: Send a message to the G7c device: “Do you need help?”, wait 2 minutes for reply.</strong><br>
+      
+        <button
+          class="step-button"
+          data-cy="step-2-action"
+          id="step-2-action"
+          onclick="handleStep2()"
+        >
+          Send Message
+        </button>
+      
+        <!-- <textarea id="step-2-note" data-cy="step-2-note"></textarea> -->
+        <textarea id="step-2-note" data-cy="step-2-note" placeholder="Document the result..." style="margin-top: 8px;"></textarea>
+        <button
+          class="post-note-button"
+          data-cy="step-2-post"
+          onclick="postNote(2)"
+        >
+          Post Note
+        </button>
+      
+        <!-- Step 2 Timer Display -->
+        <div id="step-2-timer-container" class="timer-box" style="display:none;" data-cy="step-2-timer-box">
+            <span>Timer: <span id="step-2-countdown" data-cy="step-2-countdown">02:00</span>
+            <button onclick="cancelStep2Timer()">Cancel Timer</button>
+          </div>
+      </div>
+      
+      <!-- Step 3 -->
+      <div id="step-3" class="step" data-cy="step-3">
+    <strong>STEP 3: Call the phone number assigned to the user (if available).</strong><br><br>
+  
+    <button
+  class="step-button"
+  data-cy="step-3-action"
+  data-name="Emily Garcia"
+  data-phone="+1-313 635 3171"
+  onclick="prefillUserCallNote()"
+>
+  Call User
+</button>
+
+    <textarea id="step-3-note" data-cy="step-3-note" placeholder="Document the result..." style="margin-top: 8px;"></textarea>
+  
+    <button class="post-note-button" data-cy="step-3-post" onclick="postNote(3)" style="margin-top: 8px;">
+      Post Note
+    </button>
+  </div>  
+  
+      <!-- Step 4 -->
+<div id="step-4" class="step" data-cy="step-4">
+  <strong>STEP 4: Contact emergency contacts in order of priority.</strong><br><br>
+
+  <!-- Step 4-1 -->
+  <div id="step-4-1" class="step-subsection" data-cy="step-4-1">
+    <span>Call Taylor Davis at +1-780-311-5279</span>
+    <div style="margin-top: 8px;">
+      <button
+        class="step-button"
+        data-cy="step-4-1-action"
+        data-name="Taylor Davis"
+        data-phone="+1-780-311-5279"
+        onclick="prefillECNote('4-1')"
+      >
+        Call Emergency Contact
+      </button>
+    </div>
+
+    <select id="outcome-4-1" data-cy="outcome-4-1" onchange="insertStep4TimerNote('4-1')" style="margin-top: 8px;">
+      <option value="">Select outcome</option>
+      <option value="Spoke with EC, who will check on user and call back. Waiting 30 minutes.">
+        Spoke with EC, who will check on user and call back. Waiting 30 minutes.
+      </option>
+      <option value="Confirmed user is okay and advised to resolve alert.">
+        Confirmed user is okay and advised to resolve alert.
+      </option>
+      <option value="No answer, left voicemail.">No answer, left voicemail.</option>
+      <option value="No answer, voicemail box full.">No answer, voicemail box full.</option>
+      <option value="No answer, voicemail box not set up.">No answer, voicemail box not set up.</option>
+      <option value="Unable to connect.">Unable to connect.</option>
+      <option value="Number invalid, changed, or out of service.">
+        Number invalid, changed, or out of service.
+      </option>
+    </select>
+    
+    <textarea id="step-4-1-note" data-cy="step-4-1-note" placeholder="Document the result..." class="step-textarea"></textarea>
+
+    <button class="post-note-button" onclick="postNote('4-1')" style="margin-top: 8px;">
+      Post Note
+    </button>
+  </div>
+
+  <!-- Step 4-2 -->
+  <div id="step-4-2" class="step-subsection" data-cy="step-4-2" style="margin-top: 16px;">
+    <span>Call Vanessa Liu at +1-780-452-1189</span>
+    <div style="margin-top: 8px;">
+      <button
+  class="step-button"
+  data-cy="step-4-2-action"
+  data-name="Vanessa Liu"
+  data-phone="+1-780-452-1189"
+  onclick="prefillECNote('4-2')"
+>
+  Call Emergency Contact
+</button>
+
+    </div>
+
+    <select id="outcome-4-2" data-cy="outcome-4-2" onchange="insertStep4TimerNote('4-2')" style="margin-top: 8px;">
+      <option value="">Select outcome</option>
+      <option value="Spoke with EC, who will check on user and call back. Waiting 30 minutes.">
+        Spoke with EC, who will check on user and call back. Waiting 30 minutes.
+      </option>
+      <option value="Spoke with EC, confirmed user is OK.">
+        Spoke with EC, confirmed user is OK.
+      </option> <!-- ✅ Added -->
+      <option value="Confirmed user is okay and advised to resolve alert.">
+        Confirmed user is okay and advised to resolve alert.
+      </option>
+      <option value="No answer, left voicemail.">No answer, left voicemail.</option>
+      <option value="No answer, voicemail box full.">No answer, voicemail box full.</option>
+      <option value="No answer, voicemail box not set up.">No answer, voicemail box not set up.</option>
+      <option value="Unable to connect.">Unable to connect.</option>
+      <option value="Number invalid, changed, or out of service.">
+        Number invalid, changed, or out of service.
+      </option>
+    </select>
+    
+    <textarea id="step-4-2-note" data-cy="step-4-2-note" placeholder="Document the result..." class="step-textarea"></textarea>
+
+    <button class="post-note-button" onclick="postNote('4-2')" style="margin-top: 8px;">
+      Post Note
+    </button>
+  </div>
+
+  <!-- Step 4 Follow-up Timer -->
+  <div id="step-4-timer-container" class="timer-box" data-cy="step-4-timer-box" style="display: none; margin-top: 16px;">
+    <span>Waiting for callback: <span id="step-4-countdown" data-cy="step-4-countdown">00:10</span></span>
+    <button onclick="cancelStep4Timer()">Cancel Timer</button>
+  </div>
+
+  <audio id="step-4-alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+</div>
+
+<!-- Step 5 (Fixed) -->
+<div id="step-5" class="step" data-cy="step-5">
+  <strong>STEP 5: If a valid and up to date location is available, dispatch emergency services (EMS).</strong><br><br>
+
+  <!-- Dispatch decision dropdown -->
+<label for="dispatch-decision">Dispatch conditions met?</label>
+<select id="dispatch-decision" data-cy="step-5-decision" onchange="handleDispatchDecision()" style="margin-bottom: 10px;">
+  <option value="">-- Select --</option>
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+
+<!-- Skip dispatch reason (shown only if "no") -->
+<div id="skip-reason-container" style="display: none;">
+  <label for="skip-reason">Reason for skipping dispatch:</label>
+  <select id="skip-reason" data-cy="skip-reason" onchange="prefillSkipDispatchNote()">
+    <option value="">-- Select reason --</option>
+    <option value="location-invalid">Location invalid or outdated</option>
+    <option value="gas-alert-old">Alert older than 24 hours</option>
+    <option value="device-moving">Device is moving faster than 5 km/h</option>
+    <option value="device-offline">Device is offline</option>
+  </select>
+</div>
+
+  <!-- Dispatch service type (shown only if "yes") -->
+  <div id="dispatch-service-container" style="display: none;">
+    <label for="dispatch-service">Dispatch Service Type</label>
+    <select id="dispatch-service" data-cy="dispatch-service" onchange="prefillDispatchNote()" style="margin-bottom: 10px;">
+      <option value="">-- Select Service --</option>
+      <option value="EMS">EMS</option>
+      <option value="Police">Police</option>
+      <option value="Fire">Fire</option>
+      <option value="EMS and Police">EMS and Police</option>
+      <option value="Fire and Police">Fire and Police</option>
+      <option value="EMS, Fire and Police">EMS, Fire and Police</option>
+    </select>
+  </div>
+
+  <button class="step-button" data-cy="step-5-action" onclick="scrollToNote('step-5-note')">
+    Proceed with Dispatch
+  </button>
+
+  <textarea id="step-5-note" data-cy="step-5-note" placeholder="Document the dispatch..." style="margin-top: 8px;"></textarea>
+
+  <button class="post-note-button" data-cy="step-5-post" onclick="postNote(5)" style="margin-top: 8px;">
+    Post Note
+  </button>
+
+  <!-- Timer Box -->
+  <div id="step-5-timer-container" data-cy="step-5-timer-box" style="display: none; margin-top: 10px;">
+    <span>30-min Follow-up: <span id="step-5-countdown">00:00</span></span>
+    <button onclick="cancelStep5Timer()">Cancel Timer</button>
+    <audio id="step-5-alert-sound" src="beep.mp3" preload="auto"></audio>
+  </div>
+</div>
+
+<!-- Resolution Section (Fixed) -->
+<div id="resolution-section" class="step" data-cy="resolution-section" style="margin-top: 16px;">
+  <strong>RESOLUTION</strong><br><br>
+
+  <label for="resolution-reason">Reason for resolving alert:</label>
+  <select id="resolution-reason" data-cy="resolution-reason">
+    <option value="">-- Select reason --</option>
+    <option value="False alert with dispatch">False alert with dispatch</option>
+    <option value="False alert without dispatch">False alert without dispatch</option>
+    <option value="Incident with dispatch">Incident with dispatch</option>
+    <option value="Incident without dispatch">Incident without dispatch</option>
+    <option value="Demo / Training">Demo / Training</option>
+    <option value="System Test">System Test</option>
+  </select>
+  
+  <button id="resolve-alert-btn" data-cy="resolve-alert-btn" class="post-note-button" onclick="resolveAlert()">
+    Resolve Alert
+  </button>
+  
+</div>
+
+
+  
+<script>
+  const specialistId = "Op 417";
+  let alertResolved = false;
+  let step2Timer = null, step4Timer = null, step5Timer = null;
+  let step2Seconds = 10, step4Seconds = 10, step5Seconds = 10;
+
+  window.onload = function () {
+    const alertData = window.testAlertFixture || {
+      user: 'Emily Garcia',
+      mobile: '+1-313 635 3171',
+      ec1: { name: 'Daniel Reyes', number: '+1-587-333-9271' },
+      ec2: { name: 'Vanessa Liu', number: '+1-780-452-1189' },
+      last_location: '144252 434 Ave E, Aldersyde, AB T0L 0A0, Canada'
+    };
+    window.alertData = alertData;
+
+    // Step 1
+    document.querySelector('[data-cy="step-1-action"]').addEventListener('click', () => {
+      document.querySelector('[data-cy="step-1-note"]').value = 'Called the device.';
+    });
+
+    // Step 2
+    document.querySelector('[data-cy="step-2-action"]').addEventListener('click', () => {
+      const noteArea = document.querySelector('[data-cy="step-2-note"]');
+      noteArea.value = "Sent message to the device: 'Do you need help?', waiting 2 minutes.";
+      startStep2Timer();
+    });
+
+    // Step 3
+    document.querySelector('[data-cy="step-3-action"]').addEventListener('click', () => {
+      document.querySelector('[data-cy="step-3-note"]').value = `Called ${alertData.user} at ${alertData.mobile}.`;
+    });
+
+    // Step 4 dropdowns
+    document.getElementById('outcome-4-1').addEventListener('change', () => insertStep4TimerNote('4-1'));
+    document.getElementById('outcome-4-2').addEventListener('change', () => insertStep4TimerNote('4-2'));
+
+    // Step 4 buttons
+    document.querySelector('[data-cy="step-4-1-button"]').addEventListener('click', () => insertStep4TimerNote('4-1'));
+    document.querySelector('[data-cy="step-4-2-button"]').addEventListener('click', () => insertStep4TimerNote('4-2'));
+
+    // Step 5 dispatch
+    document.getElementById('dispatch-service-type').addEventListener('change', function () {
+      const type = this.value;
+      const location = alertData.last_location;
+      const note = `Dispatch initiated. Called dispatch, requested ${type} to the following location: ${location}. Waiting 30 minutes.`;
+      document.getElementById('step-5-note').value = note;
+    });
+
+    // Resolution buttons
+    document.getElementById("resolve-alert-btn").addEventListener("click", resolveAlert);
+    document.getElementById("cancel-resolution-button").addEventListener("click", cancelResolution);
+
+    setupDispatchNoteListener();
+
+  };
+
+  function setupDispatchNoteListener() {
+  const dropdown = document.getElementById('dispatch-service-type');
+  if (!dropdown) return;
+
+  dropdown.addEventListener('change', function () {
+    const type = this.value;
+    const location = window.alertData?.last_location || '[Unknown location]';
+    const note = `Dispatch initiated. Called dispatch, requested ${type} to the following location: ${location}. Waiting 30 minutes.`;
+    const textarea = document.getElementById('step-5-note');
+    if (textarea) textarea.value = note;
+  });
+}
+
+function postNote(step) {
+  const area = document.getElementById(`step-${step}-note`);
+  const outcome = document.getElementById(`outcome-${step}`);
+  const other = document.getElementById(`other-outcome-${step}`);
+  let note = area?.value?.trim() || "";
+
+  if (outcome?.value === "Other" && other?.value) {
+    note += `. ${other.value}`;
+  } else if (outcome?.value && outcome.value !== "Other") {
+    note += `. ${outcome.value}`;
+  }
+
+  if (!note) return alert("Note required.");
+  document.getElementById(`step-${step}`).classList.add("completed-step");
+
+  // Special format for Step 4-1 and 4-2
+if (step === "4-1" || step === "4-2") {
+  const ec = window.testAlertFixture?.ec2;
+  if (ec?.name && ec?.number) {
+    const callPrefix = `Called ${ec.name} at ${ec.number}.`;
+    const alreadyPrefixed = note.startsWith(callPrefix);
+    logAction(`Step ${step.toUpperCase()}: ${alreadyPrefixed ? note : `${callPrefix} ${note}`} | Op 417`);
+  } else {
+    logAction(`Step ${step.toUpperCase()}: ${note} | Op 417`);
+  }
+  maybeStartStep4Timer(step);
+} else if (step === "5" || step === 5) {
+  logAction(`Step ${step}: ${note} | Op 417`);
+  maybeStartStep5Timer();
+} else {
+  logAction(`Step ${step}: ${note} | Op 417`);
+}
+
+
+  area.value = "";
+  if (outcome) outcome.selectedIndex = 0;
+  if (other) other.value = "";
+}
+
+
+  function insertStep4TimerNote(step) {
+    const contact = step === "4-2" ? window.alertData.ec2 : window.alertData.ec1;
+    const outcome = document.getElementById(`outcome-${step}`).value;
+    const noteField = document.getElementById(`step-${step}-note`);
+    if (!outcome) return;
+
+    if (outcome.includes("Waiting 30 minutes")) {
+      const msg = `Spoke with EC, provided the Emergency Contact the relevant alert information. They will contact user and call back. Waiting 30 minutes for response.`;
+      noteField.value = `Called ${contact.name} at ${contact.number}. ${msg}`;
+    } else {
+      noteField.value = `Called ${contact.name} at ${contact.number}. ${outcome}`;
+    }
+  }
+
+  function maybeStartStep4Timer(step) {
+  const outcome = document.getElementById(`outcome-${step}`)?.value || "";
+  if (!outcome.includes("Waiting 30 minutes")) return;
+
+  step4Seconds = 10;
+  document.getElementById("step-4-timer-container").style.display = "block";
+  updateStep4CountdownDisplay();
+
+  step4Timer = setInterval(() => {
+    step4Seconds--;
+    updateStep4CountdownDisplay();
+    if (step4Seconds <= 0) {
+      clearInterval(step4Timer);
+      step4Timer = null;
+      document.getElementById("step-4-timer-container").style.display = "none";
+      document.getElementById("step-4-alert-sound")?.play();
+      flashBox("step-4-timer-container");
+
+      const ec = window.alertData.ec2;
+      if (step === "4-2" && ec?.name && ec?.number) {
+        logAction(`Step 4: 30-minute wait completed. Call back ${ec.name} at ${ec.number}.`);
+        alert(`30 minutes have passed. Call back ${ec.name} at ${ec.number}.`);
+      } else {
+        logAction("Step 4: 30-minute wait completed. Follow up with Emergency Contact.");
+        alert("30 minutes have passed. Follow up with Emergency Contact.");
+      }
+    }
+  }, 1000);
+}
+
+function setupDispatchNoteListener() {
+    document.getElementById('dispatch-service-type')?.addEventListener('change', function () {
+      const type = this.value;
+      const location = window.alertData?.last_location || '[Unknown location]';
+      const note = `Dispatch initiated. Called dispatch, requested ${type} to the following location: ${location}. Waiting 30 minutes.`;
+      document.getElementById('step-5-note').value = note;
+    });
+  }
+
+  function maybeStartStep5Timer() {
+  const dispatchYes = document.getElementById("dispatch-decision").value === "yes";
+  if (!dispatchYes) return;
+
+  step5Seconds = 10;
+  document.getElementById("step-5-timer-container").style.display = "block";
+  updateStep5CountdownDisplay();
+
+  step5Timer = setInterval(() => {
+    step5Seconds--;
+    updateStep5CountdownDisplay();
+    if (step5Seconds <= 0) {
+      clearInterval(step5Timer);
+      step5Timer = null;
+      document.getElementById("step-5-timer-container").style.display = "none";
+      document.getElementById("step-5-alert-sound")?.play();
+      flashBox("step-5-timer-container");
+
+      // ✅ Required log format
+      logAction("Step 5: 30-minute follow-up due. Call dispatch to check on outcome. | Op 417");
+      alert("30 minutes have passed. Call dispatch to check on outcome.");
+    }
+  }, 1000);
+}
+
+
+  function flashBox(id) {
+    const box = document.getElementById(id);
+    let flashes = 6;
+    const interval = setInterval(() => {
+      box.style.backgroundColor = flashes % 2 === 0 ? "#ffcc00" : "";
+      flashes--;
+      if (flashes <= 0) clearInterval(interval);
+    }, 500);
+  }
+
+  function updateStep4CountdownDisplay() {
+  const minutes = Math.floor(step4Seconds / 60).toString().padStart(2, '0');
+  const seconds = (step4Seconds % 60).toString().padStart(2, '0');
+  document.getElementById("step-4-countdown").innerText = `${minutes}:${seconds}`;
+}
+
+
+function updateStep5CountdownDisplay() {
+  const minutes = Math.floor(step5Seconds / 60).toString().padStart(2, '0');
+  const seconds = (step5Seconds % 60).toString().padStart(2, '0');
+  document.getElementById("step-5-countdown").innerText = `${minutes}:${seconds}`;
+}
+
+
+  function startStep2Timer() {
+    step2Seconds = 10;
+    document.getElementById("step-2-timer-container").style.display = "block";
+    updateStep2CountdownDisplay();
+
+    step2Timer = setInterval(() => {
+      step2Seconds--;
+      updateStep2CountdownDisplay();
+      if (step2Seconds <= 0) {
+        clearInterval(step2Timer);
+        step2Timer = null;
+        document.getElementById("step-2-timer-container").style.display = "none";
+        document.getElementById("step-2-alert-sound")?.play();
+        flashBox("step-2");
+        logAction("Step 2: 2-minute wait completed. Proceed to Step 3.");
+        alert("2 minutes have passed. Proceed to Step 3.");
+      }
+    }, 1000);
+  }
+
+  function updateStep2CountdownDisplay() {
+  const minutes = Math.floor(step2Seconds / 60).toString().padStart(2, '0');
+  const seconds = (step2Seconds % 60).toString().padStart(2, '0');
+  document.getElementById("step-2-countdown").innerText = `${minutes}:${seconds}`;
+}
+
+  function cancelStep2Timer() {
+    clearInterval(step2Timer);
+    step2Timer = null;
+    document.getElementById("step-2-timer-container").style.display = "none";
+    logAction("Timer cancelled by specialist.");
+  }
+
+  function cancelStep4Timer() {
+    clearInterval(step4Timer);
+    step4Timer = null;
+    document.getElementById("step-4-timer-container").style.display = "none";
+    logAction("Timer cancelled by specialist.");
+  }
+
+  function cancelStep5Timer() {
+    clearInterval(step5Timer);
+    step5Timer = null;
+    document.getElementById("step-5-timer-container").style.display = "none";
+    logAction("Timer cancelled by specialist.");
+  }
+
+  function logAction(msg) {
+    const now = new Date().toLocaleTimeString("en-US", { timeZone: "America/Edmonton", hour12: false });
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    entry.textContent = `[${now} MST] ${msg} | ${specialistId}`;
+    document.getElementById("log-list").appendChild(entry);
+  }
+
+  function handleDispatchDecision() {
+  const decision = document.getElementById("dispatch-decision").value;
+  const serviceContainer = document.getElementById("dispatch-service-container");
+  const skipReasonContainer = document.getElementById("skip-reason-container");
+  const note = document.getElementById("step-5-note");
+
+  if (decision === "yes") {
+    serviceContainer.style.display = "block";
+    skipReasonContainer.style.display = "none";
+    note.value = ""; // clear
+  } else if (decision === "no") {
+    serviceContainer.style.display = "none";
+    skipReasonContainer.style.display = "block";
+    note.value = ""; // prefilled later by prefillSkipDispatchNote()
+  } else {
+    serviceContainer.style.display = "none";
+    skipReasonContainer.style.display = "none";
+    note.value = "";
+  }
+}
+
+function prefillSkipDispatchNote() {
+  const reasonSelect = document.getElementById("skip-reason");
+  const reason = reasonSelect?.options[reasonSelect.selectedIndex]?.text || "";
+  const noteArea = document.getElementById("step-5-note");
+  if (reason) {
+    noteArea.value = `Unable to dispatch. Reason: ${reason}. Repeating Steps 1–4 until someone is reached.`;
+  }
+}
+
+
+function prefillDispatchNote() {
+  const type = document.getElementById("dispatch-service").value;
+  const location = window.alertData?.last_location || "Unknown location";
+  if (!type) return;
+
+  const note = `Dispatch initiated. Called dispatch, requested ${type} to the following location: ${location}. Waiting 30 minutes.`;
+  document.getElementById("step-5-note").value = note;
+}
+
+function skipDispatch() {
+  const reason = document.getElementById("skip-reason").value;
+  const reasonText = document.querySelector(`#skip-reason option[value="${reason}"]`)?.textContent;
+
+  if (!reasonText) return alert("Please select a reason.");
+
+  logAction(`Step 5: Unable to dispatch. Reason: ${reasonText}. Repeating Steps 1–4 until someone is reached. | Op 417`);
+}
+
+function resolveAlert() {
+  const dropdown = document.getElementById("resolution-reason");
+  const reason = dropdown.options[dropdown.selectedIndex]?.text;
+
+  if (!reason || reason.includes("Select")) return alert("Please select a resolution reason.");
+  alertResolved = true;
+  document.querySelectorAll(".step").forEach(s => s.classList.add("resolved-step"));
+  document.getElementById("cancel-resolution-button").style.display = "inline-block";
+  logAction(`Alert resolved. Reason: ${reason}`);
+}
+
+  function cancelResolution() {
+    alertResolved = false;
+    document.querySelectorAll(".step").forEach(s => s.classList.remove("resolved-step"));
+    document.getElementById("cancel-resolution-button").style.display = "none";
+    logAction("Resolution canceled. Protocol re-opened.");
+  }
+</script>
+
+
+</body>
+</html>

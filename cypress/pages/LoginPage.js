@@ -6,7 +6,7 @@ class LoginPage {
   get acceptCookiesButton() { return cy.get('#cookiescript_accept') };
 
   visit() {
-    cy.visit('/sign-in');
+    cy.visit(`${Cypress.env('blnUrl')}/sign-in`);
     this.cookieBanner.should('be.visible');
     this.acceptCookiesButton.click();
   };
@@ -25,7 +25,9 @@ class LoginPage {
     this.enterEmail(email);
     this.enterPassword(password);
     this.clickSignIn();
-    cy.visit('/ng/alerts');
+
+    // Use full URL to avoid relying on baseUrl (which is set for local protocol)
+    cy.visit(`${Cypress.env('blnUrl')}/ng/alerts`);
     this.validateLogin();
   };
 }
