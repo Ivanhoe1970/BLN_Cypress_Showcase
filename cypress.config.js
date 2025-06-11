@@ -9,7 +9,7 @@ module.exports = defineConfig({
       // no special setup needed
     },
     env: {
-      protocolPath: '/automated-basic-non-gas-alert-protocol/index.html',
+      protocolPath: '/index.html', // Changed from '/automated-basic-non-gas-alert-protocol/index.html'
       blnUrl: 'https://live.blacklinesafety.com'
     }
   }
