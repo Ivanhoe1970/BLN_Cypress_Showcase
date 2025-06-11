@@ -28,7 +28,7 @@ jobs:
         run: npm install
 
       - name: Run Cypress Live tests
-        run: npx cypress run --spec "cypress/e2e/live/*"
+        run: npx cypress run --spec "cypress/e2e/live/*" --config baseUrl=https://live.blacklinesafety.com
 
   protocol-tests:
     name: Run Protocol Tests (Local HTML App)
