@@ -31,10 +31,14 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install ESLint
+      - name: Install Prettier and ESLint
         run: |
           npm init -y
-          npm install eslint --save-dev
+          npm install prettier eslint eslint-config-prettier eslint-plugin-prettier --save-dev
 
-      - name: Lint JS files
-        run: npx eslint automated-basic-non-gas-alert-protocol/*.js || true
+      - name: Run Prettier formatting check
+        run: npx prettier --check "automated-basic-non-gas-alert-protocol/**/*.{html,js}"
+
+      - name: Run ESLint with Prettier integration
+        run: |
+          npx eslint automated-basic-non-gas-alert-protocol/*.js || echo "No JS files to lint or linting completed with warnings"
