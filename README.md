@@ -5,9 +5,11 @@ All tests target live features such as login, alert filtering, and user flow val
 
 <p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/ivanhoe1970/BLN_Cypress_Showcase/cypress-ci.yaml?label=CI&style=for-the-badge" alt="CI Status"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/ivanhoe1970/BLN_Cypress_Showcase/html-js-validate.yml?label=HTML%20%26%20JS%20Checks&style=for-the-badge" alt="HTML & JS Validation"/>
   <img src="https://img.shields.io/badge/Tested%20With-Cypress-04C38E?style=for-the-badge" alt="Cypress"/>
   <img src="https://img.shields.io/github/license/ivanhoe1970/BLN_Cypress_Showcase?style=for-the-badge" alt="License"/>
 </p>
+
 
 ---
 “This is a fully working Cypress-based E2E test framework that I designed and built from scratch to automate real workflows in Blackline Live. It covers UI and API-based login flows, dynamic alert filtering (Acknowledged, Unacknowledged, Resolved), and implements the Page Object Model for scalability. All tests run in both GUI and CI headless modes with GitHub Actions.”
