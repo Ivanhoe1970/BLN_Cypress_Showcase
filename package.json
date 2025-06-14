@@ -4,11 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "start:protocol": "live-server automated-basic-non-gas-alert-protocol --port=5500 --quiet",
-  "cy:run:protocol": "start-server-and-test start:protocol http://127.0.0.1:5500 \"cypress run --spec cypress/e2e/protocols/*.cy.js\"",
-  "format": "prettier --write \"automated-basic-non-gas-alert-protocol/**/*.{html,js}\"",
-  "lint": "eslint automated-basic-non-gas-alert-protocol/*.js"
-}
-
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:protocol": "live-server automated-basic-non-gas-alert-protocol --port=5500 --quiet",
+    "cy:run:protocol": "start-server-and-test start:protocol http://127.0.0.1:5500 \"cypress run --spec cypress/e2e/protocols/*.cy.js\"",
+    "format": "prettier --write \"automated-basic-non-gas-alert-protocol/**/*.{html,js}\"",
+    "lint": "eslint automated-basic-non-gas-alert-protocol/*.js"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0",
+    "live-server": "^1.2.2",
+    "start-server-and-test": "^2.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0"
+  }
 }
