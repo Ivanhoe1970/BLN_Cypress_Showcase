@@ -7,7 +7,7 @@ module.exports = defineConfig({
     baseUrl: 'https://live.blacklinesafety.com',
     setupNodeEvents(on, config) {},
     env: {
-      protocolPath: 'automated-basic-non-gas-alert-protocol/index.html'
+      protocolPath: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase/automated-basic-non-gas-alert-protocol/index.html'
     }
   },
 });
