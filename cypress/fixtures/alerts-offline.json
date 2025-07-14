@@ -1,0 +1,22 @@
+[
+    {
+      "id": "6913830",
+      "status": "Unacknowledged", 
+      "type": "SOS",
+      "user": "Emily Garcia",
+      "organization": "GreenLine Gas Co.",
+      "trade_role": "Pipeline",
+      "device_id": "3571001334",
+      "device_name": "Unit 3571001334",
+      "device_status": "Offline",
+      "device_type": "G7c",
+      "device_mode": "Offline - Last seen 2 hours ago",
+      "mobile": "+1-313 635 3171",
+      "work": "N/A",
+      "home": "N/A",
+      "last_location": "Unknown location - device offline",
+      "latitude": null,
+      "longitude": null,
+      "alert_date": "2025-04-01"
+    }
+  ]

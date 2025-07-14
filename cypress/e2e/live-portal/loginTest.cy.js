@@ -1,4 +1,4 @@
-import LoginPage from '../pages/LoginPage';
+import LoginPage from '../../pages/LoginPage';
 
 describe('Login Tests', () => {
   it('should log in successfully with valid credentials', () => {

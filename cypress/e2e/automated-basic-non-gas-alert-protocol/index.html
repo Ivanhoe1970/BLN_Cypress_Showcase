@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Response Protocol with Global Timer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 200px 1fr;
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .protocol-log {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .protocol-log h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .log-container {
+            height: calc(100vh - 280px);
+            min-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: white;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+            font-size: 0.9em;
+            line-height: 1.3;
+        }
+        
+        .log-entry.step {
+            border-left-color: #007bff;
+        }
+        
+        .log-entry.timer {
+            border-left-color: #ffc107;
+        }
+        
+        .log-entry.resolution {
+            border-left-color: #dc3545;
+        }
+        
+        .log-placeholder {
+            color: #6c757d;
+            text-align: center;
+            margin-top: 120px;
+            font-style: normal;
+            font-size: 0.9em;
+            font-family: inherit;
+        }
+        
+        .global-timer {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            font-size: 0.9em;
+        }
+        
+        .timer-display {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .timer-info {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            padding: 8px;
+            margin: 8px 0;
+            font-size: 0.8em;
+            line-height: 1.3;
+        }
+        
+        .timer-controls {
+            margin-top: 12px;
+        }
+        
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: background 0.2s;
+        }
+        
+        .cancel-btn:hover:not(:disabled) {
+            background: #c82333;
+        }
+        
+        .cancel-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .steps-section {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .steps-section h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .step.completed {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .step.active {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+            font-size: 0.95em;
+        }
+        
+        .status-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        
+        .status-badge.completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .step-content {
+            color: #666;
+            font-size: 0.9em;
+            margin: 8px 0;
+        }
+        
+        .contact-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 8px 0;
+            font-size: 0.85em;
+        }
+        
+        .btn {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #0056b3;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background: #1e7e34;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .timer-inactive {
+            opacity: 0.6;
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+        
+        .timer-active {
+            animation: pulse 2s infinite;
+        }
+        
+        .timer-alert {
+            animation: flashRed 1s infinite;
+            border: 3px solid #dc3545 !important;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes flashRed {
+            0%, 50% { background: linear-gradient(135deg, #dc3545, #c82333); }
+            51%, 100% { background: linear-gradient(135deg, #007bff, #0056b3); }
+        }
+        
+        .manual-notes {
+            width: 100%;
+            height: 100px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        
+        .timer-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #dc3545;
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            font-size: 1.2em;
+            display: none;
+        }
+        
+        .step-outcome {
+            margin: 10px 0;
+        }
+        
+        .step-outcome select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .step-outcome textarea {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-top: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        .local-timer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .resolution-section {
+            background: #fff;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .resolution-section h3 {
+            margin-top: 0;
+            color: #dc3545;
+        }
+        
+        .resolution-section select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .resolution-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+        }
+        
+        .alert-resolved .step:not(.resolution-section) {
+            pointer-events: none;
+            background: #f8f9fa;
+            opacity: 0.6;
+        }
+        
+        .alert-resolved .step:not(.resolution-section) button {
+            cursor: not-allowed;
+        }
+        
+        /* Keep manual notes section always functional */
+        .alert-resolved .protocol-log {
+            pointer-events: auto;
+            opacity: 1;
+        }
+        
+        /* Keep resolution section fully functional */
+        .alert-resolved .resolution-section {
+            pointer-events: auto;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Protocol Log Section -->
+        <div class="protocol-log">
+            <h3>📋 Protocol Log</h3>
+            <div class="log-container" id="protocolLog">
+                <div class="log-placeholder">
+                    No log entries yet. Actions will appear here as you progress through the steps.
+                </div>
+            </div>
+            
+            <h3>📝 Add Note</h3>
+            <label for="manual-notes" style="position: absolute; left: -9999px;">Add Note</label>
+            <textarea id="manual-notes" class="manual-notes" placeholder="Add notes here..."></textarea>
+            <button class="btn btn-success" style="margin-top: 10px;" onclick="addManualNote()" data-cy="add-manual-note">
+                Post Note
+            </button>
+        </div>
+
+        <!-- Global Timer Section -->
+        <div class="global-timer timer-inactive" id="globalTimer">
+            <h3>⏰ Timer</h3>
+            
+            <div class="timer-display" id="timerDisplay" aria-live="polite">
+                --:--
+            </div>
+            
+            <div class="timer-info" id="timerInfo">
+                <strong>No active timer</strong>
+            </div>
+            
+            <div class="timer-controls">
+                <button class="cancel-btn" id="cancelTimerBtn" disabled onclick="cancelGlobalTimer()" data-cy="cancel-global-timer">
+                    🛑 Cancel Timer
+                </button>
+            </div>
+            
+            <div style="margin-top: 8px; font-size: 0.7em; opacity: 0.8; line-height: 1.2; display: flex; justify-content: space-between;" id="timerMeta">
+                <span id="timerStart">--:--</span>
+                <span id="timerEnd">--:--</span>
+            </div>
+        </div>
+
+        <!-- Emergency Response Steps -->
+        <div class="steps-section">
+            <h3>🚨 Emergency Response Protocol</h3>
+            
+            <!-- Step 1: Call G7c Device -->
+            <div class="step active" id="step-1">
+                <div class="step-header">
+                    <h4 class="step-title">✅ STEP 1: Call the G7c device and validate the need for assistance.</h4>
+                    <span class="status-badge" id="step-1-status">Pending</span>
+                </div>
+
+                <button class="btn btn-primary" onclick="startStep(1)" data-cy="call-g7c-device">
+                    📞 Call G7c Device
+                </button>
+                
+                <div class="step-outcome" id="step-1-outcome" style="display: none;">
+                    <select id="step-1-select" data-cy="step-1-outcome" onchange="autoPopulateNote(1)">
+                        <option value="">Select outcome</option>
+                        <option value="no-answer">No answer.</option>
+                        <option value="unable-to-call">Unable to call, device offline.</option>
+                        <option value="confirmed-ok">Spoke with Emily Garcia. Confirmed they are OK. Resolving alert.</option>
+                    </select>
+                    <textarea id="step-1-note" placeholder="Document the result..." data-cy="step-1-note" oninput="validatePostButton(1)"></textarea>
+                    <button class="btn btn-secondary" onclick="postNote(1)" data-cy="step-1-post" style="margin-top: 8px;" disabled>
+                        ✅ Post Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Send Message -->
+            <div class="step" id="step-2">
+                <div class="step-header">
+                    <h4 class="step-title">✅ STEP 2: Send a message to the G7c device: "Do you need help?", wait 2 minutes</h4>
+                    <span class="status-badge" id="step-2-status">Pending</span>
+                </div>
+
+                <button class="btn btn-primary" onclick="startStep(2)" data-cy="send-message" disabled>
+                    💬 Send Message
+                </button>
+                
+                <div class="step-outcome" id="step-2-outcome" style="display: none;">
+                    <div class="local-timer" id="step-2-timer" style="display: none;">
+                        <span>⏱️ Message timer: <span id="step-2-countdown">02:00</span></span>
+                        <button class="btn btn-secondary" onclick="cancelLocalTimer(2)">Cancel Timer</button>
+                    </div>
+                    <textarea id="step-2-note" placeholder="Document the result..." data-cy="step-2-note">Sent message "Do you need help?" to G7c device. Waiting 2 minutes for device user reply.</textarea>
+                    <button class="btn btn-success" onclick="postNote(2)" data-cy="step-2-post" style="margin-top: 8px;">
+                        ✅ Post Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Call User -->
+            <div class="step" id="step-3">
+                <div class="step-header">
+                    <h4 class="step-title">✅ STEP 3: Call the phone number assigned to the user (if available).</h4>
+                    <span class="status-badge" id="step-3-status">Pending</span>
+                </div>
+                <div class="contact-info">
+                    <strong>👤 Emily Garcia</strong> 📞 +1-313-635-3171
+                </div>
+                <button class="btn btn-primary" onclick="startStep(3)" data-cy="call-user" disabled>
+                    📞 Call User
+                </button>
+                
+                <div class="step-outcome" id="step-3-outcome" style="display: none;">
+                    <select id="step-3-select" data-cy="step-3-outcome" onchange="autoPopulateNote(3)">
+                        <option value="">Select outcome</option>
+                        <option value="no-answer-voicemail">No answer, left voicemail</option>
+                        <option value="no-answer-already-left">No answer, voicemail already left</option>
+                        <option value="no-answer-unable">No answer, unable to leave voicemail</option>
+                        <option value="no-answer-box-full">No answer, voicemail box full</option>
+                        <option value="no-answer-not-set">No answer, voicemail not set up</option>
+                        <option value="wrong-number">Wrong number</option>
+                        <option value="unable-to-connect">Unable to connect</option>
+                        <option value="number-invalid">Number invalid, changed, or out of service</option>
+                        <option value="confirmed-ok">Spoke with Emily Garcia, confirmed they are OK</option>
+                    </select>
+                    <textarea id="step-3-note" placeholder="Document the result..." data-cy="step-3-note" oninput="validatePostButton(3)"></textarea>
+                    <button class="btn btn-secondary" onclick="postNote(3)" data-cy="step-3-post" style="margin-top: 8px;" disabled>
+                        ✅ Post Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Contact Emergency Contacts -->
+            <div class="step" id="step-4">
+                <div class="step-header">
+                    <h4 class="step-title">✅ STEP 4: Contact emergency contacts in order of priority.</h4>
+                    <span class="status-badge" id="step-4-status">Pending</span>
+                </div>
+                <div class="step-content">
+                    If there is no answer, but dispatch conditions are met, proceed to STEP 5.<br>
+                    If dispatch conditions are not met, repeat STEPS 1, 2, 3 & 4 until someone is reached.
+                </div>
+                
+                <!-- Step 4-1: Daniel Reyes -->
+                <div class="step" id="step-4-1" style="margin: 10px 0;">
+                    <div class="step-header">
+                        <h5 class="step-title">📞 Call Daniel Reyes at +1-587-333-9271</h5>
+                        <span class="status-badge" id="step-4-1-status">Pending</span>
+                    </div>
+                    <div class="contact-info">
+                        <strong>👤 Daniel Reyes</strong> 📞 +1-587-333-9271 🏷️ Site Supervisor
+                    </div>
+                    <button class="btn btn-primary" onclick="startStep('4-1')" data-cy="call-emergency-contact-4-1" disabled>
+                        📞 Call Emergency Contact
+                    </button>
+                    
+                    <div class="step-outcome" id="step-4-1-outcome" style="display: none;">
+                        <select id="step-4-1-select" data-cy="step-4-1-outcome" onchange="autoPopulateNote('4-1')">
+                            <option value="">Select outcome</option>
+                            <option value="waiting-30-minutes">Spoke with EC, who will check on user and call back. Waiting 30 minutes</option>
+                            <option value="confirmed-ok">Confirmed user is okay and advised to resolve alert</option>
+                            <option value="no-answer-voicemail">No answer, left voicemail</option>
+                            <option value="no-answer-already-left">No answer, voicemail already left</option>
+                            <option value="no-answer-unable">No answer, unable to leave voicemail</option>
+                            <option value="no-answer-box-full">No answer, voicemail box full</option>
+                            <option value="no-answer-not-set">No answer, voicemail not set up</option>
+                            <option value="wrong-number">Wrong number</option>
+                            <option value="unable-to-connect">Unable to connect</option>
+                            <option value="number-invalid">Number invalid, changed, or out of service</option>
+                        </select>
+                        <textarea id="step-4-1-note" placeholder="Document the result..." data-cy="step-4-1-note" oninput="validatePostButton('4-1')"></textarea>
+                        <button class="btn btn-secondary" onclick="postNote('4-1')" data-cy="step-4-1-post" style="margin-top: 8px;" disabled>
+                            ✅ Post Note
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 4-2: Vanessa Liu -->
+                <div class="step" id="step-4-2" style="margin: 10px 0;">
+                    <div class="step-header">
+                        <h5 class="step-title">📞 Call Vanessa Liu at +1-780-452-1189</h5>
+                        <span class="status-badge" id="step-4-2-status">Pending</span>
+                    </div>
+                    <div class="contact-info">
+                        <strong>👤 Vanessa Liu</strong> 📞 +1-780-452-1189 🏷️ Control Room Operator
+                    </div>
+                    <button class="btn btn-primary" onclick="startStep('4-2')" data-cy="call-emergency-contact-4-2" disabled>
+                        📞 Call Emergency Contact
+                    </button>
+                    
+                    <div class="step-outcome" id="step-4-2-outcome" style="display: none;">
+                        <select id="step-4-2-select" data-cy="step-4-2-outcome" onchange="autoPopulateNote('4-2')">
+                            <option value="">Select outcome</option>
+                            <option value="waiting-30-minutes">Spoke with EC, who will check on user and call back. Waiting 30 minutes</option>
+                            <option value="confirmed-ok">Confirmed user is okay and advised to resolve alert</option>
+                            <option value="no-answer-voicemail">No answer, left voicemail</option>
+                            <option value="no-answer-already-left">No answer, voicemail already left</option>
+                            <option value="no-answer-unable">No answer, unable to leave voicemail</option>
+                            <option value="no-answer-box-full">No answer, voicemail box full</option>
+                            <option value="no-answer-not-set">No answer, voicemail not set up</option>
+                            <option value="wrong-number">Wrong number</option>
+                            <option value="unable-to-connect">Unable to connect</option>
+                            <option value="number-invalid">Number invalid, changed, or out of service</option>
+                        </select>
+                        <textarea id="step-4-2-note" placeholder="Document the result..." data-cy="step-4-2-note" oninput="validatePostButton('4-2')"></textarea>
+                        <button class="btn btn-secondary" onclick="postNote('4-2')" data-cy="step-4-2-post" style="margin-top: 8px;" disabled>
+                            ✅ Post Note
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Dispatch Decision -->
+            <div class="step active" id="step-5">
+                <div class="step-header">
+                    <h4 class="step-title">✅ STEP 5: If a valid and up to date location is available, dispatch emergency services (EMS).</h4>
+                    <span class="status-badge" id="step-5-status">Pending</span>
+                </div>
+
+                <div class="step-outcome" id="step-5-outcome">
+                    <label for="dispatch-decision">Dispatch conditions met?</label>
+                    <select id="dispatch-decision" data-cy="dispatch-decision" onchange="handleDispatchDecision()">
+                        <option value="">-- Select --</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                    
+                    <div id="dispatch-service-container" style="display: none;">
+                        <label for="dispatch-service">Dispatch Service Type</label>
+                        <select id="dispatch-service" data-cy="dispatch-service">
+                            <option value="">-- Select Service --</option>
+                            <option value="EMS">EMS</option>
+                            <option value="Police">Police</option>
+                            <option value="Fire">Fire</option>
+                            <option value="EMS and Police">EMS and Police</option>
+                            <option value="Fire and Police">Fire and Police</option>
+                            <option value="EMS, Fire and Police">EMS, Fire and Police</option>
+                        </select>
+                        <button class="btn btn-danger" onclick="callDispatch()" data-cy="call-dispatch" style="margin: 10px 0;">
+                            📞 Call Dispatch
+                        </button>
+                    </div>
+                    
+                    <div id="skip-reason-container" style="display: none;">
+                        <label for="skip-reason">Reason for skipping dispatch:</label>
+                        <select id="skip-reason" data-cy="skip-reason" onchange="autoPopulateSkipReason()">
+                            <option value="">-- Select reason --</option>
+                            <option value="location-invalid">Location invalid or outdated</option>
+                            <option value="alert-old">Alert older than 24 hours</option>
+                            <option value="device-moving">Device is moving faster than 5 km/h</option>
+                            <option value="device-offline">Device is offline</option>
+                        </select>
+                    </div>
+                    
+                    <textarea id="step-5-note" placeholder="Document the dispatch decision..." data-cy="step-5-note" oninput="validatePostButton(5)"></textarea>
+                    <button class="btn btn-secondary" onclick="postNote(5)" data-cy="step-5-post" style="margin-top: 8px;" disabled>
+                        ✅ Post Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resolution Section -->
+            <div class="resolution-section" id="resolution-section">
+                <div class="step-header">
+                    <h3>✅ RESOLUTION</h3>
+                    <span class="status-badge" id="resolution-status">Pending</span>
+                </div>
+
+                
+                <label for="resolution-reason">Reason for resolving alert:</label>
+                <select id="resolution-reason" data-cy="resolution-reason">
+                    <option value="">-- Select reason --</option>
+                    <option value="false-alert-without-dispatch">False alert without dispatch</option>
+                    <option value="false-alert-with-dispatch">False alert with dispatch</option>
+                    <option value="incident-without-dispatch">Incident without dispatch</option>
+                    <option value="incident-with-dispatch">Incident with dispatch</option>
+                    <option value="pre-alert">Pre-Alert</option>
+                    <option value="demo-training">Demo/Training</option>
+                </select>
+                
+                <div class="resolution-buttons">
+                    <button class="btn btn-danger" onclick="resolveAlert()" data-cy="resolve-alert">
+                        ✅ Resolve Alert
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelResolution()" data-cy="cancel-resolution">
+                        ❌ Cancel Resolution
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Complete Notification -->
+    <div class="timer-notification" id="timerNotification">
+        <h3>⏰ Timer Complete!</h3>
+        <p id="timerNotificationText">30-minute callback wait has expired.</p>
+        <button class="btn btn-primary" onclick="dismissNotification()" data-cy="dismiss-timer-notification">
+            Acknowledge
+        </button>
+    </div>
+
+    <script>
+        // Global timer management
+        let globalTimerInterval = null;
+        let activeTimerData = null;
+        let tabFlashInterval = null;
+        let localTimerInterval = null;
+        let beepTimeouts = [];
+        let originalTitle = "Emergency Response Protocol with Global Timer";
+        
+        // Use injected fixture data if available, otherwise fallback to demo data
+        const deviceData = window.testAlertFixture || {
+            "id": "demo-alert",
+            "status": "Unacknowledged",
+            "type": "SOS",
+            "user": "Emily Garcia",
+            "organization": "GreenLine Gas Co.",
+            "trade_role": "Pipeline",
+            "device_id": "3571001334",
+            "device_name": "Unit 3571001334",
+            "device_status": "Online",
+            "device_type": "G7c",
+            "device_mode": "Normal operation",
+            "mobile": "+1-313 635 3171",
+            "work": "N/A",
+            "home": "N/A",
+            "last_location": "144252 434 Ave E, Aldersyde, AB T0L 0A0, Canada",
+            "latitude": 50.66004,
+            "longitude": -113.7685769,
+            "alert_date": "2025-04-01"
+        };
+        
+        const currentAlertData = {
+            type: 'SOS',
+            alert_date: new Date().toISOString(),
+            user: { name: 'Emily Garcia', phone: '+1-313-635-3171' }
+        };
+
+        // Protocol state management
+        let protocolState = {
+            completedSteps: [],
+            currentStep: 1,
+            dispatchMade: false,
+            dispatchTimerStarted: false,
+            alertResolved: false
+        };
+
+        // Logging functions
+        function addLogEntry(message, type = 'general') {
+            const logContainer = document.getElementById('protocolLog');
+            const placeholder = logContainer.querySelector('.log-placeholder');
+            
+            if (placeholder) {
+                placeholder.remove();
+            }
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('en-US', {
+                hour12: false,
+                timeZone: 'America/Edmonton',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            entry.innerHTML = `<strong>[${timestamp} MDT]</strong> ${message} <span style="float: right;">Op 417</span>`;
+            
+            // Insert at the top (newest first) instead of bottom
+            logContainer.insertBefore(entry, logContainer.firstChild);
+        }
+
+        // Step management functions
+        function startStep(stepId) {
+            // Show outcome section for the step
+            const outcomeSection = document.getElementById(`step-${stepId}-outcome`);
+            if (outcomeSection) {
+                outcomeSection.style.display = 'block';
+            }
+            
+            // For Step 2, show local timer and start countdown
+            if (stepId === 2) {
+                startLocalTimer();
+                // Don't log here - let the postNote function handle logging
+            }
+        }
+        
+        function getStepDescription(stepId) {
+            const descriptions = {
+                1: 'G7c device',
+                2: 'G7c device',
+                3: 'user Emily Garcia',
+                '4-1': 'emergency contact Daniel Reyes',
+                '4-2': 'emergency contact Vanessa Liu',
+                5: 'dispatch decision'
+            };
+            return descriptions[stepId] || `step ${stepId}`;
+        }
+        
+        // Initialize button states when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Step 2 starts with pre-filled text, so validate its button
+            validatePostButton(2);
+        });
+
+        function validatePostButton(stepId) {
+            const note = document.getElementById(`step-${stepId}-note`);
+            const button = document.querySelector(`[data-cy="step-${stepId}-post"]`);
+            
+            if (!note || !button) return;
+            
+            const hasText = note.value.trim().length > 0;
+            
+            if (hasText) {
+                button.disabled = false;
+                button.classList.remove('btn-secondary');
+                button.classList.add('btn-success');
+            } else {
+                button.disabled = true;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-secondary');
+            }
+        }
+
+        function autoPopulateNote(stepId) {
+            const select = document.getElementById(`step-${stepId}-select`);
+            const note = document.getElementById(`step-${stepId}-note`);
+            
+            if (!select || !note) return;
+            
+            const outcome = select.value;
+            if (!outcome) return;
+            
+            const autoNotes = {
+                1: {
+                    'no-answer': 'Called device. No answer.',
+                    'unable-to-call': 'Unable to call, device offline.',
+                    'confirmed-ok': 'Called device. Spoke with Emily Garcia. Confirmed they are OK. Resolving alert.'
+                },
+                3: {
+                    'no-answer-voicemail': 'Called Emily Garcia at +1-313-635-3171. No answer, left voicemail.',
+                    'no-answer-already-left': 'Called Emily Garcia at +1-313-635-3171. No answer, voicemail already left.',
+                    'no-answer-unable': 'Called Emily Garcia at +1-313-635-3171. No answer, unable to leave voicemail.',
+                    'no-answer-box-full': 'Called Emily Garcia at +1-313-635-3171. No answer, voicemail box full.',
+                    'no-answer-not-set': 'Called Emily Garcia at +1-313-635-3171. No answer. Unable to leave voicemail, voicemail box not set up.',
+                    'wrong-number': 'Called Emily Garcia at +1-313-635-3171. Wrong number.',
+                    'unable-to-connect': 'Called Emily Garcia at +1-313-635-3171. Unable to connect.',
+                    'number-invalid': 'Called Emily Garcia at +1-313-635-3171. Number invalid, changed, or out of service.',
+                    'confirmed-ok': 'Called Emily Garcia at +1-313-635-3171. Spoke with Emily Garcia, confirmed they are OK. Resolving alert.'
+                },
+                '4-1': {
+                    'waiting-30-minutes': 'Called Daniel Reyes at +1-587-333-9271. Spoke with EC, who will check on user and call back. Waiting 30 minutes.',
+                    'confirmed-ok': 'Called Daniel Reyes at +1-587-333-9271. Confirmed user is okay and advised to resolve alert.',
+                    'no-answer-voicemail': 'Called Daniel Reyes at +1-587-333-9271. No answer, left voicemail.',
+                    'no-answer-already-left': 'Called Daniel Reyes at +1-587-333-9271. No answer, voicemail already left.',
+                    'no-answer-unable': 'Called Daniel Reyes at +1-587-333-9271. No answer, unable to leave voicemail.',
+                    'no-answer-box-full': 'Called Daniel Reyes at +1-587-333-9271. No answer, voicemail box full.',
+                    'no-answer-not-set': 'Called Daniel Reyes at +1-587-333-9271. No answer, voicemail not set up.',
+                    'wrong-number': 'Called Daniel Reyes at +1-587-333-9271. Wrong number.',
+                    'unable-to-connect': 'Called Daniel Reyes at +1-587-333-9271. Unable to connect.',
+                    'number-invalid': 'Called Daniel Reyes at +1-587-333-9271. Number invalid, changed, or out of service.'
+                },
+                '4-2': {
+                    'waiting-30-minutes': 'Called Vanessa Liu at +1-780-452-1189. Spoke with EC, who will check on user and call back. Waiting 30 minutes.',
+                    'confirmed-ok': 'Called Vanessa Liu at +1-780-452-1189. Confirmed user is okay and advised to resolve alert.',
+                    'no-answer-voicemail': 'Called Vanessa Liu at +1-780-452-1189. No answer, left voicemail.',
+                    'no-answer-already-left': 'Called Vanessa Liu at +1-780-452-1189. No answer, voicemail already left.',
+                    'no-answer-unable': 'Called Vanessa Liu at +1-780-452-1189. No answer, unable to leave voicemail.',
+                    'no-answer-box-full': 'Called Vanessa Liu at +1-780-452-1189. No answer, voicemail box full.',
+                    'no-answer-not-set': 'Called Vanessa Liu at +1-780-452-1189. No answer, voicemail not set up.',
+                    'wrong-number': 'Called Vanessa Liu at +1-780-452-1189. Wrong number.',
+                    'unable-to-connect': 'Called Vanessa Liu at +1-780-452-1189. Unable to connect.',
+                    'number-invalid': 'Called Vanessa Liu at +1-780-452-1189. Number invalid, changed, or out of service.'
+                }
+            };
+            
+            const autoNote = autoNotes[stepId]?.[outcome];
+            if (autoNote) {
+                note.value = autoNote;
+                // Validate button after auto-population
+                validatePostButton(stepId);
+            }
+        }
+        
+        function postNote(stepId) {
+            const select = document.getElementById(`step-${stepId}-select`);
+            const note = document.getElementById(`step-${stepId}-note`);
+            
+            if (!note) {
+                console.error(`Note element not found for step ${stepId}`);
+                return;
+            }
+            
+            // Check if textarea has content
+            const noteText = note.value.trim();
+            if (!noteText) {
+                alert('Please enter text before posting note');
+                return;
+            }
+            
+            // For steps with dropdowns, validate outcome selection
+            let outcome = '';
+            if (select) {
+                outcome = select.value;
+                if (!outcome) {
+                    alert('Please select an outcome first');
+                    return;
+                }
+                
+                // Auto-populate note based on outcome if textarea was empty initially
+                if (!noteText) {
+                    note.value = getAutoNote(stepId, outcome);
+                }
+            }
+            
+            // Log the step completion directly using current textarea content
+            const stepText = note.value.trim();
+            addLogEntry(`Step ${stepId}: ${stepText}`, 'step');
+            
+            // Clear the textarea for fresh input
+            note.value = '';
+            
+            // Re-validate the button after clearing (should disable it)
+            validatePostButton(stepId);
+            
+            // Mark step complete
+            markStepComplete(stepId);
+            
+            // Handle special outcomes
+            handleSpecialOutcomes(stepId, outcome);
+        }
+        
+        function getAutoNote(stepId, outcome) {
+            const autoNotes = {
+                1: {
+                    'no-answer': 'Called the device. No answer.',
+                    'unable-to-call': 'Unable to call, device offline.',
+                    'confirmed-ok': 'Spoke with Emily Garcia. Confirmed they are OK. Resolving alert.'
+                },
+                3: {
+                    'no-answer-voicemail': 'Called Emily Garcia at +1-313-635-3171. No answer, left voicemail.',
+                    'confirmed-ok': 'Called Emily Garcia at +1-313-635-3171. Spoke with Emily Garcia, confirmed they are OK. Resolving alert.'
+                }
+            };
+            
+            return autoNotes[stepId]?.[outcome] || '';
+        }
+        
+        function getStepLogText(stepId, outcome) {
+            const note = document.getElementById(`step-${stepId}-note`);
+            if (!note) return '';
+            
+            const noteText = note.value.trim();
+            return noteText || getAutoNote(stepId, outcome);
+        }
+        
+        function markStepComplete(stepId) {
+            const step = document.getElementById(`step-${stepId}`);
+            const statusBadge = document.getElementById(`step-${stepId}-status`);
+            
+            if (step) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            }
+            
+            if (statusBadge) {
+                statusBadge.textContent = 'Completed';
+                statusBadge.classList.add('completed');
+            }
+            
+            // Enable next step
+            enableNextStep(stepId);
+        }
+        
+        function enableNextStep(stepId) {
+            const nextSteps = {
+                1: '2',
+                2: '3', 
+                3: '4-1',  // Step 3 enables first emergency contact
+                '4-1': '4-2',  // First EC enables second EC
+                '4-2': null,   // Second EC doesn't enable anything (Step 5 always active)
+                5: 'resolution'
+            };
+            
+            const nextStepId = nextSteps[stepId];
+            if (nextStepId && nextStepId !== 'resolution') {
+                const nextStep = document.getElementById(`step-${nextStepId}`);
+                const nextButton = nextStep?.querySelector('button:not([onclick*="postNote"])');
+                
+                if (nextStep) {
+                    nextStep.classList.add('active');
+                }
+                if (nextButton) {
+                    nextButton.disabled = false;
+                    nextButton.classList.remove('btn-secondary');
+                    nextButton.classList.add('btn-primary');
+                }
+            }
+            
+            // Note: Step 5 is always active, no need to enable it
+        }
+        
+        function handleSpecialOutcomes(stepId, outcome) {
+            // Auto-resolve outcomes (without logging the suggestion)
+            if (outcome === 'confirmed-ok') {
+                setTimeout(() => {
+                    const resolutionSelect = document.getElementById('resolution-reason');
+                    if (resolutionSelect) {
+                        resolutionSelect.value = 'false-alert-without-dispatch';
+                    }
+                    // Block remaining steps since user is confirmed OK
+                    blockRemainingSteps(stepId, 'User confirmed OK');
+                }, 500);
+            }
+            
+            // Step 4 timer outcomes
+            if ((stepId === '4-1' || stepId === '4-2') && outcome === 'waiting-30-minutes') {
+                const contactNames = { '4-1': 'Daniel Reyes', '4-2': 'Vanessa Liu' };
+                startGlobalTimer(stepId, 'EC Callback', contactNames[stepId], 1800);
+            }
+            
+            // Step 5 dispatch timer (first time only)
+            if (stepId === 5 && protocolState.dispatchMade && !protocolState.dispatchTimerStarted) {
+                protocolState.dispatchTimerStarted = true;
+                startGlobalTimer(5, 'Dispatch Follow-up', 'Check status with Emergency Services', 1800);
+            }
+            
+            // Step 5 "No" dispatch - reset protocol for repeated attempts
+            if (stepId === 5 && !protocolState.dispatchMade) {
+                setTimeout(() => {
+                    resetProtocolStepsOnly(); // Reset without additional logging
+                }, 500);
+            }
+        }
+
+        function resetProtocolStepsOnly() {
+            // Reset all steps 1-4 for repeated attempts (no additional log entry)
+            const stepsToReset = ['1', '2', '3', '4-1', '4-2'];
+            
+            stepsToReset.forEach(stepId => {
+                const step = document.getElementById(`step-${stepId}`);
+                const button = step?.querySelector('button:not([onclick*="postNote"])');
+                const status = document.getElementById(`step-${stepId}-status`);
+                
+                // Remove completed styling
+                if (step) {
+                    step.classList.remove('completed');
+                    step.classList.add('active');
+                    step.style.opacity = '';
+                    step.style.pointerEvents = '';
+                }
+                
+                // Re-enable buttons
+                if (button) {
+                    button.disabled = false;
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-primary');
+                    
+                    // Restore original button text
+                    if (stepId === '1') button.textContent = '📞 Call G7c Device';
+                    else if (stepId === '2') button.textContent = '💬 Send Message';
+                    else if (stepId === '3') button.textContent = '📞 Call User';
+                    else if (stepId === '4-1' || stepId === '4-2') button.textContent = '📞 Call Emergency Contact';
+                }
+                
+                // Reset status badges
+                if (status) {
+                    status.textContent = 'Pending';
+                    status.classList.remove('completed');
+                    status.style.background = '';
+                }
+            });
+        }
+
+        function blockRemainingSteps(currentStepId, reason) {
+            // Define step order and what to block
+            const stepOrder = ['1', '2', '3', '4', '4-1', '4-2', '5'];
+            const currentIndex = stepOrder.indexOf(currentStepId.toString());
+            
+            // Block all steps after current step
+            for (let i = currentIndex + 1; i < stepOrder.length; i++) {
+                const nextStepId = stepOrder[i];
+                const nextStep = document.getElementById(`step-${nextStepId}`);
+                const nextButton = nextStep?.querySelector('button:not([onclick*="postNote"])');
+                const nextStatus = document.getElementById(`step-${nextStepId}-status`);
+                
+                if (nextStep) {
+                    nextStep.style.opacity = '0.5';
+                    nextStep.style.pointerEvents = 'none';
+                }
+                if (nextButton) {
+                    nextButton.disabled = true;
+                    nextButton.textContent = `Skipped - ${reason}`;
+                    nextButton.classList.remove('btn-primary');
+                    nextButton.classList.add('btn-secondary');
+                }
+                if (nextStatus) {
+                    nextStatus.textContent = 'Skipped';
+                    nextStatus.style.background = '#6c757d';
+                }
+            }
+            
+            // Also block step 5 specifically (dispatch)
+            const step5 = document.getElementById('step-5');
+            const step5Button = step5?.querySelector('button:not([onclick*="postNote"])');
+            const step5Status = document.getElementById('step-5-status');
+            
+            if (step5) {
+                step5.style.opacity = '0.5';
+                step5.style.pointerEvents = 'none';
+            }
+            if (step5Button) {
+                step5Button.disabled = true;
+                step5Button.textContent = `Skipped - ${reason}`;
+                step5Button.classList.remove('btn-secondary');
+                step5Button.classList.add('btn-secondary');
+            }
+            if (step5Status) {
+                step5Status.textContent = 'Skipped';
+                step5Status.style.background = '#6c757d';
+            }
+        }
+        
+        function addManualNote() {
+            const noteText = document.getElementById('manual-notes').value.trim();
+            if (!noteText) {
+                alert('Please enter a note first');
+                return;
+            }
+            
+            addLogEntry(`${noteText}`, 'general');
+            document.getElementById('manual-notes').value = '';
+        }
+
+        function startLocalTimer() {
+            const timerElement = document.getElementById('step-2-timer');
+            const countdownElement = document.getElementById('step-2-countdown');
+            
+            if (!timerElement || !countdownElement) return;
+            
+            // Clear any existing timer first
+            if (localTimerInterval) {
+                clearInterval(localTimerInterval);
+            }
+            
+            timerElement.style.display = 'flex';
+            
+            let timeLeft = 120; // 2 minutes in seconds
+            
+            // Display initial time
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            localTimerInterval = setInterval(() => {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(localTimerInterval);
+                    localTimerInterval = null;
+                    
+                    // Flash the timer area and play sound
+                    flashTimerArea(timerElement, countdownElement, "⏰ TIMER EXPIRED - 2 minutes elapsed");
+                    playTimerSound();
+                    startTabFlashing("🚨 TIMER EXPIRED");
+                    
+                    // Only log timer completion
+                    addLogEntry(`⏰ 2-minute message wait completed`, 'timer');
+                }
+            }, 1000);
+        }
+
+        function cancelLocalTimer(stepId) {
+            const timerElement = document.getElementById(`step-${stepId}-timer`);
+            if (timerElement) {
+                timerElement.style.display = 'none';
+                timerElement.style.animation = ''; // Clear any flashing
+            }
+            
+            // Clear the timer interval
+            if (localTimerInterval) {
+                clearInterval(localTimerInterval);
+                localTimerInterval = null;
+            }
+            
+            // Clear any pending beeps
+            clearBeepTimeouts();
+            
+            // Stop tab flashing
+            stopTabFlashing();
+            
+            addLogEntry(`⏹️ Cancelled local timer for step ${stepId}`, 'timer');
+        }
+
+        function handleDispatchDecision() {
+            const decision = document.getElementById('dispatch-decision').value;
+            const serviceContainer = document.getElementById('dispatch-service-container');
+            const reasonContainer = document.getElementById('skip-reason-container');
+            const note = document.getElementById('step-5-note');
+            const resolutionSelect = document.getElementById('resolution-reason');
+            
+            if (decision === 'yes') {
+                serviceContainer.style.display = 'block';
+                reasonContainer.style.display = 'none';
+                if (note) note.value = ''; // Clear note for fresh input
+                
+                // Auto-suggest "False alert with dispatch"
+                if (resolutionSelect) {
+                    resolutionSelect.value = 'false-alert-with-dispatch';
+                }
+            } else if (decision === 'no') {
+                serviceContainer.style.display = 'none';
+                reasonContainer.style.display = 'block';
+                if (note) note.value = ''; // Clear note for fresh input
+                
+                // Auto-suggest "False alert without dispatch"
+                if (resolutionSelect) {
+                    resolutionSelect.value = 'false-alert-without-dispatch';
+                }
+            } else {
+                serviceContainer.style.display = 'none';
+                reasonContainer.style.display = 'none';
+                if (note) note.value = ''; // Clear note
+                
+                // Clear resolution suggestion when no decision is made
+                if (resolutionSelect) {
+                    resolutionSelect.value = '';
+                }
+            }
+            
+            // Validate button after changes
+            validatePostButton(5);
+        }
+
+        function callDispatch() {
+            const service = document.getElementById('dispatch-service').value;
+            if (!service) {
+                alert('Please select a dispatch service first');
+                return;
+            }
+            
+            protocolState.dispatchMade = true;
+            addLogEntry(`🚑 Initiating dispatch.`, 'general');
+            
+            // Format current date/time for location timestamp
+            const now = new Date();
+            const locationTime = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'America/Edmonton'
+            }) + ' at ' + now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/Edmonton'
+            }) + ' MDT';
+            
+            // Auto-populate the note with dynamic location data
+            const note = document.getElementById('step-5-note');
+            if (note) {
+                note.value = `Called dispatch, spoke with ___. Requested ${service} dispatch to the following location:
+
+Last Location: ${locationTime}
+Approximate Address: ${deviceData.last_location}
+Latitude / Longitude: ${deviceData.latitude}, ${deviceData.longitude}
+Speed: 0 km/h
+
+Waiting 30 minutes.`;
+                
+                // Validate button after auto-population
+                validatePostButton(5);
+            }
+        }
+
+        function resolveAlert() {
+            const reason = document.getElementById('resolution-reason').value;
+            if (!reason) {
+                alert('Please select a resolution reason first');
+                return;
+            }
+            
+            protocolState.alertResolved = true;
+            const reasonText = document.getElementById('resolution-reason').options[document.getElementById('resolution-reason').selectedIndex].text;
+            
+            addLogEntry(`✅ Alert resolved: ${reasonText}`, 'resolution');
+            
+            // Mark resolution as complete
+            const resolutionBadge = document.getElementById('resolution-status');
+            if (resolutionBadge) {
+                resolutionBadge.textContent = 'Completed';
+                resolutionBadge.classList.add('completed');
+            }
+            
+            // Disable the "Resolve Alert" button
+            const resolveButton = document.querySelector('[data-cy="resolve-alert"]');
+            if (resolveButton) {
+                resolveButton.disabled = true;
+                resolveButton.classList.remove('btn-danger');
+                resolveButton.classList.add('btn-secondary');
+            }
+            
+            // Disable the entire protocol except Cancel Resolution and Add Note
+            const container = document.querySelector('.container');
+            if (container) {
+                container.classList.add('alert-resolved');
+            }
+            
+            // Cancel any active timers
+            if (globalTimerInterval) {
+                cancelGlobalTimer();
+            }
+        }
+
+        function cancelResolution() {
+            addLogEntry(`❌ Resolution cancelled`, 'general');
+            
+            // Clear resolution selection
+            const resolutionSelect = document.getElementById('resolution-reason');
+            if (resolutionSelect) {
+                resolutionSelect.value = '';
+            }
+            
+            // Re-enable the "Resolve Alert" button
+            const resolveButton = document.querySelector('[data-cy="resolve-alert"]');
+            if (resolveButton) {
+                resolveButton.disabled = false;
+                resolveButton.classList.remove('btn-secondary');
+                resolveButton.classList.add('btn-danger');
+            }
+            
+            // Remove alert-resolved class to restore functionality
+            const container = document.querySelector('.container');
+            if (container) {
+                container.classList.remove('alert-resolved');
+            }
+            
+            // Reset resolution status
+            const resolutionBadge = document.getElementById('resolution-status');
+            if (resolutionBadge) {
+                resolutionBadge.textContent = 'Pending';
+                resolutionBadge.classList.remove('completed');
+            }
+            
+            // Update protocol state
+            protocolState.alertResolved = false;
+            
+            // Restore all protocol steps to their previous state
+            const allSteps = document.querySelectorAll('.step');
+            allSteps.forEach(step => {
+                step.style.opacity = '';
+                step.style.pointerEvents = '';
+                
+                // Keep completed steps as completed, but make them interactive
+                if (step.classList.contains('completed')) {
+                    step.classList.add('active'); // Make them active again for interaction
+                }
+            });
+            
+            // Restore all step buttons and make them functional again
+            const allButtons = document.querySelectorAll('.step button');
+            allButtons.forEach(button => {
+                button.style.pointerEvents = '';
+                
+                // If button was marked as "Skipped", restore it
+                if (button.textContent.includes('Skipped')) {
+                    button.disabled = false;
+                    // Restore original button text based on step
+                    if (button.closest('#step-4-1')) {
+                        button.textContent = '📞 Call Emergency Contact';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-primary');
+                    } else if (button.closest('#step-4-2')) {
+                        button.textContent = '📞 Call Emergency Contact';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-primary');
+                    } else if (button.closest('#step-5')) {
+                        button.textContent = '🚑 Make Dispatch Decision';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-primary');
+                    }
+                }
+            });
+            
+            // Restore status badges that were marked as "Skipped"
+            const skippedStatuses = document.querySelectorAll('.status-badge');
+            skippedStatuses.forEach(badge => {
+                if (badge.textContent === 'Skipped') {
+                    badge.textContent = 'Pending';
+                    badge.style.background = '';
+                }
+            });
+        }
+
+        function dismissNotification() {
+            const notification = document.getElementById('timerNotification');
+            if (notification) {
+                notification.style.display = 'none';
+            }
+            stopTabFlashing();
+        }
+
+        // Timer notification functions
+        function flashTimerArea(element, textElement, newText) {
+            if (!element) return;
+            
+            // Add flashing animation
+            element.style.animation = 'flashRed 1s infinite';
+            
+            // Update text if provided
+            if (textElement && newText) {
+                textElement.textContent = newText;
+            }
+            
+            // Stop flashing after 10 seconds
+            setTimeout(() => {
+                element.style.animation = '';
+            }, 10000);
+        }
+
+        function playTimerSound() {
+            // Clear any existing beep timeouts first
+            clearBeepTimeouts();
+            
+            // Play 3 quick beeps
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Store timeouts so we can cancel them
+                beepTimeouts.push(setTimeout(() => playBeep(audioContext), 0));
+                beepTimeouts.push(setTimeout(() => playBeep(audioContext), 300));
+                beepTimeouts.push(setTimeout(() => playBeep(audioContext), 600));
+                
+            } catch (e) {
+                console.log('Audio not available');
+            }
+        }
+
+        function clearBeepTimeouts() {
+            beepTimeouts.forEach(timeout => clearTimeout(timeout));
+            beepTimeouts = [];
+        }
+
+        function playBeep(audioContext) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        function startTabFlashing(alertText) {
+            stopTabFlashing(); // Stop any existing flashing
+            
+            let isAlert = false;
+            tabFlashInterval = setInterval(() => {
+                document.title = isAlert ? originalTitle : alertText;
+                isAlert = !isAlert;
+            }, 1000);
+        }
+
+        function stopTabFlashing() {
+            if (tabFlashInterval) {
+                clearInterval(tabFlashInterval);
+                tabFlashInterval = null;
+                document.title = originalTitle;
+            }
+        }
+
+        function autoPopulateSkipReason() {
+            const reasonSelect = document.getElementById('skip-reason');
+            const note = document.getElementById('step-5-note');
+            
+            if (!reasonSelect || !note) return;
+            
+            const reason = reasonSelect.value;
+            if (!reason) return;
+            
+            const skipReasons = {
+                'location-invalid': 'Unable to dispatch. Location invalid or outdated. Cannot provide accurate address/coordinates for emergency services. Repeating protocol steps until someone is reached.',
+                'alert-old': 'Unable to dispatch. Alert older than 24 hours. Repeating protocol steps until someone is reached.',
+                'device-moving': 'Unable to dispatch. Device is moving faster than 5 km/h. Repeating protocol steps until someone is reached.',
+                'device-offline': 'Unable to dispatch. Device is offline. Cannot confirm current location accuracy. Repeating protocol steps until someone is reached.'
+            };
+            
+            const autoNote = skipReasons[reason];
+            if (autoNote) {
+                note.value = autoNote;
+                // Validate button after auto-population
+                validatePostButton(5);
+            }
+        }
+
+        function suggestResolution(reason) {
+            const resolutionSelect = document.getElementById('resolution-reason');
+            if (resolutionSelect) {
+                resolutionSelect.value = reason;
+                addLogEntry(`💡 Suggested resolution: ${resolutionSelect.options[resolutionSelect.selectedIndex].text}`, 'resolution');
+            }
+        }
+
+        function startGlobalTimer(stepId, description, contactName, duration = 1800) {
+            // Cancel any existing timer
+            if (globalTimerInterval) {
+                console.warn('⚠️ Another timer was active - cancelling it first');
+                clearInterval(globalTimerInterval);
+                addLogEntry(`⏹️ Cancelled previous timer`, 'timer');
+            }
+            
+            activeTimerData = {
+                stepId: stepId,
+                description: description,
+                contactName: contactName,
+                duration: duration,
+                startTime: Date.now()
+            };
+            
+            updateTimerDisplay(duration);
+            updateTimerInfo(description, contactName);
+            activateTimer();
+            
+            addLogEntry(`⏰ Started ${duration/60}-minute timer: ${description} for ${contactName}`, 'timer');
+            
+            globalTimerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+                const remaining = Math.max(0, duration - elapsed);
+                
+                updateTimerDisplay(remaining);
+                
+                if (remaining <= 0) {
+                    timerComplete();
+                } else if (remaining <= 300) { // Last 5 minutes
+                    document.getElementById('globalTimer').classList.add('timer-alert');
+                }
+            }, 1000);
+        }
+
+        function cancelGlobalTimer() {
+            if (globalTimerInterval) {
+                clearInterval(globalTimerInterval);
+                globalTimerInterval = null;
+                
+                if (activeTimerData) {
+                    addLogEntry(`⏹️ Cancelled timer: ${activeTimerData.description}`, 'timer');
+                    activeTimerData = null;
+                }
+                
+                deactivateTimer();
+            }
+        }
+
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timerDisplay').textContent = display;
+            
+            const timerStart = document.getElementById('timerStart');
+            const timerEnd = document.getElementById('timerEnd');
+            
+            if (activeTimerData) {
+                const startTime = new Date(activeTimerData.startTime).toLocaleTimeString('en-US', {
+                    hour12: false, 
+                    timeZone: 'America/Edmonton',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const endTime = new Date(activeTimerData.startTime + activeTimerData.duration * 1000).toLocaleTimeString('en-US', {
+                    hour12: false, 
+                    timeZone: 'America/Edmonton',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                timerStart.textContent = startTime;
+                timerEnd.textContent = endTime;
+            }
+        }
+
+        function updateTimerInfo(description, contactName) {
+            const info = document.getElementById('timerInfo');
+            info.innerHTML = `<strong>${description}</strong><br>${contactName}`;
+        }
+
+        function activateTimer() {
+            const timer = document.getElementById('globalTimer');
+            const cancelBtn = document.getElementById('cancelTimerBtn');
+            
+            timer.classList.remove('timer-inactive');
+            timer.classList.add('timer-active');
+            cancelBtn.disabled = false;
+        }
+
+        function deactivateTimer() {
+            const timer = document.getElementById('globalTimer');
+            const cancelBtn = document.getElementById('cancelTimerBtn');
+            
+            timer.classList.remove('timer-active', 'timer-alert');
+            timer.classList.add('timer-inactive');
+            cancelBtn.disabled = true;
+            
+            document.getElementById('timerDisplay').textContent = '--:--';
+            document.getElementById('timerInfo').innerHTML = '<strong>No active timer</strong>';
+            document.getElementById('timerStart').textContent = '--:--';
+            document.getElementById('timerEnd').textContent = '--:--';
+        }
+
+        function timerComplete() {
+            clearInterval(globalTimerInterval);
+            globalTimerInterval = null;
+            
+            if (activeTimerData) {
+                // Flash timer area and play sound
+                const globalTimer = document.getElementById('globalTimer');
+                flashTimerArea(globalTimer, null, null);
+                playTimerSound();
+                startTabFlashing("🚨 TIMER EXPIRED");
+                
+                addLogEntry(`⏰ TIMER EXPIRED: ${activeTimerData.description} for ${activeTimerData.contactName}`, 'timer');
+            }
+            
+            const notification = document.getElementById('timerNotification');
+            const notificationText = document.getElementById('timerNotificationText');
+            
+            if (activeTimerData) {
+                notificationText.textContent = `${activeTimerData.description} timer has expired.`;
+            }
+            
+            notification.style.display = 'block';
+            deactivateTimer();
+            activeTimerData = null;
+        }
+    </script>
+</body>
+</html>
