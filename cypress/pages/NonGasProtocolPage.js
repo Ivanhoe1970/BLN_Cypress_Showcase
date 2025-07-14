@@ -2,8 +2,8 @@ class NonGasProtocolPage {
   visit() {
     cy.visit(Cypress.env('protocolPath'));
     // Wait for the page to fully load and elements to be available
-    cy.get('#steps-container').should('be.visible');
-    cy.get('[data-cy="step-1-action"]').should('be.visible');
+    cy.get('.steps-section').should('be.visible');  // ✅ FIXED: Use class instead of ID
+    cy.get('[data-cy="call-g7c-device"]').should('be.visible');  // ✅ FIXED: Use actual data-cy attribute
     return this;
   }
 
