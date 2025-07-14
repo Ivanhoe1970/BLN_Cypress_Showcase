@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "cypress:protocol": "cypress run --spec 'cypress/e2e/**/*'",
+    "cypress:protocol": "cypress run --spec 'cypress/e2e/**/*.cy.js'",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
