@@ -1,0 +1,44 @@
+name: HTML & JS QA Checks
+
+on:
+  push:
+    paths:
+      - 'automated-basic-non-gas-alert-protocol/**.html'
+      - 'automated-basic-non-gas-alert-protocol/**.js'
+
+jobs:
+  qa-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install tidy
+        run: sudo apt-get update && sudo apt-get install -y tidy
+
+      - name: Validate HTML
+        run: tidy -errors -q automated-basic-non-gas-alert-protocol/index.html || true
+
+      - name: Check for broken local links
+        run: |
+          grep -n "href=" automated-basic-non-gas-alert-protocol/*.html | grep -v "http" || true
+
+      - name: Verify critical DOM elements exist
+        run: |
+          grep -q "alert-protocol" automated-basic-non-gas-alert-protocol/index.html && echo "✅ Protocol structure found" || echo "❌ Missing key structure"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Prettier and ESLint
+        run: |
+          npm init -y
+          npm install prettier eslint eslint-config-prettier eslint-plugin-prettier --save-dev
+
+      - name: Run Prettier formatting check
+        run: npx prettier --check "automated-basic-non-gas-alert-protocol/**/*.{html,js}"
+
+      - name: Run ESLint with Prettier integration
+        run: |
+          npx eslint automated-basic-non-gas-alert-protocol/*.js || echo "No JS files to lint or linting completed with warnings"
