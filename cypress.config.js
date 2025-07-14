@@ -7,7 +7,7 @@ module.exports = defineConfig({
     baseUrl: 'https://live.blacklinesafety.com',
     setupNodeEvents(on, config) {},
     env: {
-      // Add any environment variables you need
+      protocolPath: 'http://127.0.0.1:5501/automated-basic-non-gas-alert-protocol/index.html'
     }
   },
 });
