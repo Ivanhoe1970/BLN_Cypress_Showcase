@@ -4,8 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "cypress:protocol": "cypress run --spec 'cypress/e2e/local-testing/**/*.cy.js'",
+    "cypress:protocol": "cypress run --spec 'cypress/e2e/simple-test.cy.js'",
     "cypress:protocol-specific": "cypress run --spec 'cypress/e2e/local-testing/automated-basic-non-gas-alert-protocol/*.cy.js'",
+    "cypress:debug": "cypress run --spec 'cypress/e2e/local-testing/automated-basic-non-gas-alert-protocol/protocol-dispatch-logic.cy.js'",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
