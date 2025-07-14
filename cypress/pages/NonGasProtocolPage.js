@@ -1,6 +1,10 @@
 class NonGasProtocolPage {
   visit() {
-    return cy.visit(Cypress.env('protocolPath'));
+    cy.visit(Cypress.env('protocolPath'));
+    // Wait for the page to fully load and elements to be available
+    cy.get('#steps-container').should('be.visible');
+    cy.get('[data-cy="step-1-action"]').should('be.visible');
+    return this;
   }
 
   // Step 1
