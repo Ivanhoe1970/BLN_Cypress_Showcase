@@ -47,4 +47,4 @@ jobs:
         run: npm install
 
       - name: Run protocol tests with live-server
-        run: npm run cy:run:protocol
+        run: npm run cypress:protocol
