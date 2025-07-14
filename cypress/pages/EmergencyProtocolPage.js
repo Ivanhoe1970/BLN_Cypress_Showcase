@@ -77,7 +77,10 @@ class EmergencyProtocolPage {
   // ========================================
 
   visit() {
-    cy.visit('http://127.0.0.1:5501/cypress/e2e/automated-basic-non-gas-alert-protocol/index.html');
+    cy.visit(Cypress.env('protocolPath'));
+    // Wait for page to load
+    cy.get('.steps-section').should('be.visible');
+    return this;
   }
 
   loadFixture(fixtureFile = 'alerts.json') {
