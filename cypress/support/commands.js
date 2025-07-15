@@ -6,188 +6,283 @@ Cypress.Commands.add('loginViaApi', () => {
   // Make the login request to the correct API endpoint
   cy.request({
     method: 'POST',
-    url: 'https://live.blacklinesafety.com/rest/auth-token',  // Correct login API endpoint
+    url: `${Cypress.env('API_BASE_URL')}/auth/login`,
+    body: {
+      username: Cypress.env('PORTAL_USERNAME'),
+      password: Cypress.env('PORTAL_PASSWORD')
+    }
+  }).then((response) => {
+    expect(response.status).to.eq(200);
+    // Store the authentication token
+    window.localStorage.setItem('authToken', response.body.token);
+    // Set the token in session storage as well if needed
+    window.sessionStorage.setItem('authToken', response.body.token);
+  });
+});
+
+Cypress.Commands.add('loginViaUI', () => {
+  cy.visit('/login');
+  cy.get('#username').type(Cypress.env('PORTAL_USERNAME'));
+  cy.get('#password').type(Cypress.env('PORTAL_PASSWORD'));
+  cy.get('[data-cy="login-button"]').click();
+  cy.url().should('include', '/dashboard');
+});
+
+// ========================================
+// GAS MONITORING COMMANDS
+// ========================================
+
+Cypress.Commands.add('navigateToGasMonitoring', () => {
+  cy.get('[data-cy="nav-gas-monitoring"]').click();
+  cy.url().should('include', '/gas-monitoring');
+  cy.get('[data-cy="gas-monitoring-header"]').should('be.visible');
+});
+
+Cypress.Commands.add('selectDevice', (deviceId) => {
+  cy.get(`[data-cy="device-${deviceId}"]`).click();
+  cy.get('[data-cy="device-details"]').should('be.visible');
+});
+
+Cypress.Commands.add('triggerGasAlert', (alertType, gasLevel) => {
+  cy.request({
+    method: 'POST',
+    url: `${Cypress.env('API_BASE_URL')}/gas-alerts/simulate`,
     headers: {
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
     },
     body: {
-      username: Cypress.env('emailAddress'),
-      password: Cypress.env('password'),
-    },
-    failOnStatusCode: false,  // Don't fail the test if the response status is not 2xx
+      alertType: alertType,
+      gasLevel: gasLevel,
+      deviceId: Cypress.env('TEST_DEVICE_ID'),
+      timestamp: new Date().toISOString()
+    }
   }).then((response) => {
-    // Ensure we got a 200 OK response
     expect(response.status).to.eq(200);
-    
-    // Save the token in localStorage
-    window.localStorage.setItem('auth_token', response.body.token); // Assuming the response has the token
+  });
+});
+
+Cypress.Commands.add('acknowledgeAlert', (alertId) => {
+  cy.get(`[data-cy="acknowledge-alert-${alertId}"]`).click();
+  cy.get('[data-cy="acknowledgment-modal"]').should('be.visible');
+  cy.get('[data-cy="acknowledge-comment"]').type('Alert acknowledged via automation');
+  cy.get('[data-cy="confirm-acknowledgment"]').click();
+  cy.get('[data-cy="acknowledgment-success"]').should('be.visible');
+});
+
+Cypress.Commands.add('verifyAlertStatus', (alertId, expectedStatus) => {
+  cy.get(`[data-cy="alert-${alertId}"]`).within(() => {
+    cy.get('[data-cy="alert-status"]').should('contain', expectedStatus);
   });
 });
 
 // ========================================
-// EMERGENCY PROTOCOL TESTING COMMANDS
+// GAS PROTOCOL COMMANDS
 // ========================================
 
-Cypress.Commands.add('visitProtocol', () => {
-  cy.visit('http://127.0.0.1:5501/cypress/e2e/automated-basic-non-gas-alert-protocol/index.html');
+Cypress.Commands.add('initiateGasProtocol', (protocolType = 'emergency') => {
+  cy.get('[data-cy="initiate-protocol"]').click();
+  cy.get('[data-cy="protocol-type-selector"]').select(protocolType);
+  cy.get('[data-cy="confirm-protocol"]').click();
+  cy.get('[data-cy="protocol-initiated"]').should('be.visible');
 });
 
-Cypress.Commands.add('loadAlertFixture', (fixtureFile = 'alerts.json') => {
-  cy.fixture(fixtureFile).then(alertData => {
-    cy.window().then(win => {
-      win.testAlertFixture = alertData;
+Cypress.Commands.add('verifyProtocolSteps', (expectedSteps) => {
+  expectedSteps.forEach((step, index) => {
+    cy.get(`[data-cy="protocol-step-${index + 1}"]`).within(() => {
+      cy.get('[data-cy="step-title"]').should('contain', step.title);
+      cy.get('[data-cy="step-description"]').should('contain', step.description);
     });
   });
 });
 
-Cypress.Commands.add('completeStep', (stepNumber, outcome = null, customNote = null) => {
-  // Click step button to start the step
-  cy.get(`#step-${stepNumber} button:first`).click();
-  
-  // Select outcome if provided
-  if (outcome) {
-    cy.get(`[data-cy="step-${stepNumber}-outcome"]`).select(outcome);
-  }
-  
-  // Add custom note if provided (otherwise use auto-populated note)
-  if (customNote) {
-    cy.get(`[data-cy="step-${stepNumber}-note"]`).clear().type(customNote);
-  }
-  
-  // Post the note
-  cy.get(`[data-cy="step-${stepNumber}-post"]`).click();
+Cypress.Commands.add('completeProtocolStep', (stepNumber) => {
+  cy.get(`[data-cy="protocol-step-${stepNumber}"]`).within(() => {
+    cy.get('[data-cy="step-checkbox"]').check();
+    cy.get('[data-cy="step-timestamp"]').should('be.visible');
+  });
 });
 
-Cypress.Commands.add('completeStepWithTimer', (stepNumber, outcome = null, waitForTimer = false) => {
-  // Special handling for steps with timers (like Step 2)
-  cy.get(`#step-${stepNumber} button:first`).click();
-  
-  if (outcome) {
-    cy.get(`[data-cy="step-${stepNumber}-outcome"]`).select(outcome);
-  }
-  
-  if (waitForTimer && stepNumber === 2) {
-    // Wait for 2-minute timer to complete (for testing purposes, could be shortened)
-    cy.get('#step-2-countdown').should('contain.text', '00:00');
-  }
-  
-  cy.get(`[data-cy="step-${stepNumber}-post"]`).click();
+Cypress.Commands.add('addProtocolComment', (stepNumber, comment) => {
+  cy.get(`[data-cy="protocol-step-${stepNumber}"]`).within(() => {
+    cy.get('[data-cy="add-comment"]').click();
+    cy.get('[data-cy="comment-input"]').type(comment);
+    cy.get('[data-cy="save-comment"]').click();
+  });
 });
 
-Cypress.Commands.add('makeDispatchDecision', (decision, serviceType = null, skipReason = null) => {
-  // Step 5 dispatch decision
-  cy.get('[data-cy="dispatch-decision"]').select(decision);
-  
-  if (decision === 'Yes' && serviceType) {
-    cy.get('[data-cy="dispatch-service"]').select(serviceType);
-    cy.get('[data-cy="call-dispatch"]').click();
-  }
-  
-  if (decision === 'No' && skipReason) {
-    cy.get('[data-cy="skip-reason"]').select(skipReason);
-  }
-  
-  cy.get('[data-cy="step-5-post"]').click();
-});
-
-Cypress.Commands.add('resolveAlert', (resolutionReason) => {
-  cy.get('[data-cy="resolution-reason"]').select(resolutionReason);
-  cy.get('[data-cy="resolve-alert"]').click();
-});
-
-Cypress.Commands.add('cancelResolution', () => {
-  cy.get('[data-cy="cancel-resolution"]').click();
-});
-
-Cypress.Commands.add('addManualNote', (noteText) => {
-  cy.get('#manual-notes').type(noteText);
-  cy.get('[data-cy="add-manual-note"]').click();
+Cypress.Commands.add('verifyProtocolCompletion', () => {
+  cy.get('[data-cy="protocol-completion-status"]').should('contain', 'Complete');
+  cy.get('[data-cy="protocol-completion-time"]').should('be.visible');
+  cy.get('[data-cy="protocol-summary"]').should('be.visible');
 });
 
 // ========================================
-// VERIFICATION COMMANDS
+// EMPLOYEE MANAGEMENT COMMANDS
 // ========================================
 
-Cypress.Commands.add('verifyLogEntry', (expectedText) => {
-  cy.get('#protocolLog').should('contain.text', expectedText);
+Cypress.Commands.add('searchEmployee', (employeeName) => {
+  cy.get('[data-cy="employee-search"]').type(employeeName);
+  cy.get('[data-cy="search-button"]').click();
+  cy.get('[data-cy="employee-results"]').should('be.visible');
 });
 
-Cypress.Commands.add('verifyStepCompleted', (stepNumber) => {
-  cy.get(`#step-${stepNumber}`).should('have.class', 'completed');
-  cy.get(`#step-${stepNumber}-status`).should('contain.text', 'Completed');
+Cypress.Commands.add('selectEmployee', (employeeId) => {
+  cy.get(`[data-cy="employee-${employeeId}"]`).click();
+  cy.get('[data-cy="employee-details"]').should('be.visible');
 });
 
-Cypress.Commands.add('verifyStepActive', (stepNumber) => {
-  cy.get(`#step-${stepNumber}`).should('have.class', 'active');
-  cy.get(`#step-${stepNumber}-status`).should('contain.text', 'Pending');
+Cypress.Commands.add('verifyEmployeeStatus', (employeeId, expectedStatus) => {
+  cy.get(`[data-cy="employee-${employeeId}"]`).within(() => {
+    cy.get('[data-cy="employee-status"]').should('contain', expectedStatus);
+  });
 });
 
-Cypress.Commands.add('verifyTimerActive', (description = null) => {
-  cy.get('#globalTimer').should('have.class', 'timer-active');
-  cy.get('[data-cy="cancel-global-timer"]').should('not.be.disabled');
+// ========================================
+// DEVICE MANAGEMENT COMMANDS
+// ========================================
+
+Cypress.Commands.add('verifyDeviceStatus', (deviceId, expectedStatus) => {
+  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
+    cy.get('[data-cy="device-status"]').should('contain', expectedStatus);
+  });
+});
+
+Cypress.Commands.add('calibrateDevice', (deviceId) => {
+  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
+    cy.get('[data-cy="calibrate-button"]').click();
+  });
+  cy.get('[data-cy="calibration-modal"]').should('be.visible');
+  cy.get('[data-cy="start-calibration"]').click();
+  cy.get('[data-cy="calibration-progress"]').should('be.visible');
+});
+
+Cypress.Commands.add('verifyDeviceCalibration', (deviceId, expectedDate) => {
+  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
+    cy.get('[data-cy="last-calibration"]').should('contain', expectedDate);
+  });
+});
+
+// ========================================
+// REPORTING COMMANDS
+// ========================================
+
+Cypress.Commands.add('generateGasReport', (reportType, dateRange) => {
+  cy.get('[data-cy="generate-report"]').click();
+  cy.get('[data-cy="report-type"]').select(reportType);
+  cy.get('[data-cy="date-from"]').type(dateRange.from);
+  cy.get('[data-cy="date-to"]').type(dateRange.to);
+  cy.get('[data-cy="generate-report-button"]').click();
+  cy.get('[data-cy="report-generation-progress"]').should('be.visible');
+});
+
+Cypress.Commands.add('verifyReportContent', (expectedContent) => {
+  cy.get('[data-cy="report-content"]').should('be.visible');
+  expectedContent.forEach((content) => {
+    cy.get('[data-cy="report-content"]').should('contain', content);
+  });
+});
+
+Cypress.Commands.add('downloadReport', (format = 'pdf') => {
+  cy.get(`[data-cy="download-${format}"]`).click();
+  cy.readFile(`cypress/downloads/gas-report.${format}`).should('exist');
+});
+
+// ========================================
+// UTILITY COMMANDS
+// ========================================
+
+Cypress.Commands.add('waitForPageLoad', (timeout = 10000) => {
+  cy.get('[data-cy="loading-indicator"]', { timeout }).should('not.exist');
+  cy.get('[data-cy="page-content"]').should('be.visible');
+});
+
+Cypress.Commands.add('verifyNotification', (message, type = 'success') => {
+  cy.get(`[data-cy="notification-${type}"]`).should('be.visible');
+  cy.get(`[data-cy="notification-${type}"]`).should('contain', message);
+});
+
+Cypress.Commands.add('dismissNotification', () => {
+  cy.get('[data-cy="notification-dismiss"]').click();
+  cy.get('[data-cy="notification"]').should('not.exist');
+});
+
+Cypress.Commands.add('verifyTimestamp', (selector, expectedFormat = 'MM/DD/YYYY HH:mm:ss') => {
+  cy.get(selector).should('be.visible').then(($element) => {
+    const timestamp = $element.text();
+    expect(timestamp).to.match(/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}/);
+  });
+});
+
+// ========================================
+// API VERIFICATION COMMANDS
+// ========================================
+
+Cypress.Commands.add('verifyApiResponse', (endpoint, expectedStatus = 200) => {
+  cy.request({
+    method: 'GET',
+    url: `${Cypress.env('API_BASE_URL')}${endpoint}`,
+    headers: {
+      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
+    }
+  }).then((response) => {
+    expect(response.status).to.eq(expectedStatus);
+  });
+});
+
+Cypress.Commands.add('verifyGasLevels', (deviceId, expectedLevels) => {
+  cy.request({
+    method: 'GET',
+    url: `${Cypress.env('API_BASE_URL')}/devices/${deviceId}/gas-levels`,
+    headers: {
+      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
+    }
+  }).then((response) => {
+    expect(response.status).to.eq(200);
+    expect(response.body).to.have.property('gasLevels');
+    expectedLevels.forEach((level) => {
+      expect(response.body.gasLevels).to.include(level);
+    });
+  });
+});
+
+// ========================================
+// CLEANUP COMMANDS
+// ========================================
+
+Cypress.Commands.add('cleanupTestData', () => {
+  // Clean up any test alerts
+  cy.request({
+    method: 'DELETE',
+    url: `${Cypress.env('API_BASE_URL')}/test-data/alerts`,
+    headers: {
+      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
+    },
+    failOnStatusCode: false
+  });
   
-  if (description) {
-    cy.get('#timerInfo').should('contain.text', description);
-  }
-});
-
-Cypress.Commands.add('verifyTimerInactive', () => {
-  cy.get('#globalTimer').should('have.class', 'timer-inactive');
-  cy.get('[data-cy="cancel-global-timer"]').should('be.disabled');
-  cy.get('#timerDisplay').should('contain.text', '--:--');
-});
-
-Cypress.Commands.add('verifyResolutionSuggestion', (expectedResolution) => {
-  cy.get('[data-cy="resolution-reason"]').should('have.value', expectedResolution);
-});
-
-Cypress.Commands.add('verifyProtocolLocked', () => {
-  // Verify protocol is locked after resolution
-  cy.get('.container').should('have.class', 'alert-resolved');
-  cy.get('[data-cy="resolve-alert"]').should('be.disabled');
-});
-
-Cypress.Commands.add('verifyProtocolUnlocked', () => {
-  // Verify protocol is unlocked after canceling resolution
-  cy.get('.container').should('not.have.class', 'alert-resolved');
-  cy.get('[data-cy="resolve-alert"]').should('not.be.disabled');
+  // Clean up test protocols
+  cy.request({
+    method: 'DELETE',
+    url: `${Cypress.env('API_BASE_URL')}/test-data/protocols`,
+    headers: {
+      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
+    },
+    failOnStatusCode: false
+  });
 });
 
 // ========================================
-// WORKFLOW COMMANDS
+// ACCESSIBILITY COMMANDS
 // ========================================
 
-Cypress.Commands.add('completeBasicProtocol', () => {
-  // Complete steps 1-3 with standard outcomes
-  cy.completeStep(1, 'no-answer');
-  cy.completeStep(2); // Uses pre-filled message text
-  cy.completeStep(3, 'no-answer-voicemail');
+Cypress.Commands.add('checkAccessibility', () => {
+  cy.injectAxe();
+  cy.checkA11y();
 });
 
-Cypress.Commands.add('completeEmergencyContactAttempts', () => {
-  // Complete both emergency contact attempts
-  cy.completeStep('4-1', 'no-answer-voicemail');
-  cy.completeStep('4-2', 'no-answer-voicemail');
-});
-
-Cypress.Commands.add('completeFullProtocolWithDispatch', (serviceType = 'EMS') => {
-  cy.completeBasicProtocol();
-  cy.completeEmergencyContactAttempts();
-  cy.makeDispatchDecision('Yes', serviceType);
-  cy.resolveAlert('false-alert-with-dispatch');
-});
-
-Cypress.Commands.add('completeFullProtocolWithoutDispatch', () => {
-  cy.completeBasicProtocol();
-  cy.completeEmergencyContactAttempts();
-  cy.makeDispatchDecision('No', null, 'device-offline');
-  cy.resolveAlert('false-alert-without-dispatch');
-});
-
-// ========================================
-// GLOBAL ERROR HANDLING
-// ========================================
-
-Cypress.on('uncaught:exception', (err, runnable) => {
-  return false;
+Cypress.Commands.add('verifyKeyboardNavigation', (selectors) => {
+  selectors.forEach((selector) => {
+    cy.get(selector).focus().should('have.focus');
+    cy.get(selector).type('{enter}');
+  });
 });

@@ -16,6 +16,9 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 
+// Import page objects
+import '../pages/GasProtocolPage'
+
 Cypress.on('uncaught:exception', (err, runnable) => {
     // Ignore specific known frontend errors
     if (err.message.includes('_LTracker is not defined')) {
@@ -23,5 +26,4 @@ Cypress.on('uncaught:exception', (err, runnable) => {
     }
   
     // Let others fail the test
-  });
-  
+});
