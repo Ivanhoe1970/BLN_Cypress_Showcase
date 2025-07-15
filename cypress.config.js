@@ -11,11 +11,12 @@ module.exports = defineConfig({
       protocolPath: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase/automated-basic-non-gas-alert-protocol/index.html',
       
       // Gas protocol paths
-      // LOCAL DEVELOPMENT:
-      gasProtocolPath: 'http://127.0.0.1:5501/automated-gas-alert-protocol/index.html',
+      // PRODUCTION (GitHub Pages - NOW ACTIVE):
+      gasProtocolPath: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase/automated-gas-alert-protocol/index.html',
       
-      // PRODUCTION (GitHub Pages - uncomment when deployed):
-      // gasProtocolPath: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase/automated-gas-alert-protocol/index.html',
+      // LOCAL DEVELOPMENT (commented out for CI/CD):
+      // gasProtocolPath: 'http://127.0.0.1:5501/automated-gas-alert-protocol/index.html',
+      
       gasMonitoringPath: '/gas-monitoring',
       
       // API endpoints (TBD - since this is local development)
