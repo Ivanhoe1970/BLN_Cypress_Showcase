@@ -38,5 +38,39 @@
       "name": "Vanessa Liu",
       "number": "+1-780-452-1189"
     }
+  },
+
+  {
+    "id": "9999999",
+    "alert_id": "9999999",
+    "status": "Acknowledged",
+    "type": "Message Alert",
+    "alert_subtype": "Device Message Test",
+    "user": "Test User",
+    "employee_id": "999999",
+    "organization": "QA Team",
+    "trade_role": "Tester",
+    "device_id": "TEST-DEVICE-001",
+    "device_name": "Simulated Device",
+    "device_status": "Online",
+    "device_type": "G7c",
+    "device_mode": "Normal operation",
+    "mobile": "+1 555-555-0000",
+    "work": "+1 555-555-0000",
+    "home": "N/A",
+    "last_location": "Test Facility A",
+    "latitude": 51.0,
+    "longitude": -114.0,
+    "alert_date": "2025-07-19T12:00:00-06:00",
+    "is_gas_alert": false,
+    "gas_protocol_type": "none",
+    "requires_2min_monitoring": false,
+    "gas_readings": {
+      "h2s": { "value": 0.0, "unit": " ppm", "status": "NORMAL" },
+      "co": { "value": 0.0, "unit": " ppm", "status": "NORMAL" },
+      "o2": { "value": 20.9, "unit": " %vol", "status": "NORMAL" },
+      "lel": { "value": 0.0, "unit": " %LEL", "status": "NORMAL" }
+    }
   }
+  
 ]

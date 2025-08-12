@@ -1,0 +1,2546 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Blackline Live - Alert Management</title>
+    <style>
+      body {
+          margin: 0;
+          padding: 0;
+          background: #f8f9fa;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      .header {
+          background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+          color: #1565c0;
+          padding: 20px;
+          margin-bottom: 20px;
+          border-radius: 8px;
+          border: 1px solid #90caf9;
+          display: none;
+      }
+
+      .header.active { display: block; }
+
+      .alert-title {
+          margin: 0;
+          font-size: 1.5em;
+          font-weight: bold;
+          margin-bottom: 15px;
+      }
+
+      .alert-details {
+          background: white;
+          border: 1px solid #90caf9;
+          border-radius: 6px;
+          padding: 15px;
+          color: #333;
+      }
+
+      .alert-info { display: block; font-size: 0.9em; }
+      .info-item { padding: 3px 0; }
+      .info-item strong { color: #1565c0; font-weight: 600; }
+
+      .container {
+          display: grid;
+          grid-template-columns: 1fr 200px 1fr 300px;
+          gap: 15px;
+          max-width: 1600px;
+          margin: 0 auto;
+          padding: 20px;
+      }
+
+      .protocol-log {
+          background: white;
+          border: 2px solid #007bff;
+          border-radius: 8px;
+          padding: 20px;
+      }
+
+      .protocol-log h3 { margin-top: 0; color: #333; font-size: 1.1em; }
+
+      .log-container {
+          height: calc(100vh - 350px);
+          min-height: 400px;
+          overflow-y: auto;
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 5px;
+          border: 1px solid #e9ecef;
+          margin-bottom: 20px;
+      }
+
+      .log-entry {
+          margin: 8px 0;
+          padding: 8px 12px;
+          background: white;
+          border-left: 4px solid #28a745;
+          border-radius: 4px;
+          font-size: 0.9em;
+          line-height: 1.3;
+      }
+
+      .log-entry.step { border-left-color: #007bff; }
+      .log-entry.timer { border-left-color: #ffc107; }
+      .log-entry.resolution { border-left-color: #dc3545; }
+      .log-entry.gas { border-left-color: #fd7e14; }
+      .log-entry.system { border-left-color: #6c757d; }
+
+      .log-placeholder {
+          color: #6c757d;
+          text-align: center;
+          margin-top: 120px;
+          font-style: normal;
+          font-size: 0.9em;
+          font-family: inherit;
+      }
+
+      .global-timer {
+          background: linear-gradient(135deg, #007bff, #0056b3);
+          color: white;
+          border-radius: 8px;
+          padding: 15px;
+          text-align: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          position: sticky;
+          top: 20px;
+          height: fit-content;
+          font-size: 0.9em;
+      }
+
+      .timer-display {
+          font-size: 1.8em;
+          font-weight: bold;
+          margin: 8px 0;
+          font-family: 'Courier New', monospace;
+      }
+
+      .timer-info {
+          background: rgba(255,255,255,0.2);
+          border-radius: 4px;
+          padding: 8px;
+          margin: 8px 0;
+          font-size: 0.8em;
+          line-height: 1.3;
+      }
+
+      .timer-controls { margin-top: 12px; }
+
+      .cancel-btn {
+          background: #dc3545;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 0.8em;
+          transition: background 0.2s;
+      }
+
+      .cancel-btn:hover:not(:disabled) { background: #c82333; }
+      .cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .steps-section {
+          background: white;
+          border: 2px solid #007bff;
+          border-radius: 8px;
+          padding: 20px;
+      }
+
+      .steps-section h3 { margin-top: 0; color: #333; font-size: 1.1em; }
+
+      .gas-readings-card {
+          background: white;
+          border: 2px solid #28a745;
+          border-radius: 8px;
+          padding: 20px;
+          position: sticky;
+          top: 20px;
+          height: fit-content;
+      }
+
+      .gas-readings-card h3 {
+          margin-top: 0;
+          color: #333;
+          font-size: 1.1em;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+
+      .gas-reading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+          border-bottom: 1px solid #e9ecef;
+          font-size: 0.9em;
+      }
+
+      .gas-reading:last-child { border-bottom: none; }
+      .gas-value { font-weight: bold; }
+
+      .gas-status {
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 0.8em;
+          font-weight: bold;
+      }
+
+      .gas-status.high {
+          background: #f8d7da;
+          color: #721c24;
+      }
+
+      .gas-status.normal {
+          background: #d4edda;
+          color: #155724;
+      }
+
+      .triggered-by {
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 4px;
+          padding: 8px;
+          margin-bottom: 15px;
+          font-size: 0.85em;
+          font-weight: bold;
+          color: #856404;
+      }
+
+      .last-updated {
+          font-size: 0.8em;
+          color: #6c757d;
+          text-align: center;
+          margin-top: 10px;
+          font-style: italic;
+      }
+
+      .step {
+          background: #f8f9fa;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          padding: 15px;
+          margin: 15px 0;
+          position: relative;
+      }
+
+      .step.completed {
+          background: #d4edda;
+          border-color: #c3e6cb;
+      }
+
+      .step.active {
+          background: #fff3cd;
+          border-color: #ffeaa7;
+      }
+
+      .step-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+      }
+
+      .step-title {
+          font-weight: bold;
+          color: #333;
+          margin: 0;
+          font-size: 0.95em;
+      }
+
+      .status-badge {
+          background: #ffc107;
+          color: #000;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 0.75em;
+          font-weight: bold;
+      }
+
+      .status-badge.completed {
+          background: #28a745;
+          color: white;
+      }
+
+      .step-content {
+          color: #666;
+          font-size: 0.9em;
+          margin: 8px 0;
+      }
+
+      .contact-info {
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 4px;
+          padding: 8px;
+          margin: 8px 0;
+          font-size: 0.85em;
+      }
+
+      .btn {
+          border: none;
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: 500;
+          font-size: 0.85em;
+          transition: all 0.2s;
+      }
+
+      .btn-primary {
+          background: #007bff;
+          color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+          background: #0056b3;
+      }
+
+      .btn-success {
+          background: #28a745;
+          color: white;
+      }
+
+      .btn-success:hover:not(:disabled) {
+          background: #1e7e34;
+      }
+
+      .btn-secondary {
+          background: #6c757d;
+          color: white;
+      }
+
+      .btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+      }
+
+      .timer-inactive {
+          opacity: 0.6;
+          background: linear-gradient(135deg, #6c757d, #495057);
+      }
+
+      .manual-notes {
+          width: 100%;
+          height: 100px;
+          border-radius: 5px;
+          border: 1px solid #ddd;
+          padding: 10px;
+          box-sizing: border-box;
+          resize: vertical;
+          font-family: inherit;
+          font-size: 0.9em;
+      }
+
+      .step-outcome {
+          margin: 10px 0;
+      }
+
+      .step-outcome select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 0.9em;
+      }
+
+      .step-outcome textarea {
+          width: 100%;
+          height: 80px;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 0.9em;
+          margin-top: 8px;
+          box-sizing: border-box;
+          resize: vertical;
+      }
+
+      .resolution-section {
+          background: #fff;
+          border: 2px solid #dc3545;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 20px 0;
+      }
+
+      .resolution-section h3 {
+          margin-top: 0;
+          color: #dc3545;
+      }
+
+      .resolution-section select {
+          width: 100%;
+          padding: 10px;
+          margin: 10px 0;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+      }
+
+      .resolution-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+      }
+
+      .btn-danger {
+          background: #dc3545;
+          color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+          background: #c82333;
+      }
+
+      /* Demo Controls */
+      .demo-gear {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 40px;
+          height: 40px;
+          background: #6c757d;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 1000;
+          transition: all 0.3s;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      }
+
+      .demo-gear:hover {
+          background: #5a6268;
+          transform: rotate(90deg);
+      }
+
+      .demo-gear::before {
+          content: '⚙️';
+          font-size: 20px;
+      }
+
+      .demo-panel {
+          position: fixed;
+          bottom: 70px;
+          right: 20px;
+          background: white;
+          border-radius: 8px;
+          padding: 15px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          border: 1px solid #e9ecef;
+          z-index: 999;
+          min-width: 250px;
+          display: none;
+      }
+
+      .demo-panel.show {
+          display: block;
+          animation: slideUp 0.3s ease-out;
+      }
+
+      @keyframes slideUp {
+          from {
+              opacity: 0;
+              transform: translateY(20px);
+          }
+          to {
+              opacity: 1;
+              transform: translateY(0);
+          }
+      }
+
+      /* Device Communication Functions (from base script) */
+      function simulateDeviceResponse(responseText) {
+          if (protocolState.deviceMessageReceived) return;
+
+          protocolState.deviceMessageReceived = true;
+          const timestamp = new Date().toLocaleTimeString('en-US', {
+              hour12: false,
+              timeZone: 'America/Denver',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+          });
+
+          // Log the response with gas data for gas alerts
+          if (currentAlert && (currentAlert.id === 'gas-high-threshold' || currentAlert.id === 'gas-normalizing')) {
+              const gasReading = getCurrentGasReading();
+              addLogEntry(`Received "${responseText}" from device. Gas level: ${gasReading.status} – Gas Reading: ${gasReading.type}: ${gasReading.value}${gasReading.unit}`, 'step');
+          } else {
+              addLogEntry(`Received "${responseText}" from device`, 'step');
+          }
+
+          // Determine action based on response and gas level
+          if (['Issue resolved', 'False alarm', 'No'].includes(responseText)) {
+              if (currentAlert && currentAlert.id === 'gas-high-threshold' && !isGasLevelHigh()) {
+                  addLogEntry(`Device indicates resolution and gas levels normal. Ready for resolution.`, 'general');
+              } else if (currentAlert && currentAlert.id === 'gas-high-threshold' && isGasLevelHigh()) {
+                  addLogEntry(`Device indicates resolution, but gas levels remain elevated. Continuing protocol escalation.`, 'general');
+              }
+          } else if (responseText === 'Send help') {
+              addLogEntry(`Device user requests immediate assistance. Escalating to dispatch.`, 'general');
+              triggerImmediateDispatch();
+          }
+      }
+
+      function triggerImmediateDispatch() {
+          // Auto-select dispatch and suggest resolution
+          dispatchMade = true;
+          const resolutionSelect = document.getElementById('resolution-reason');
+          if (resolutionSelect) {
+              resolutionSelect.value = (currentAlert && (currentAlert.id === 'gas-high-threshold' || currentAlert.id === 'gas-normalizing')) ?
+                  'incident-with-dispatch' : 'false-alert-with-dispatch';
+          }
+          addLogEntry('Device user requested immediate assistance. Emergency services will be contacted.', 'general');
+      }
+
+      // Enhanced Step Management Functions
+      function markStepComplete(stepId) {
+          const step = document.getElementById(stepId);
+          const statusBadge = document.getElementById(stepId + '-status');
+
+          if (step) {
+              step.classList.add('completed');
+              step.classList.remove('active');
+          }
+
+          if (statusBadge) {
+              statusBadge.textContent = 'Completed';
+              statusBadge.classList.add('completed');
+          }
+
+          protocolState.completedSteps.push(stepId);
+      }
+
+      function handleSpecialOutcomes(stepId, outcome) {
+          if (outcome === 'confirmed-ok') {
+              setTimeout(() => {
+                  const resolutionSelect = document.getElementById('resolution-reason');
+                  if (resolutionSelect && !resolutionSelect.value) {
+                      if (dispatchMade) {
+                          resolutionSelect.value = currentAlert && currentAlert.id === 'gas-high-threshold' ?
+                              'incident-with-dispatch' : 'false-alert-with-dispatch';
+                      } else {
+                          resolutionSelect.value = currentAlert && currentAlert.id === 'gas-high-threshold' ?
+                              'incident-without-dispatch' : 'false-alert-without-dispatch';
+                      }
+                  }
+                  blockRemainingSteps(stepId, 'User confirmed OK');
+              }, 500);
+          }
+
+          // Handle timer-based outcomes
+          if (outcome === 'waiting-30-minutes') {
+              startGlobalTimer(stepId, 'EC Callback', 'Emergency Contact', 1800);
+          }
+      }
+
+      // Timer Management Functions (from base script)
+      function startLocalTimer(duration = 120) {
+          const timerElement = document.getElementById('step-2-timer');
+          const countdownElement = document.getElementById('step-2-countdown');
+
+          if (localTimerInterval) {
+              clearInterval(localTimerInterval);
+          }
+
+          let timeLeft = duration;
+          addLogEntry(`⏰ Started ${duration/60}-minute local timer`, 'timer');
+
+          localTimerInterval = setInterval(() => {
+              timeLeft--;
+
+              if (timeLeft <= 0) {
+                  clearInterval(localTimerInterval);
+                  localTimerInterval = null;
+
+                  playTimerSound();
+                  startTabFlashing("🚨 TIMER EXPIRED");
+                  addLogEntry(`⏰ Local timer expired`, 'timer');
+              }
+          }, 1000);
+      }
+
+      function startGlobalTimer(stepId, description, contactName, duration = 1800) {
+          if (globalTimerInterval) {
+              clearInterval(globalTimerInterval);
+              addLogEntry(`⏹️ Cancelled previous timer`, 'timer');
+          }
+
+          activeTimerData = {
+              stepId: stepId,
+              description: description,
+              contactName: contactName,
+              duration: duration,
+              startTime: Date.now()
+          };
+
+          updateTimerDisplay(duration);
+          updateTimerInfo(description, contactName);
+          activateTimer();
+
+          addLogEntry(`⏰ Started ${duration/60}-minute timer: ${description} for ${contactName}`, 'timer');
+
+          globalTimerInterval = setInterval(() => {
+              const elapsed = Math.floor((Date.now() - activeTimerData.startTime) / 1000);
+              const remaining = Math.max(0, duration - elapsed);
+
+              updateTimerDisplay(remaining);
+
+              if (remaining <= 0) {
+                  timerComplete();
+              } else if (remaining <= 300) {
+                  document.getElementById('globalTimer').classList.add('timer-alert');
+              }
+          }, 1000);
+      }
+
+      function cancelGlobalTimer() {
+          if (globalTimerInterval) {
+              clearInterval(globalTimerInterval);
+              globalTimerInterval = null;
+
+              if (activeTimerData) {
+                  addLogEntry(`⏹️ Cancelled timer: ${activeTimerData.description}`, 'timer');
+                  activeTimerData = null;
+              }
+
+              deactivateTimer();
+          }
+      }
+
+      function updateTimerDisplay(seconds) {
+          const minutes = Math.floor(seconds / 60);
+          const secs = seconds % 60;
+          const display = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+          document.getElementById('timerDisplay').textContent = display;
+      }
+
+      function updateTimerInfo(description, contactName) {
+          const info = document.getElementById('timerInfo');
+          info.innerHTML = `<strong>${description}</strong><br>${contactName}`;
+      }
+
+      function activateTimer() {
+          const timer = document.getElementById('globalTimer');
+          const cancelBtn = document.getElementById('cancelTimerBtn');
+
+          timer.classList.remove('timer-inactive');
+          timer.classList.add('timer-active');
+          cancelBtn.disabled = false;
+      }
+
+      function deactivateTimer() {
+          const timer = document.getElementById('globalTimer');
+          const cancelBtn = document.getElementById('cancelTimerBtn');
+
+          timer.classList.remove('timer-active', 'timer-alert');
+          timer.classList.add('timer-inactive');
+          cancelBtn.disabled = true;
+
+          document.getElementById('timerDisplay').textContent = '--:--';
+          document.getElementById('timerInfo').innerHTML = '<strong>No active timer</strong>';
+
+          stopTabFlashing();
+      }
+
+      function timerComplete() {
+          clearInterval(globalTimerInterval);
+          globalTimerInterval = null;
+
+          if (activeTimerData) {
+              playTimerSound();
+              startTabFlashing("🚨 TIMER EXPIRED");
+              addLogEntry(`⏰ TIMER EXPIRED: ${activeTimerData.description} for ${activeTimerData.contactName}`, 'timer');
+          }
+
+          deactivateTimer();
+          activeTimerData = null;
+      }
+
+      // Audio and Visual Alert Functions (from base script)
+      function playTimerSound() {
+          clearBeepTimeouts();
+
+          try {
+              const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+              beepTimeouts.push(setTimeout(() => playBeep(audioContext), 0));
+              beepTimeouts.push(setTimeout(() => playBeep(audioContext), 300));
+              beepTimeouts.push(setTimeout(() => playBeep(audioContext), 600));
+
+          } catch (e) {
+              console.log('Audio not available');
+          }
+      }
+
+      function clearBeepTimeouts() {
+          beepTimeouts.forEach(timeout => clearTimeout(timeout));
+          beepTimeouts = [];
+      }
+
+      function playBeep(audioContext) {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator.type = 'sine';
+
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.2);
+      }
+
+      function startTabFlashing(alertText) {
+          stopTabFlashing();
+
+          let isAlert = false;
+          tabFlashInterval = setInterval(() => {
+              document.title = isAlert ? originalTitle : alertText;
+              isAlert = !isAlert;
+          }, 1000);
+      }
+
+      function stopTabFlashing() {
+          if (tabFlashInterval) {
+              clearInterval(tabFlashInterval);
+              tabFlashInterval = null;
+              document.title = originalTitle;
+          }
+      }
+
+      .demo-panel h4 {
+          margin: 0 0 15px 0;
+          color: #333;
+          font-size: 0.9em;
+          border-bottom: 1px solid #e9ecef;
+          padding-bottom: 8px;
+      }
+
+      .demo-panel button {
+          width: 100%;
+          margin: 5px 0;
+          font-size: 0.8em;
+          padding: 8px 12px;
+      }
+
+      .empty-state {
+          text-align: center;
+          color: #6c757d;
+          padding: 100px 20px;
+          font-size: 1.1em;
+      }
+
+      .empty-state h2 {
+          color: #1565c0;
+          margin-bottom: 15px;
+      }
+
+      .protocol-placeholder {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 300px;
+          padding: 20px;
+      }
+
+      .protocol-frame {
+          border: 2px solid #e9ecef;
+          border-radius: 8px;
+          padding: 40px 30px;
+          text-align: center;
+          background: #f8f9fa;
+          width: 100%;
+          max-width: 400px;
+      }
+
+      .placeholder-text {
+          font-size: 1.1em;
+          font-weight: 600;
+          color: #6c757d;
+          margin-bottom: 10px;
+      }
+
+      .placeholder-subtitle {
+          font-size: 0.9em;
+          color: #8d9499;
+          line-height: 1.4;
+      }
+
+      .timer-active {
+          opacity: 1;
+          background: linear-gradient(135deg, #007bff, #0056b3);
+      }
+
+      .timer-alert {
+          animation: flashRed 1s infinite;
+      }
+
+      @keyframes flashRed {
+          0%, 50% { background: linear-gradient(135deg, #dc3545, #c82333); }
+          51%, 100% { background: linear-gradient(135deg, #007bff, #0056b3); }
+      }
+
+      /* Override Modal Styles */
+      .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: none;
+          z-index: 2000;
+      }
+
+      .override-modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          border-radius: 8px;
+          padding: 25px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          z-index: 2001;
+          min-width: 400px;
+          max-width: 500px;
+      }
+
+      .override-modal h3 {
+          color: #dc3545;
+          margin-top: 0;
+          margin-bottom: 15px;
+          font-size: 1.2em;
+      }
+
+      .override-modal .warning-text {
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 4px;
+          padding: 12px;
+          margin: 15px 0;
+          color: #856404;
+          font-weight: 500;
+      }
+
+      .override-modal .gas-reading-display {
+          background: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 4px;
+          padding: 12px;
+          margin: 15px 0;
+          color: #721c24;
+          font-weight: bold;
+          text-align: center;
+      }
+
+      .override-modal select {
+          width: 100%;
+          padding: 10px;
+          margin: 10px 0;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 0.9em;
+      }
+
+      .override-modal .modal-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+          justify-content: flex-end;
+      }
+
+      .override-modal .btn {
+          padding: 10px 20px;
+          font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Demo Controls -->
+    <div class="demo-gear" id="demo-gear" onclick="toggleDemoPanel()"></div>
+    <div class="demo-panel" id="demo-panel">
+      <h4>Select Alert Type</h4>
+      <button class="btn btn-primary" onclick="loadAlert('gas-high-threshold')">
+        Gas Alert (H₂S High)
+      </button>
+      <button class="btn btn-primary" onclick="loadAlert('gas-normalizing')">
+        Gas Alert (H₂S Normalizing)
+      </button>
+      <button class="btn btn-primary" onclick="loadAlert('fall-detection')">
+        Fall Detection
+      </button>
+      <button class="btn btn-primary" onclick="loadAlert('sos')">
+        SOS Alert
+      </button>
+      <button class="btn btn-primary" onclick="loadAlert('no-motion')">
+        No Motion
+      </button>
+      <button class="btn btn-primary" onclick="loadAlert('missed-check-in')">
+        Missed Check-In
+      </button>
+      <button
+        class="btn btn-secondary"
+        onclick="clearAlert()"
+        style="margin-top: 10px"
+      >
+        Clear Alert
+      </button>
+    </div>
+
+    <!-- Alert Information Header -->
+    <div class="header" id="alert-header">
+      <h1 class="alert-title" id="alert-title">🚨 Alert Management</h1>
+
+      <div class="alert-details">
+        <div class="alert-info">
+          <div class="info-item">
+            <strong>Alert ID:</strong> <span id="alert-id">--</span>
+          </div>
+          <div class="info-item">
+            <strong>Employee:</strong> <span id="employee-details">--</span>
+          </div>
+          <div class="info-item">
+            <strong>Device:</strong> <span id="device-details">--</span>
+          </div>
+          <div class="info-item">
+            <strong>Mobile:</strong> <span id="mobile-number">--</span>
+          </div>
+          <div class="info-item">
+            <strong>Alert Time:</strong> <span id="alert-time">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Protocol Log Section -->
+      <div class="protocol-log">
+        <h3>📋 Protocol Log</h3>
+        <div class="log-container" id="protocolLog">
+          <div class="log-placeholder">
+            No log entries yet. Actions will appear here as you progress through
+            the steps.
+          </div>
+        </div>
+
+        <h3>📝 Add Note</h3>
+        <textarea
+          id="manual-notes"
+          class="manual-notes"
+          placeholder="Add notes here..."
+        ></textarea>
+        <button
+          class="btn btn-success"
+          style="margin-top: 10px"
+          onclick="addManualNote()"
+        >
+          Post Note
+        </button>
+      </div>
+
+      <!-- Global Timer Section -->
+      <div class="global-timer timer-inactive" id="globalTimer">
+        <h3>⏰ Timer</h3>
+
+        <div class="timer-display" id="timerDisplay">--:--</div>
+
+        <div class="timer-info" id="timerInfo">
+          <strong>No active timer</strong>
+        </div>
+
+        <div class="timer-controls">
+          <button
+            class="cancel-btn"
+            id="cancelTimerBtn"
+            disabled
+            onclick="cancelGlobalTimer()"
+          >
+            🛑 Cancel Timer
+          </button>
+        </div>
+      </div>
+
+      <!-- Emergency Response Steps -->
+      <div class="steps-section">
+        <h3>🚨 Emergency Response Protocol</h3>
+
+        <div id="protocol-content">
+          <div class="protocol-placeholder">
+            <div class="protocol-frame">
+              <div class="placeholder-text">No protocol loaded</div>
+              <div class="placeholder-subtitle">
+                Alert type will load the relevant emergency response protocol
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gas Readings Card -->
+      <div class="gas-readings-card" id="gasReadingsCard">
+        <h3>🔎 Gas Readings (Live)</h3>
+
+        <div class="triggered-by" id="triggeredBy" style="display: none">
+          Alert Type: <span id="alert-trigger">--</span>
+        </div>
+
+        <div class="gas-reading" id="h2s-reading">
+          <span
+            >🟢 H₂S:
+            <span class="gas-value" id="h2s-value">1.20 ppm</span></span
+          >
+          <span class="gas-status normal" id="h2s-status">NORMAL</span>
+        </div>
+
+        <div class="gas-reading" id="co-reading">
+          <span
+            >🟢 CO: <span class="gas-value" id="co-value">2.50 ppm</span></span
+          >
+          <span class="gas-status normal" id="co-status">NORMAL</span>
+        </div>
+
+        <div class="gas-reading" id="o2-reading">
+          <span
+            >🟢 O₂:
+            <span class="gas-value" id="o2-value">20.90 %vol</span></span
+          >
+          <span class="gas-status normal" id="o2-status">NORMAL</span>
+        </div>
+
+        <div class="gas-reading" id="lel-reading">
+          <span
+            >🟢 LEL:
+            <span class="gas-value" id="lel-value">0.50 %LEL</span></span
+          >
+          <span class="gas-status normal" id="lel-status">NORMAL</span>
+        </div>
+
+        <div class="last-updated" id="lastUpdated" style="display: none">
+          Last updated: <span id="gas-timestamp">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Override Modal -->
+    <div class="modal-overlay" id="modalOverlay" style="display: none"></div>
+    <div class="override-modal" id="overrideModal" style="display: none">
+      <h3>⚠️ Override Required</h3>
+
+      <div class="warning-text">
+        You are attempting to resolve this alert while gas levels remain HIGH.
+        Please provide a reason for the override.
+      </div>
+
+      <div class="gas-reading-display" id="overrideGasReading">
+        Current Gas Reading: H₂S: 17.90 ppm (HIGH)
+      </div>
+
+      <label for="override-reason"><strong>Override Reason:</strong></label>
+      <select id="override-reason">
+        <option value="">-- Select override reason --</option>
+        <option value="Sensor error">Sensor error</option>
+        <option value="User confirmed safety">User confirmed safety</option>
+        <option value="Bump Test/Calibration in progress">
+          Bump Test/Calibration in progress
+        </option>
+        <option value="Other">Other</option>
+      </select>
+
+      <div class="modal-buttons">
+        <button
+          class="btn btn-danger"
+          id="confirmOverrideBtn"
+          onclick="confirmOverride()"
+          disabled
+        >
+          Confirm Override
+        </button>
+        <button class="btn btn-secondary" onclick="cancelOverride()">
+          Cancel
+        </button>
+      </div>
+    </div>
+    
+
+    <script>
+      // Data and State
+      const usersData = {
+        "zach-sowell": {
+          id: "373595",
+          name: "Zach Sowell",
+          device: "G7c-3571031421",
+          mobile: "+1 470-505-6195",
+          company: "WM - Corporate",
+          emergencyContacts: [
+            {
+              name: "Daniel Reyes",
+              phone: "+1-587-333-9271",
+              role: "Site Supervisor",
+            },
+          ],
+        },
+        "marcus-rodriguez": {
+          id: "428756",
+          name: "Marcus Rodriguez",
+          device: "G7c-2947182653",
+          mobile: "+1 403-555-0167",
+          company: "Enbridge Pipelines",
+          emergencyContacts: [
+            {
+              name: "Mike Chen",
+              phone: "+1-403-555-0123",
+              role: "Site Supervisor",
+            },
+          ],
+        },
+      };
+
+      const alertTypesData = {
+        "gas-high-threshold": {
+          id: "gas-high-threshold",
+          displayName: "High threshold detected (H₂S)",
+          user: "zach-sowell",
+          protocolFile: "gas-emergency-protocol",
+        },
+        "gas-normalizing": {
+          id: "gas-normalizing",
+          displayName: "High threshold detected (H₂S - Normalizing)",
+          user: "zach-sowell",
+          protocolFile: "gas-emergency-protocol",
+        },
+        "fall-detection": {
+          id: "fall-detection",
+          displayName: "Fall detection detected",
+          user: "marcus-rodriguez",
+          protocolFile: "fall-detection-protocol",
+        },
+        sos: {
+          id: "sos",
+          displayName: "SOS alert activated",
+          user: "zach-sowell",
+          protocolFile: "sos-protocol",
+        },
+        "no-motion": {
+          id: "no-motion",
+          displayName: "No motion detected",
+          user: "marcus-rodriguez",
+          protocolFile: "no-motion-protocol",
+        },
+        "missed-check-in": {
+          id: "missed-check-in",
+          displayName: "Missed check-in",
+          user: "zach-sowell",
+          protocolFile: "check-in-protocol",
+        },
+      };
+
+      const protocolsData = {
+        "gas-emergency-protocol": {
+          name: "Gas Emergency Protocol",
+          steps: [
+            {
+              id: "step-1",
+              title:
+                "STEP 1: Call the G7c device and validate the need for assistance",
+              action: "Call G7c Device",
+            },
+            {
+              id: "step-2",
+              title:
+                "STEP 2: Send text 'Do you need help?' to device and wait 2 minutes",
+              action: "Send Message",
+              timer: 120,
+            },
+            {
+              id: "step-3",
+              title: "STEP 3: Call the phone number assigned to the user",
+              action: "Call User",
+            },
+            {
+              id: "step-4",
+              title: "STEP 4: Contact emergency contacts in order of priority",
+              action: "Contact Emergency Contacts",
+            },
+            {
+              id: "step-5",
+              title: "STEP 5: Dispatch emergency services (EMS and Fire)",
+              action: "Dispatch Services",
+            },
+          ],
+        },
+        "fall-detection-protocol": {
+          name: "Fall Detection Protocol",
+          steps: [
+            {
+              id: "step-1",
+              title:
+                "STEP 1: Send message 'Do you need help?' and wait 10 minutes",
+              action: "Send Message",
+              timer: 600,
+            },
+            {
+              id: "step-2",
+              title: "STEP 2: Call user assigned phone number",
+              action: "Call User",
+            },
+            {
+              id: "step-3",
+              title: "STEP 3: Contact emergency contacts in priority order",
+              action: "Contact Emergency Contacts",
+            },
+            {
+              id: "step-4",
+              title: "STEP 4: Dispatch emergency services (EMS)",
+              action: "Dispatch EMS",
+            },
+            {
+              id: "step-5",
+              title: "STEP 5: Wait 60 minutes and follow up",
+              action: "Start Follow-up Wait",
+              timer: 3600,
+            },
+          ],
+        },
+        "sos-protocol": {
+          name: "SOS Emergency Protocol",
+          steps: [
+            {
+              id: "step-1",
+              title: "STEP 1: Call the device immediately",
+              action: "Call Device",
+            },
+            {
+              id: "step-2",
+              title: "STEP 2: Call user phone number",
+              action: "Call User",
+            },
+            {
+              id: "step-3",
+              title: "STEP 3: Contact emergency contacts",
+              action: "Contact Emergency Contacts",
+            },
+            {
+              id: "step-4",
+              title: "STEP 4: Dispatch emergency services immediately",
+              action: "Immediate Dispatch",
+            },
+          ],
+        },
+        "no-motion-protocol": {
+          name: "No Motion Detection Protocol",
+          steps: [
+            {
+              id: "step-1",
+              title:
+                "STEP 1: Send message 'Do you need help?' and wait 5 minutes",
+              action: "Send Message",
+              timer: 300,
+            },
+            {
+              id: "step-2",
+              title: "STEP 2: Call user phone number",
+              action: "Call User",
+            },
+            {
+              id: "step-3",
+              title: "STEP 3: Contact emergency contacts",
+              action: "Contact Emergency Contacts",
+            },
+            {
+              id: "step-4",
+              title: "STEP 4: Dispatch if no response",
+              action: "Conditional Dispatch",
+            },
+          ],
+        },
+        "check-in-protocol": {
+          name: "Missed Check-In Protocol",
+          steps: [
+            {
+              id: "step-1",
+              title: "STEP 1: Call user phone number immediately",
+              action: "Call User",
+            },
+            {
+              id: "step-2",
+              title: "STEP 2: Send message reminder",
+              action: "Send Reminder",
+            },
+            {
+              id: "step-3",
+              title: "STEP 3: Contact emergency contacts",
+              action: "Contact Emergency Contacts",
+            },
+            {
+              id: "step-4",
+              title: "STEP 4: Escalate if no contact",
+              action: "Escalate",
+            },
+          ],
+        },
+      };
+
+      const gasReadingsData = {
+        "gas-high-threshold": {
+          h2s: { value: 17.9, status: "HIGH" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 4.0, status: "NORMAL" },
+        },
+        "gas-normalizing": {
+          h2s: { value: 17.9, status: "HIGH" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 4.0, status: "NORMAL" },
+        },
+        default: {
+          h2s: { value: 1.2, status: "NORMAL" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 0.5, status: "NORMAL" },
+        },
+      };
+
+      let currentAlert = null;
+      let currentUser = null;
+      let gasUpdateInterval = null;
+      let dispatchMade = false; // Track if dispatch was called
+      let gasNormalizationTimer = null; // Track gas normalization timer
+
+      // Timer management variables (from base script)
+      let globalTimerInterval = null;
+      let activeTimerData = null;
+      let tabFlashInterval = null;
+      let localTimerInterval = null;
+      let beepTimeouts = [];
+      let originalTitle = "Enhanced Blackline Live - Alert Management";
+
+      // Protocol state management
+      let protocolState = {
+        completedSteps: [],
+        currentStep: 1,
+        dispatchMade: false,
+        dispatchTimerStarted: false,
+        alertResolved: false,
+        deviceMessageReceived: false,
+        currentProtocol: null,
+      };
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        updateGasReadings("default");
+        startGasMonitoring();
+      });
+
+      // Demo Functions
+      function toggleDemoPanel() {
+        document.getElementById("demo-panel").classList.toggle("show");
+      }
+
+      function loadAlert(alertType) {
+        const alertConfig = alertTypesData[alertType];
+        const userConfig = usersData[alertConfig.user];
+        const protocolConfig = protocolsData[alertConfig.protocolFile];
+
+        currentAlert = alertConfig;
+        currentUser = userConfig;
+
+        // Clear any existing logs first
+        const logContainer = document.getElementById("protocolLog");
+        logContainer.innerHTML = "";
+
+        // Add realistic alert sequence logs (most recent first)
+        addAlertSequenceLogs(userConfig);
+
+        updateAlertHeader(alertConfig, userConfig);
+        updateGasReadings(alertType);
+        loadProtocolSteps(protocolConfig, userConfig);
+        initializeAlert(alertConfig, userConfig);
+
+        // Start gas normalization timer for normalizing scenario
+        if (alertType === "gas-normalizing") {
+          startGasNormalizationTimer();
+        }
+
+        document.getElementById("alert-header").classList.add("active");
+        document.getElementById("demo-panel").classList.remove("show");
+      }
+
+      function startGasNormalizationTimer() {
+        // After 30 seconds, normalize gas levels
+        gasNormalizationTimer = setTimeout(function () {
+          normalizeGasLevels();
+        }, 30000); // 30 seconds
+      }
+
+      function normalizeGasLevels() {
+        // Update gas readings to normal levels
+        const gasData = gasReadingsData["gas-normalizing"];
+        gasData.h2s.value = 3.5;
+        gasData.h2s.status = "NORMAL";
+
+        // Update display
+        updateGasReadings("gas-normalizing");
+
+        // Log the normalization
+        addLogEntry(
+          "Gas levels have returned to normal ranges. H₂S: 3.50 ppm (NORMAL)",
+          "gas"
+        );
+
+        // Clear normalization timer
+        gasNormalizationTimer = null;
+      }
+
+      function initializeAlert(alertConfig, userConfig) {
+        // Reset protocol state
+        protocolState = {
+          completedSteps: [],
+          currentStep: 1,
+          dispatchMade: false,
+          dispatchTimerStarted: false,
+          alertResolved: false,
+          deviceMessageReceived: false,
+          currentProtocol: alertConfig.protocolFile,
+        };
+
+        // Check if 2-minute monitoring is required for gas alerts
+        if (alertConfig.id === "gas-high-threshold") {
+          // Could add 2-minute monitoring here if needed
+          // Removed automatic gas monitoring log
+        }
+      }
+
+      function addAlertSequenceLogs(userConfig) {
+        // Calculate realistic timestamps (just happened moments ago)
+        const now = new Date();
+        const ackTime = new Date(now.getTime() - 9000); // 9 seconds ago
+        const serverTime = new Date(now.getTime() - 18000); // 18 seconds ago
+        const deviceTime = new Date(now.getTime() - 18000); // Same time as server
+
+        // Format timestamps as EDT (Eastern Time)
+        const formatEDT = function (date) {
+          return (
+            date.toLocaleTimeString("en-US", {
+              hour12: false,
+              timeZone: "America/New_York",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }) + " EDT"
+          );
+        };
+
+        // Add in correct order (most recent at top)
+        addLogEntry(
+          "Alert triggered by device.",
+          "system",
+          "*" + userConfig.company + "*",
+          formatEDT(deviceTime)
+        );
+        addLogEntry(
+          "Alert received by server.",
+          "system",
+          "*" + userConfig.company + "*",
+          formatEDT(serverTime)
+        );
+        addLogEntry(
+          "Alert acknowledged.",
+          "system",
+          "*Blackline Safety Operations Centre*",
+          formatEDT(ackTime)
+        );
+      }
+
+      function loadProtocolSteps(protocolConfig, userConfig) {
+        let protocolHTML =
+          '<div style="margin-bottom: 20px;"><h4 style="color: #1565c0; margin: 0 0 10px 0;">📋 ' +
+          protocolConfig.name +
+          '</h4><p style="color: #666; font-size: 0.9em; margin: 0;">Showing only relevant steps for this alert type</p></div>';
+
+        protocolConfig.steps.forEach(function (step, index) {
+          const isFirst = index === 0;
+          const stepNumber = index + 1;
+
+          protocolHTML +=
+            '<div class="step ' +
+            (isFirst ? "active" : "") +
+            '" id="' +
+            step.id +
+            '">' +
+            '<div class="step-header">' +
+            '<h4 class="step-title">✅ ' +
+            step.title +
+            "</h4>" +
+            '<span class="status-badge" id="' +
+            step.id +
+            '-status">Pending</span>' +
+            "</div>";
+
+          if (step.id === "step-3" || step.id === "step-2") {
+            protocolHTML +=
+              '<div class="contact-info">' +
+              "<strong>👤 " +
+              userConfig.name +
+              "</strong> 📞 " +
+              userConfig.mobile +
+              "</div>";
+          }
+
+          protocolHTML +=
+            '<button class="btn btn-primary" onclick="startStep(\'' +
+            step.id +
+            "')\" " +
+            (!isFirst ? "disabled" : "") +
+            ">" +
+            getActionIcon(step.action) +
+            " " +
+            step.action +
+            "</button>";
+
+          // Add step outcome section (initially hidden)
+          protocolHTML +=
+            '<div class="step-outcome" id="' +
+            step.id +
+            '-outcome" style="display: none; margin-top: 15px;">';
+
+          if (step.timer) {
+            protocolHTML +=
+              '<div style="background: #fff3cd; padding: 8px; border-radius: 4px; margin: 10px 0; font-size: 0.85em;">' +
+              "⏱️ Timer: " +
+              Math.floor(step.timer / 60) +
+              " minutes" +
+              "</div>";
+          }
+
+          // Add outcome dropdown based on step
+          protocolHTML +=
+            '<select id="' +
+            step.id +
+            '-select" onchange="autoPopulateFromDropdown(\'' +
+            step.id +
+            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+            '<option value="">Select outcome</option>';
+
+          if (step.id === "step-1") {
+            protocolHTML +=
+              '<option value="no-answer">No answer.</option>' +
+              '<option value="unable-to-call">Unable to call, device offline.</option>' +
+              '<option value="confirmed-ok">Spoke with ' +
+              userConfig.name +
+              ". Confirmed they are OK. Resolving alert.</option>";
+          } else if (step.id === "step-2") {
+            protocolHTML +=
+              '<option value="unable-to-send">Unable to send text message, device offline.</option>';
+
+            // Check if this is a gas alert for different message options
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing")
+            ) {
+              // Gas alert options
+              protocolHTML +=
+                "<option value=\"false-alarm-gas\">Received message 'False alarm', confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>" +
+                '<option value="issue-resolved-gas">Received message "Issue resolved", confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>' +
+                "<option value=\"no-gas\">Received reply message 'No', confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>" +
+                "<option value=\"yes-gas\">Received reply message 'Yes', confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>" +
+                "<option value=\"im-okay-gas\">Received message 'I'm Okay', confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>" +
+                "<option value=\"custom-gas\">Received message '{custom message}', confirming the user is okay. Gas readings back to normal levels. Resolving alert.</option>";
+            } else {
+              // Non-gas alert options
+              protocolHTML +=
+                "<option value=\"false-alarm\">Received message 'False alarm', confirming the user is okay. Resolving alert.</option>" +
+                '<option value="issue-resolved">Received message "Issue resolved", confirming the user is okay. Resolving alert.</option>' +
+                "<option value=\"no\">Received reply message 'No', confirming the user is okay. Resolving alert.</option>" +
+                "<option value=\"yes\">Received reply message 'Yes', confirming the user is okay. Resolving alert.</option>" +
+                "<option value=\"im-okay\">Received message 'I'm Okay', confirming the user is okay. Resolving alert.</option>" +
+                "<option value=\"custom\">Received message '{custom message}', confirming the user is okay. Resolving alert.</option>";
+            }
+
+            protocolHTML += '<option value="no-response">No response</option>';
+          } else if (step.id === "step-3") {
+            protocolHTML +=
+              '<option value="no-answer-voicemail">No answer, left voicemail</option>' +
+              '<option value="no-answer-already-left">No answer, voicemail already left</option>' +
+              '<option value="no-answer-unable">No answer, unable to leave voicemail</option>' +
+              '<option value="no-answer-box-full">No answer, voicemail box full</option>' +
+              '<option value="no-answer-not-set">No answer, voicemail not set up</option>' +
+              '<option value="wrong-number">Wrong number</option>' +
+              '<option value="unable-to-connect">Unable to connect</option>' +
+              '<option value="number-invalid">Number invalid, changed, or out of service</option>' +
+              '<option value="confirmed-ok">Spoke with ' +
+              userConfig.name +
+              ", confirmed they are OK</option>";
+          } else {
+            protocolHTML +=
+              '<option value="completed">Action completed</option>' +
+              '<option value="no-answer">No answer</option>';
+          }
+
+          protocolHTML +=
+            "</select>" +
+            '<textarea id="' +
+            step.id +
+            '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
+            step.id +
+            "')\" onchange=\"autoPopulateFromDropdown('" +
+            step.id +
+            "')\"></textarea>";
+
+          // Add Call Dispatch button for Step 5
+          if (step.id === "step-5" && step.action === "Dispatch Services") {
+            protocolHTML +=
+              '<div style="margin: 10px 0;"><button class="btn btn-danger" onclick="callDispatch()" style="margin-right: 10px;">🚑 Call Dispatch</button><span id="dispatch-status" style="color: #28a745; font-weight: bold; display: none;">✅ Dispatch Called</span></div>';
+          }
+
+          protocolHTML +=
+            '<button class="btn btn-secondary" onclick="postNote(\'' +
+            step.id +
+            '\')" style="margin-top: 8px;" disabled id="' +
+            step.id +
+            '-post-btn">✅ Post Note</button>' +
+            "</div>" +
+            "</div>";
+        });
+
+        // Add Resolution Section
+        protocolHTML +=
+          '<div class="resolution-section">' +
+          '<div class="step-header">' +
+          "<h3>✅ RESOLUTION</h3>" +
+          '<span class="status-badge" id="resolution-status">Pending</span>' +
+          "</div>" +
+          '<select id="resolution-reason" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+          '<option value="">-- Select reason --</option>' +
+          '<option value="false-alert-without-dispatch">False alert without dispatch</option>' +
+          '<option value="false-alert-with-dispatch">False alert with dispatch</option>' +
+          '<option value="incident-without-dispatch">Incident without dispatch</option>' +
+          '<option value="incident-with-dispatch">Incident with dispatch</option>' +
+          "</select>" +
+          '<div class="resolution-buttons">' +
+          '<button class="btn btn-danger" onclick="resolveAlert()">' +
+          "✅ Resolve Alert" +
+          "</button>" +
+          '<button class="btn btn-secondary" onclick="cancelResolution()">' +
+          "❌ Cancel Resolution" +
+          "</button>" +
+          "</div>" +
+          "</div>";
+
+        document.getElementById("protocol-content").innerHTML = protocolHTML;
+      }
+
+      function callDispatch() {
+        dispatchMade = true;
+        document.getElementById("dispatch-status").style.display = "inline";
+        addLogEntry("🚑 Called dispatch - Emergency services notified", "step");
+
+        // Auto-update resolution to "with dispatch"
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect && !resolutionSelect.value) {
+          if (currentAlert && currentAlert.id === "gas-high-threshold") {
+            resolutionSelect.value = "incident-with-dispatch";
+          } else {
+            resolutionSelect.value = "false-alert-with-dispatch";
+          }
+        }
+      }
+
+      function startStep(stepId) {
+        // Show the outcome section for this step
+        const outcomeSection = document.getElementById(stepId + "-outcome");
+        if (outcomeSection) {
+          outcomeSection.style.display = "block";
+        }
+
+        // For Step 2 (message steps), start local timer if specified
+        const protocolConfig = protocolsData[currentAlert.protocolFile];
+        const stepConfig = protocolConfig.steps.find(
+          (step) => step.id === stepId
+        );
+
+        if (stepConfig && stepConfig.timer && stepId === "step-2") {
+          startLocalTimer(stepConfig.timer);
+        }
+
+        // Don't log anything here - wait for actual outcome selection
+      }
+
+      function postNote(stepId) {
+        const note = document.getElementById(stepId + "-note");
+        const select = document.getElementById(stepId + "-select");
+
+        if (!note || !note.value.trim()) {
+          alert("Please enter text before posting note");
+          return;
+        }
+
+        // Check if this is a "confirmed OK" outcome
+        const selectedOutcome = select ? select.value : "";
+        const isConfirmedOK = selectedOutcome === "confirmed-ok";
+
+        // Generate proper step log based on selection and gas readings
+        let logMessage = note.value.trim();
+
+        // Add gas reading info for gas alerts
+        if (
+          currentAlert &&
+          (currentAlert.id === "gas-high-threshold" ||
+            currentAlert.id === "gas-normalizing")
+        ) {
+          const gasReading = getCurrentGasReading();
+          logMessage +=
+            ". Gas level: " +
+            gasReading.status +
+            " – Gas Reading: " +
+            gasReading.type +
+            ": " +
+            gasReading.value +
+            gasReading.unit;
+        }
+
+        addLogEntry(logMessage, "step");
+
+        // Mark current step as completed
+        const step = document.getElementById(stepId);
+        const statusBadge = document.getElementById(stepId + "-status");
+
+        if (step) {
+          step.classList.remove("active");
+          step.classList.add("completed");
+        }
+
+        if (statusBadge) {
+          statusBadge.textContent = "Completed";
+          statusBadge.classList.add("completed");
+        }
+
+        // Clear note and reset - this should disable the button
+        note.value = "";
+        if (select) select.value = "";
+
+        // Re-validate button after clearing (should disable it)
+        validatePostButton(stepId);
+
+        // Handle "confirmed OK" logic
+        if (isConfirmedOK) {
+          handleConfirmedOK(stepId);
+        } else {
+          // Enable next step normally
+          enableNextStep(stepId);
+        }
+      }
+
+      function handleConfirmedOK(currentStepId) {
+        // Skip remaining steps
+        blockRemainingSteps(currentStepId, "User confirmed OK");
+
+        // Auto-suggest resolution based on alert type and dispatch status
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect && !resolutionSelect.value) {
+          if (dispatchMade) {
+            // Dispatch was called
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing")
+            ) {
+              resolutionSelect.value = "incident-with-dispatch";
+            } else {
+              resolutionSelect.value = "false-alert-with-dispatch";
+            }
+          } else {
+            // No dispatch
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing")
+            ) {
+              resolutionSelect.value = "incident-without-dispatch";
+            } else {
+              resolutionSelect.value = "false-alert-without-dispatch";
+            }
+          }
+        }
+
+        // For gas alerts, check if override is needed immediately
+        if (
+          currentAlert &&
+          (currentAlert.id === "gas-high-threshold" ||
+            currentAlert.id === "gas-normalizing") &&
+          isGasLevelHigh()
+        ) {
+          setTimeout(function () {
+            if (
+              confirm(
+                "Gas levels are still HIGH but user confirmed they're OK. You can continue, but will need to provide override reason when resolving."
+              )
+            ) {
+              addLogEntry(
+                "⚠️ User confirmed OK despite HIGH gas levels. Override will be required at resolution.",
+                "general"
+              );
+            }
+          }, 500);
+        }
+      }
+
+      function blockRemainingSteps(currentStepId, reason) {
+        // Get all steps after current one
+        const stepOrder = ["step-1", "step-2", "step-3", "step-4", "step-5"];
+        const currentIndex = stepOrder.indexOf(currentStepId);
+
+        for (let i = currentIndex + 1; i < stepOrder.length; i++) {
+          const nextStepId = stepOrder[i];
+          const nextStep = document.getElementById(nextStepId);
+          const nextButton = nextStep
+            ? nextStep.querySelector('button:not([onclick*="postNote"])')
+            : null;
+          const nextStatus = document.getElementById(nextStepId + "-status");
+
+          if (nextStep) {
+            nextStep.style.opacity = "0.5";
+            nextStep.style.pointerEvents = "none";
+          }
+          if (
+            nextButton &&
+            !nextButton.onclick.toString().includes("callDispatch")
+          ) {
+            nextButton.disabled = true;
+            nextButton.classList.remove("btn-primary");
+            nextButton.classList.add("btn-secondary");
+          }
+          if (nextStatus) {
+            nextStatus.textContent = "Skipped";
+            nextStatus.style.background = "#6c757d";
+            nextStatus.style.color = "white";
+          }
+        }
+      }
+
+      function enableNextStep(stepId) {
+        // Enable next step normally
+        const stepNumber = parseInt(stepId.replace("step-", ""));
+        const nextStepId = "step-" + (stepNumber + 1);
+        const nextStep = document.getElementById(nextStepId);
+
+        if (nextStep) {
+          nextStep.classList.add("active");
+          const nextButton = nextStep.querySelector(
+            'button:not([onclick*="postNote"])'
+          );
+          if (nextButton) {
+            nextButton.disabled = false;
+            nextButton.classList.remove("btn-secondary");
+            nextButton.classList.add("btn-primary");
+          }
+        }
+      }
+
+      function getCurrentGasReading() {
+        // Get current H2S reading for gas alerts
+        const h2sValueElement = document.getElementById("h2s-value");
+        const h2sStatusElement = document.getElementById("h2s-status");
+
+        if (!h2sValueElement || !h2sStatusElement) {
+          // Fallback if elements don't exist
+          return {
+            type: "H₂S",
+            value: "17.90",
+            unit: " ppm",
+            status: "HIGH",
+          };
+        }
+
+        const h2sReading = h2sValueElement.textContent;
+        const h2sStatus = h2sStatusElement.textContent;
+
+        return {
+          type: "H₂S",
+          value: h2sReading.split(" ")[0],
+          unit: " ppm",
+          status: h2sStatus,
+        };
+      }
+
+      function validatePostButton(stepId) {
+        const note = document.getElementById(stepId + "-note");
+        const button = document.getElementById(stepId + "-post-btn");
+
+        if (!note || !button) return;
+
+        const hasText = note.value.trim().length > 0;
+
+        if (hasText) {
+          button.disabled = false;
+          button.classList.remove("btn-secondary");
+          button.classList.add("btn-success");
+        } else {
+          button.disabled = true;
+          button.classList.remove("btn-success");
+          button.classList.add("btn-secondary");
+        }
+      }
+
+      function autoPopulateFromDropdown(stepId) {
+        const select = document.getElementById(stepId + "-select");
+        const note = document.getElementById(stepId + "-note");
+
+        if (!select || !note || !currentUser) return;
+
+        const selectedValue = select.value;
+        if (!selectedValue) return;
+
+        let noteText = "";
+
+        if (stepId === "step-1") {
+          if (selectedValue === "no-answer") {
+            noteText = "Step 1: Called device. No answer";
+          } else if (selectedValue === "unable-to-call") {
+            noteText = "Step 1: Unable to call, device offline";
+          } else if (selectedValue === "confirmed-ok") {
+            noteText =
+              "Step 1: Spoke with " +
+              currentUser.name +
+              ". Confirmed they are OK. Resolving alert";
+          }
+        } else if (stepId === "step-2") {
+          if (selectedValue === "unable-to-send") {
+            noteText = "Step 2: Unable to send text message, device offline";
+          } else if (selectedValue === "no-response") {
+            noteText =
+              'Step 2: Sent message "Do you need help?" to device. No response received';
+          } else if (selectedValue.includes("false-alarm")) {
+            noteText =
+              'Step 2: Received message "False alarm" from device. User confirmed okay';
+            // For gas alerts with user confirmation, check if override needed
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing") &&
+              isGasLevelHigh()
+            ) {
+              setTimeout(function () {
+                if (
+                  confirm(
+                    "Gas levels are still HIGH but user confirmed OK. This will require an override when resolving. Continue?"
+                  )
+                ) {
+                  // User can continue, override will be handled at resolution
+                }
+              }, 100);
+            }
+          } else if (selectedValue.includes("issue-resolved")) {
+            noteText =
+              'Step 2: Received message "Issue resolved" from device. User confirmed okay';
+            // For gas alerts with user confirmation, check if override needed
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing") &&
+              isGasLevelHigh()
+            ) {
+              setTimeout(function () {
+                if (
+                  confirm(
+                    "Gas levels are still HIGH but user confirmed issue resolved. This will require an override when resolving. Continue?"
+                  )
+                ) {
+                  // User can continue, override will be handled at resolution
+                }
+              }, 100);
+            }
+          } else if (selectedValue.includes("no")) {
+            noteText =
+              'Step 2: Received reply "No" from device. User confirmed okay';
+          } else if (selectedValue.includes("im-okay")) {
+            noteText =
+              'Step 2: Received message "I\'m Okay" from device. User confirmed okay';
+            // For gas alerts with user confirmation, check if override needed
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing") &&
+              isGasLevelHigh()
+            ) {
+              setTimeout(function () {
+                if (
+                  confirm(
+                    "Gas levels are still HIGH but user confirmed they're okay. This will require an override when resolving. Continue?"
+                  )
+                ) {
+                  // User can continue, override will be handled at resolution
+                }
+              }, 100);
+            }
+          }
+        } else if (stepId === "step-3") {
+          if (selectedValue === "no-answer-voicemail") {
+            noteText =
+              "Step 3: Called " +
+              currentUser.name +
+              " at " +
+              currentUser.mobile +
+              ". No answer, left voicemail";
+          } else if (selectedValue === "confirmed-ok") {
+            noteText =
+              "Step 3: Spoke with " +
+              currentUser.name +
+              " at " +
+              currentUser.mobile +
+              ". Confirmed they are OK";
+            // For gas alerts with user confirmation, check if override needed
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing") &&
+              isGasLevelHigh()
+            ) {
+              setTimeout(function () {
+                if (
+                  confirm(
+                    "Gas levels are still HIGH but user confirmed they're OK. This will require an override when resolving. Continue?"
+                  )
+                ) {
+                  // User can continue, override will be handled at resolution
+                }
+              }, 100);
+            }
+          }
+        } else if (stepId === "step-1") {
+          if (selectedValue === "confirmed-ok") {
+            // For gas alerts with user confirmation, check if override needed
+            if (
+              currentAlert &&
+              (currentAlert.id === "gas-high-threshold" ||
+                currentAlert.id === "gas-normalizing") &&
+              isGasLevelHigh()
+            ) {
+              setTimeout(function () {
+                if (
+                  confirm(
+                    "Gas levels are still HIGH but user confirmed they're OK. This will require an override when resolving. Continue?"
+                  )
+                ) {
+                  // User can continue, override will be handled at resolution
+                }
+              }, 100);
+            }
+          }
+        }
+
+        if (noteText) {
+          note.value = noteText;
+          validatePostButton(stepId);
+        }
+      }
+
+      function getActionIcon(action) {
+        const icons = {
+          "Call G7c Device": "📞",
+          "Send Message": "📱",
+          "Call User": "📞",
+          "Contact Emergency Contacts": "👥",
+          "Dispatch Services": "🚑",
+          "Dispatch EMS": "🚑",
+          "Start Follow-up Wait": "⏰",
+          "Call Device": "📞",
+          "Immediate Dispatch": "🚨",
+          "Conditional Dispatch": "⚠️",
+          "Send Reminder": "📨",
+          Escalate: "⬆️",
+        };
+        return icons[action] || "▶️";
+      }
+
+      function resolveAlert() {
+        const reasonSelect = document.querySelector(
+          ".resolution-section select"
+        );
+        const reason = reasonSelect ? reasonSelect.value : "";
+
+        if (!reason) {
+          alert("Please select a resolution reason first");
+          return;
+        }
+
+        // Check if gas levels are high and require override
+        if (
+          currentAlert &&
+          (currentAlert.id === "gas-high-threshold" ||
+            currentAlert.id === "gas-normalizing") &&
+          isGasLevelHigh()
+        ) {
+          showOverrideModal();
+          return;
+        }
+
+        completeResolution(reason);
+      }
+
+      function isGasLevelHigh() {
+        // Check if any gas reading is HIGH status
+        const h2sStatus = document.getElementById("h2s-status");
+        const coStatus = document.getElementById("co-status");
+        const o2Status = document.getElementById("o2-status");
+        const lelStatus = document.getElementById("lel-status");
+
+        return (
+          (h2sStatus && h2sStatus.textContent === "HIGH") ||
+          (coStatus && coStatus.textContent === "HIGH") ||
+          (o2Status && o2Status.textContent === "HIGH") ||
+          (lelStatus && lelStatus.textContent === "HIGH")
+        );
+      }
+
+      function showOverrideModal() {
+        const gasReading = getCurrentGasReading();
+        document.getElementById("overrideGasReading").textContent =
+          "Current Gas Reading: " +
+          gasReading.type +
+          ": " +
+          gasReading.value +
+          gasReading.unit +
+          " (" +
+          gasReading.status +
+          ")";
+
+        document.getElementById("modalOverlay").style.display = "block";
+        document.getElementById("overrideModal").style.display = "block";
+
+        // Enable/disable confirm button based on override reason selection
+        const overrideReasonSelect = document.getElementById("override-reason");
+        const confirmBtn = document.getElementById("confirmOverrideBtn");
+
+        overrideReasonSelect.addEventListener("change", function () {
+          confirmBtn.disabled = !this.value;
+        });
+      }
+
+      function confirmOverride() {
+        const overrideReason = document.getElementById("override-reason").value;
+        if (!overrideReason) {
+          alert("Please select an override reason");
+          return;
+        }
+
+        const reasonSelect = document.getElementById("resolution-reason");
+        const reason = reasonSelect ? reasonSelect.value : "";
+        const gasReading = getCurrentGasReading();
+
+        // Log the override
+        addLogEntry(
+          "Resolved alert despite high gas levels – Gas Reading: " +
+            gasReading.type +
+            ": " +
+            gasReading.value +
+            gasReading.unit +
+            ". Override reason: " +
+            overrideReason +
+            ".",
+          "resolution"
+        );
+
+        // Close the override modal
+        cancelOverride();
+
+        // Complete the resolution (same logic as clicking "Resolve Alert")
+        completeResolution(reason);
+      }
+
+      function cancelOverride() {
+        document.getElementById("modalOverlay").style.display = "none";
+        document.getElementById("overrideModal").style.display = "none";
+
+        // Reset override reason
+        document.getElementById("override-reason").value = "";
+        document.getElementById("confirmOverrideBtn").disabled = true;
+      }
+
+      function completeResolution(reason) {
+        const reasonSelect = document.querySelector(
+          ".resolution-section select"
+        );
+        const reasonText = reasonSelect
+          ? reasonSelect.options[reasonSelect.selectedIndex].text
+          : "Alert resolved";
+
+        if (
+          currentAlert &&
+          (currentAlert.id === "gas-high-threshold" ||
+            currentAlert.id === "gas-normalizing")
+        ) {
+          const gasReading = getCurrentGasReading();
+          addLogEntry(
+            "Alert resolved: " +
+              reasonText +
+              ". Gas level: " +
+              gasReading.status +
+              " – Gas Reading: " +
+              gasReading.type +
+              ": " +
+              gasReading.value +
+              gasReading.unit,
+            "resolution"
+          );
+        } else {
+          addLogEntry("✅ Alert resolved: " + reasonText, "resolution");
+        }
+
+        // Mark resolution as complete
+        const resolutionBadge = document.querySelector(
+          ".resolution-section .status-badge"
+        );
+        if (resolutionBadge) {
+          resolutionBadge.textContent = "Completed";
+          resolutionBadge.classList.add("completed");
+        }
+
+        const resolveButton = document.querySelector(
+          ".resolution-section .btn-danger"
+        );
+        if (resolveButton) {
+          resolveButton.disabled = true;
+          resolveButton.classList.remove("btn-danger");
+          resolveButton.classList.add("btn-secondary");
+          resolveButton.textContent = "✅ Alert Resolved";
+        }
+
+        // Removed automatic demo completion log
+      }
+
+      function cancelResolution() {
+        addLogEntry("❌ Resolution cancelled", "general");
+
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect) {
+          resolutionSelect.value = "";
+        }
+
+        const resolveButton = document.querySelector(
+          ".resolution-section .btn-danger"
+        );
+        if (resolveButton) {
+          resolveButton.disabled = false;
+          resolveButton.classList.remove("btn-secondary");
+          resolveButton.classList.add("btn-danger");
+          resolveButton.textContent = "✅ Resolve Alert";
+        }
+
+        const container = document.querySelector(".container");
+        if (container) {
+          container.classList.remove("alert-resolved");
+        }
+
+        const resolutionBadge = document.getElementById("resolution-status");
+        if (resolutionBadge) {
+          resolutionBadge.textContent = "Pending";
+          resolutionBadge.classList.remove("completed");
+        }
+      }
+
+      function clearAlert() {
+        currentAlert = null;
+        currentUser = null;
+        dispatchMade = false; // Reset dispatch status
+
+        // Clear gas normalization timer if active
+        if (gasNormalizationTimer) {
+          clearTimeout(gasNormalizationTimer);
+          gasNormalizationTimer = null;
+        }
+
+        document.getElementById("alert-header").classList.remove("active");
+        updateGasReadings("default");
+        document.getElementById("triggeredBy").style.display = "none";
+        document.getElementById("lastUpdated").style.display = "none";
+        document.getElementById("protocolLog").innerHTML =
+          '<div class="log-placeholder">No log entries yet. Actions will appear here as you progress through the steps.</div>';
+        document.getElementById("protocol-content").innerHTML =
+          '<div class="protocol-placeholder"><div class="protocol-frame"><div class="placeholder-text">No protocol loaded</div><div class="placeholder-subtitle">Alert type will load the relevant emergency response protocol</div></div></div>';
+        document.getElementById("demo-panel").classList.remove("show");
+      }
+
+      function updateAlertHeader(alertConfig, userConfig) {
+        const alertId = Math.floor(Math.random() * 9000000) + 1000000;
+        const alertTime = formatAlertTime(new Date());
+
+        document.getElementById("alert-title").textContent =
+          "🚨 Alert Management - " +
+          userConfig.name +
+          " (" +
+          alertConfig.displayName +
+          ")";
+        document.getElementById("alert-id").textContent = alertId;
+        document.getElementById("employee-details").textContent =
+          userConfig.name + " (ID: " + userConfig.id + ")";
+        document.getElementById("device-details").textContent =
+          userConfig.device;
+        document.getElementById("mobile-number").textContent =
+          userConfig.mobile;
+        document.getElementById("alert-time").textContent = alertTime;
+        document.getElementById("alert-trigger").textContent =
+          alertConfig.displayName;
+      }
+
+      function formatAlertTime(alertDate) {
+        const now = new Date();
+        const diffMinutes = Math.floor((now - alertDate) / 60000);
+
+        const timeStr =
+          alertDate.toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+          }) +
+          " " +
+          alertDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }) +
+          " MDT";
+
+        let timeAgo = "";
+        if (diffMinutes === 0) timeAgo = "(just now)";
+        else if (diffMinutes === 1) timeAgo = "(-1 minute ago)";
+        else if (diffMinutes < 60) timeAgo = `(-${diffMinutes} minutes ago)`;
+        else if (diffMinutes < 1440)
+          timeAgo = `(-${Math.floor(diffMinutes / 60)} hours ago)`;
+        else timeAgo = `(-${Math.floor(diffMinutes / 1440)} days ago)`;
+
+        return `${timeStr} ${timeAgo}`;
+      }
+
+      // Auto-resolution functions for gas alerts
+      function autoResolveAlert() {
+        const gasReading = getCurrentGasReading();
+        addLogEntry(
+          `Gas levels have returned to acceptable levels. Auto-resolving alert. Gas Reading: ${gasReading.type}: ${gasReading.value}${gasReading.unit}`,
+          "resolution"
+        );
+
+        // Auto-select resolution reason
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect) {
+          resolutionSelect.value = "incident-without-dispatch";
+        }
+
+        // Resolve the alert
+        protocolState.alertResolved = true;
+        completeResolution("incident-without-dispatch");
+      }
+
+      // Utility Functions
+      function dismissNotification() {
+        // Handle any notification dismissals
+        stopTabFlashing();
+      }
+
+      // Demo function to test different gas levels
+      window.setGasLevel = function (gas, value) {
+        const gasData =
+          gasReadingsData[currentAlert ? currentAlert.id : "default"] ||
+          gasReadingsData.default;
+        if (gasData[gas]) {
+          gasData[gas].value = value;
+          updateGasStatus();
+          updateGasReadings(currentAlert ? currentAlert.id : "default");
+          console.log(`Set ${gas.toUpperCase()} to ${value}`);
+        }
+      };
+
+      // Demo function to test device responses (assign after function is defined)
+      window.simulateDeviceResponse = function (responseText) {
+        simulateDeviceResponse(responseText);
+      };
+
+      function updateGasReadings(alertType) {
+        const gasData = gasReadingsData[alertType] || gasReadingsData.default;
+
+        Object.keys(gasData).forEach(function (gas) {
+          const reading = gasData[gas];
+          const valueElement = document.getElementById(gas + "-value");
+          const statusElement = document.getElementById(gas + "-status");
+          const readingElement = document.getElementById(gas + "-reading");
+
+          if (valueElement) {
+            const unit =
+              gas === "o2" ? " %vol" : gas === "lel" ? " %LEL" : " ppm";
+            valueElement.textContent = reading.value.toFixed(2) + unit;
+          }
+
+          if (statusElement) {
+            statusElement.textContent = reading.status;
+            statusElement.className =
+              "gas-status " + reading.status.toLowerCase();
+          }
+
+          if (readingElement) {
+            const icon = reading.status === "HIGH" ? "🔴" : "🟢";
+            const gasLabel =
+              gas === "h2s" ? "H₂S" : gas === "o2" ? "O₂" : gas.toUpperCase();
+            readingElement.querySelector("span").innerHTML =
+              icon +
+              " " +
+              gasLabel +
+              ': <span class="gas-value">' +
+              reading.value.toFixed(2) +
+              (gas === "o2" ? " %vol" : gas === "lel" ? " %LEL" : " ppm") +
+              "</span>";
+          }
+        });
+
+        if (alertType !== "default") {
+          document.getElementById("triggeredBy").style.display = "block";
+          document.getElementById("lastUpdated").style.display = "block";
+          document.getElementById("gas-timestamp").textContent =
+            new Date().toLocaleTimeString() + " MDT";
+        }
+      }
+
+      function addLogEntry(message, type, source, customTime) {
+        const logContainer = document.getElementById("protocolLog");
+        const placeholder = logContainer.querySelector(".log-placeholder");
+
+        if (placeholder) {
+          placeholder.remove();
+        }
+
+        const entry = document.createElement("div");
+        entry.className = "log-entry " + (type || "general");
+
+        let timestamp, operator;
+
+        if (customTime) {
+          timestamp = customTime;
+          operator = "";
+        } else {
+          timestamp =
+            new Date().toLocaleTimeString("en-US", {
+              hour12: false,
+              timeZone: "America/Denver",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }) + " MDT";
+          operator = '<span style="float: right;">Op 417</span>';
+        }
+
+        if (source) {
+          entry.innerHTML =
+            "<strong>" +
+            source +
+            "</strong><br>2025-07-15 " +
+            timestamp +
+            "<br>" +
+            message;
+        } else {
+          entry.innerHTML =
+            "<strong>[" + timestamp + "]</strong> " + message + " " + operator;
+        }
+
+        logContainer.insertBefore(entry, logContainer.firstChild);
+      }
+
+      function addManualNote() {
+        const noteText = document.getElementById("manual-notes").value.trim();
+        if (!noteText) {
+          alert("Please enter a note first");
+          return;
+        }
+
+        addLogEntry(noteText, "general");
+        document.getElementById("manual-notes").value = "";
+      }
+
+      function cancelGlobalTimer() {
+        addLogEntry("Timer cancelled", "timer");
+      }
+
+      // Gas Monitoring Functions (from base script)
+      function startGasMonitoring() {
+        updateGasDisplay();
+
+        // Update gas readings every 5 seconds
+        gasUpdateInterval = setInterval(() => {
+          simulateGasFluctuations();
+          updateGasDisplay();
+        }, 5000);
+      }
+
+      function simulateGasFluctuations() {
+        // Keep readings stable for clean demo state
+        // Gas levels will only change through user interaction or manual testing
+        updateGasStatus();
+      }
+
+      function updateGasStatus() {
+        // Update status based on current values
+        const gasThresholds = {
+          h2s: { lowThreshold: 5.0, highThreshold: 10.0 },
+          co: { lowThreshold: 100.0, highThreshold: 200.0 },
+          o2: { enrichmentHigh: 25.0, depletionHigh: 18.0 },
+          lel: { lowThreshold: 10.0, highThreshold: 20.0 },
+        };
+
+        // H2S status
+        const h2sElement = document.getElementById("h2s-value");
+        const h2sStatus = document.getElementById("h2s-status");
+        if (h2sElement && h2sStatus) {
+          const h2sValue = parseFloat(h2sElement.textContent);
+          const status =
+            h2sValue >= gasThresholds.h2s.highThreshold ? "HIGH" : "NORMAL";
+          h2sStatus.textContent = status;
+          h2sStatus.className = "gas-status " + status.toLowerCase();
+        }
+
+        // Similar for other gases...
+      }
+
+      function updateGasDisplay() {
+        const timestamp = new Date().toLocaleTimeString("en-US", {
+          hour12: false,
+          timeZone: "America/Denver",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+        // Update timestamp
+        const timestampElement = document.getElementById("gas-timestamp");
+        if (timestampElement) {
+          timestampElement.textContent = timestamp + " MDT";
+        }
+      }
+
+      // Close demo panel when clicking outside
+      document.addEventListener("click", function (event) {
+        const demoPanel = document.getElementById("demo-panel");
+        const demoGear = document.getElementById("demo-gear");
+
+        if (
+          !demoPanel.contains(event.target) &&
+          !demoGear.contains(event.target)
+        ) {
+          demoPanel.classList.remove("show");
+        }
+      });
+    </script>
+  </body>
+</html>
