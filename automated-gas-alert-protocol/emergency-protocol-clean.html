@@ -1777,34 +1777,33 @@
             steps: [
               {
                 id: "step-1",
-                title:
-                  "STEP 1: Call the device and validate need for assistance",
-                action: "Call G7c Device",
+                title: "Call Device and Validate Need for Assistance", // ← Removed "STEP 1:"
+                action: "call-device", // ← Changed from "Call G7c Device"
               },
               {
                 id: "step-2",
                 title:
-                  "STEP 2: Send message 'Do you need help?' to device and wait 2 minutes",
-                action: "Send Message",
+                  "Send message 'Do you need help?' to device and wait 2 minutes",
+                action: "message-device",
                 timer: 120,
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-4",
                 title:
-                  "STEP 4: Contact emergency contacts in order of priority. If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
               {
                 id: "step-5",
                 title:
-                  "STEP 5: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
             ],
           },
@@ -1813,28 +1812,27 @@
             steps: [
               {
                 id: "step-1",
-                title:
-                  "STEP 1: Send message 'Do you need help?' and wait 2 minutes",
-                action: "Send Message",
+                title: "Send message 'Do you need help?' and wait 2 minutes",
+                action: "message-device",
                 timer: 120,
               },
               {
                 id: "step-2",
                 title:
-                  "STEP 2: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Contact emergency contacts in order of priority. If valid location not available, repeat STEPS 1, 2 & 3 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
               {
                 id: "step-4",
                 title:
-                  "STEP 4: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
             ],
           },
@@ -1844,20 +1842,20 @@
               {
                 id: "step-1",
                 title:
-                  "STEP 1: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-2",
                 title:
-                  "STEP 2: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Contact emergency contacts in order of priority. If no answer, repeat Steps 1 and 3 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
             ],
           },
@@ -1866,28 +1864,27 @@
             steps: [
               {
                 id: "step-1",
-                title:
-                  "STEP 1: Send message 'Do you need help?' and wait 5 minutes",
-                action: "Send Message",
+                title: "Send message 'Do you need help?' and wait 5 minutes",
+                action: "message-device",
                 timer: 300,
               },
               {
                 id: "step-2",
                 title:
-                  "STEP 2: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Contact emergency contacts in order of priority. If valid location not available, repeat STEPS 1, 2 & 3 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
               {
                 id: "step-4",
                 title:
-                  "STEP 4: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
             ],
           },
@@ -1896,22 +1893,21 @@
             steps: [
               {
                 id: "step-1",
-                title:
-                  "STEP 1: Send message 'Do you need help?' and wait 2 minutes",
-                action: "Send Message",
+                title: "Send message 'Do you need help?' and wait 2 minutes",
+                action: "message-device",
                 timer: 120,
               },
               {
                 id: "step-2",
                 title:
-                  "STEP 2: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Contact emergency contacts in order of priority. If no answer, repeat STEPS 2 & 3 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
             ],
           },
@@ -1922,33 +1918,32 @@
               {
                 id: "step-1",
                 title:
-                  "STEP 1: Send message 'Leave the area, understood?' to device and wait 5 minutes",
-                action: "Send Message",
+                  "Send message 'Leave the area, understood?' to device and wait 5 minutes",
+                action: "message-device",
                 timer: 300,
               },
               {
                 id: "step-2",
-                title:
-                  "STEP 2: Call the device and validate need for assistance",
-                action: "Call G7c Device",
+                title: "Call Device and Validate Need for Assistance",
+                action: "call-device",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-4",
                 title:
-                  "STEP 4: Contact emergency contacts in order of priority. If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
               {
                 id: "step-5",
                 title:
-                  "STEP 5: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
             ],
           },
@@ -1958,33 +1953,32 @@
               {
                 id: "step-1",
                 title:
-                  "STEP 1: Send message 'Do you need help?' to device and wait 5 minutes",
-                action: "Send Message",
+                  "Send message 'Do you need help?' to device and wait 5 minutes",
+                action: "message-device",
                 timer: 300,
               },
               {
                 id: "step-2",
-                title:
-                  "STEP 2: Call the device and validate need for assistance",
-                action: "Call G7c Device",
+                title: "Call Device and Validate Need for Assistance",
+                action: "call-device",
               },
               {
                 id: "step-3",
                 title:
-                  "STEP 3: Call the phone number assigned to the user and validate need for assistance",
-                action: "Call User",
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
               },
               {
                 id: "step-4",
                 title:
-                  "STEP 4: Contact emergency contacts in order of priority. If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached.",
-                action: "Contact Emergency Contacts",
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
               },
               {
                 id: "step-5",
                 title:
-                  "STEP 5: If a valid and up to date location is available, dispatch emergency services (EMS)",
-                action: "Dispatch Services",
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
+                action: "dispatch",
               },
             ],
           },
@@ -2324,7 +2318,7 @@
                   (step) => step.id === activeTimerData.originalStepId
                 );
 
-                if (stepConfig && stepConfig.action !== "Dispatch Services") {
+                if (stepConfig && stepConfig.action !== "dispatch") {
                   enableNextStep(activeTimerData.originalStepId);
                 }
               } else if (activeTimerData.stepId.startsWith("step-")) {
@@ -2344,7 +2338,7 @@
                   (step) => step.id === activeTimerData.stepId
                 );
 
-                if (stepConfig && stepConfig.action !== "Dispatch Services") {
+                if (stepConfig && stepConfig.action !== "dispatch") {
                   enableNextStep(activeTimerData.stepId);
                 }
               }
@@ -2736,7 +2730,7 @@
         console.log("DEBUG: stepId =", stepId, "stepAction =", stepAction);
 
         // ACTION-BASED LOGIC
-        if (stepAction === "Call User") {
+        if (stepAction === "call-user") {
           // GROUP 1: RESOLUTION OUTCOMES (User confirmed okay)
           if (selectedValue === "confirmed-ok") {
             noteText = `${stepId.replace("step-", "Step ")}: Called ${
@@ -2814,7 +2808,7 @@
             } at ${currentUser.mobile}. Unable to connect.`;
           }
         } else if (
-          stepAction === "Contact Emergency Contacts" ||
+          stepAction === "call-emergency-contacts" ||
           stepId === "step-4" ||
           stepId.startsWith("step-4-")
         ) {
@@ -2848,7 +2842,7 @@
           } else if (selectedValue === "unable-to-connect") {
             noteText = "Unable to connect";
           }
-        } else if (stepAction === "Dispatch Services") {
+        } else if (stepAction === "dispatch") {
           // Handle Step 5 user/EC callback options
           if (selectedValue === "user-callback") {
             noteText =
@@ -3015,7 +3009,7 @@
         );
         const stepAction = stepConfig?.action;
 
-        if (stepAction === "Dispatch Services") {
+        if (stepAction === "dispatch") {
           // CHECK IF THIS IS A USER/EC CALLBACK (new options)
           if (
             selectedOutcome === "user-callback" ||
@@ -3094,8 +3088,29 @@
               ? dispatchTypeElement.value
               : "";
 
-            // Use the actual textarea content (with user edits)
-            addLogEntry(logMessage, "step");
+            // Create comprehensive dispatch log with protocol reset message
+            let dispatchLog = generateDispatchProtocolLog(
+              decision,
+              reason,
+              selectedService,
+              stepId
+            );
+
+            // For NO dispatch, add the protocol reset message to the same log entry
+            if (decision === "no") {
+              const protocolConfig = ProtocolFactory.getProtocolConfig(
+                currentAlert.id
+              );
+              const stepCount = protocolConfig.steps.length - 1; // Exclude dispatch step
+              const stepNumbers = Array.from(
+                { length: stepCount },
+                (_, i) => i + 1
+              ).join(", ");
+
+              dispatchLog += `\n\nRepeating STEPS ${stepNumbers} until someone is reached.`;
+            }
+
+            addLogEntry(dispatchLog, "step");
 
             // ADD TIMER FOR "YES" DISPATCH:
             if (decision === "yes") {
@@ -3180,10 +3195,6 @@
                   { length: stepCount },
                   (_, i) => i + 1
                 ).join(", ");
-                addLogEntry(
-                  `Valid location not available, repeating STEPS ${stepNumbers} until someone is reached.`,
-                  "system"
-                );
 
                 // Disable current dispatch step after protocol reset
                 const currentDispatchStep = document.getElementById(stepId);
@@ -3196,7 +3207,7 @@
 
                   // Disable only dispatch-specific selects, NOT User/EC callback
                   const dispatchSelects = currentDispatchStep.querySelectorAll(
-                    "#dispatch-decision, #dispatch-service, #skip-reason"
+                    "#dispatch-decision, #dispatch, #skip-reason"
                   );
                   dispatchSelects.forEach((select) => (select.disabled = true));
 
@@ -3258,7 +3269,7 @@
 
                 // Disable only dispatch selects, NOT User/EC callback
                 const dispatchSelects = step.querySelectorAll(
-                  "#dispatch-decision, #dispatch-service, #skip-reason"
+                  "#dispatch-decision, #dispatch, #skip-reason"
                 );
                 dispatchSelects.forEach((select) => (select.disabled = true));
 
@@ -3284,7 +3295,7 @@
         // CHECK FOR 30-MINUTE TIMER OUTCOMES and start timer here (for non-dispatch steps)
         if (
           selectedOutcome === "ec-callback-30min" &&
-          stepAction !== "Dispatch Services"
+          stepAction !== "dispatch"
         ) {
           // Start 30-minute timer silently when posting the note
           if (currentUser && currentUser.emergencyContacts[0]) {
@@ -4143,6 +4154,49 @@
 
           return formatted;
         }
+        // Handle "Unable to dispatch" messages
+        else if (message.includes("Unable to dispatch")) {
+          const lines = message.split("\n").filter((line) => line.trim());
+
+          // Extract the main unable to dispatch line
+          const mainLine = lines[0];
+
+          // Format with proper HTML structure
+          let formatted = `<div class="dispatch-summary" style="color: #dc3545; font-weight: bold;">❌ ${mainLine}</div>`;
+
+          // Process remaining lines with same formatting as dispatch
+          lines.slice(1).forEach((line) => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return;
+
+            if (trimmedLine.includes("Last Known Location")) {
+              formatted +=
+                '<div class="location-info">📍 ' + trimmedLine + "</div>";
+            } else if (trimmedLine.includes("Address:")) {
+              formatted +=
+                '<div class="location-info">📍 ' + trimmedLine + "</div>";
+            } else if (trimmedLine.includes("Coordinates:")) {
+              formatted +=
+                '<div class="coordinates">🗺️ ' + trimmedLine + "</div>";
+            } else if (trimmedLine.includes("Speed:")) {
+              formatted +=
+                '<div class="dispatch-detail">' + trimmedLine + "</div>";
+            } else if (trimmedLine.includes("Last Location Date/Time:")) {
+              formatted +=
+                '<div class="dispatch-detail">' + trimmedLine + "</div>";
+            } else if (trimmedLine.includes("Repeating STEPS")) {
+              formatted +=
+                '<div class="protocol-reset" style="color: #856404; font-weight: bold;">🔄 ' +
+                trimmedLine +
+                "</div>";
+            } else {
+              formatted +=
+                '<div class="dispatch-detail">' + trimmedLine + "</div>";
+            }
+          });
+
+          return formatted;
+        }
         // Clean up long dispatch messages (old format)
         else if (
           message.includes(
@@ -4196,17 +4250,27 @@
 
       function getActionIcon(action) {
         const icons = {
-          "Call G7c Device": "📞",
-          "Send Message": "📱",
-          "Call User": "📞",
-          "Contact Emergency Contacts": "👥",
-          "Dispatch Services": "🚑",
+          "call-device": "📞",
+          "message-device": "📱",
+          "call-user": "📞",
+          "call-emergency-contacts": "👥",
+          dispatch: "🚑",
           "Dispatch EMS": "🚑",
-          "Call Device": "📞",
+          "call-device": "📞",
           "Immediate Dispatch": "🚨",
           "Conditional Dispatch": "⚠️",
         };
         return icons[action] || "▶️";
+      }
+
+      function getStepLabel(stepId) {
+        const parts = stepId.split("-");
+        if (parts.length === 2) {
+          return `Step ${parts[1]}`; // "step-3" → "Step 3"
+        } else if (parts.length === 3) {
+          return `Step ${parts[1]}.${parts[2]}`; // "step-4-1" → "Step 4.1"
+        }
+        return stepId; // fallback
       }
 
       function loadProtocolSteps(protocolConfig, userConfig) {
@@ -4217,7 +4281,7 @@
 
         protocolConfig.steps.forEach(function (step, index) {
           const isFirst = index === 0;
-          const isDispatchStep = step.action === "Dispatch Services";
+          const isDispatchStep = step.action === "dispatch";
 
           // Build step classes - add dispatch-step class for dispatch steps
           let stepClasses = "step";
@@ -4235,20 +4299,18 @@
             step.title +
             "</h4>" +
             '<span class="status-badge ' +
-            (isFirst || step.action === "Dispatch Services" ? "active" : "") +
+            (isFirst || step.action === "dispatch" ? "active" : "") +
             '" id="' +
             step.id +
             '-status">' +
-            (isFirst || step.action === "Dispatch Services"
-              ? "Active"
-              : "Pending") +
+            (isFirst || step.action === "dispatch" ? "Active" : "Pending") +
             "</span>" +
             "</div>";
 
           // Add contact info for relevant steps
           if (step.id === "step-3" || step.id === "step-2") {
             // Only show user contact for "Call User" actions
-            if (step.action === "Call User") {
+            if (step.action === "call-user") {
               protocolHTML +=
                 '<div class="contact-info">' +
                 "<strong>👤 " +
@@ -4351,7 +4413,7 @@
           }
 
           // Handle Step 5 with Dispatch Logic
-          if (step.action === "Dispatch Services") {
+          if (step.action === "dispatch") {
             console.log(
               "DEBUG: Generating full dispatch interface for step:",
               step.id
@@ -4371,8 +4433,8 @@
               "</select>" +
               // Service Selection (fix dropdown ID)
               '<div id="service-type-container" style="display: none; margin-bottom: 15px;">' +
-              '<label for="dispatch-service" style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Dispatch Service Type:</label>' +
-              '<select id="dispatch-service" onchange="autoPopulateDispatchNote(\'' +
+              '<label for="dispatch" style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Dispatch Service Type:</label>' +
+              '<select id="dispatch" onchange="autoPopulateDispatchNote(\'' +
               step.id +
               '\')" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 12px; font-size: 0.9em;">' +
               '<option value="">-- Select Service --</option>' +
@@ -4430,7 +4492,7 @@
           }
 
           // Standard processing for other steps
-          if (step.action === "Dispatch Services") {
+          if (step.action === "dispatch") {
             protocolHTML +=
               '<button class="btn btn-primary" onclick="checkDispatchConditions(\'' +
               step.id +
@@ -4484,10 +4546,7 @@
           // Action-based dropdown options (instead of step-number-based)
           console.log("Step ID:", step.id, "Step Action:", step.action); // ADD THIS
 
-          if (
-            step.action === "Call G7c Device" ||
-            step.action === "Call Device"
-          ) {
+          if (step.action === "call-device") {
             protocolHTML +=
               // GROUP 1: RESOLUTION OUTCOMES (User confirmed okay)
               '<option value="confirmed-ok">Spoke with ' +
@@ -4497,7 +4556,7 @@
               // GROUP 2: CONTINUE PROTOCOL OUTCOMES (Keep trying next steps)
               '<option value="no-answer">No answer.</option>' +
               '<option value="unable-to-call">Unable to call, device offline.</option>';
-          } else if (step.action === "Send Message") {
+          } else if (step.action === "message-device") {
             protocolHTML +=
               '<option value="no-response">No response</option>' +
               '<option value="unable-to-send">Unable to send text message, device offline</option>' +
@@ -4507,7 +4566,7 @@
               '<option value="understood">Received "Understood" - User confirmed okay</option>' +
               '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
               '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
-          } else if (step.action === "Call User") {
+          } else if (step.action === "call-user") {
             console.log("Generating Call User dropdown for:", step.id);
             protocolHTML +=
               // GROUP 1: RESOLUTION OUTCOMES (User confirmed okay)
@@ -4529,7 +4588,7 @@
               '<option value="no-phone-number">Unable to call, user has no phone number assigned</option>' +
               '<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>' +
               '<option value="unable-to-connect">Unable to connect</option>';
-          } else if (step.action === "Contact Emergency Contacts") {
+          } else if (step.action === "call-emergency-contacts") {
             // This is handled separately by the EC generation code
             protocolHTML +=
               // GROUP 1: RESOLUTION OUTCOMES (User confirmed okay)
@@ -5149,7 +5208,7 @@
       };
 
       // ═══════════════════════════════════════════════════════════════
-      // 🚑 ENHANCED STEP 5 DISPATCH MANAGEMENT
+      // 🚑 ENHANCED DISPATCH STEP MANAGEMENT
       // ═══════════════════════════════════════════════════════════════
 
       function callDispatch() {
@@ -5162,7 +5221,7 @@
         dispatchMade = true;
 
         // Get selected service from the correct dropdown ID
-        const serviceDropdown = document.getElementById("dispatch-service");
+        const serviceDropdown = document.getElementById("dispatch");
         const selectedService = serviceDropdown ? serviceDropdown.value : "";
 
         // Remove popup alert - handle validation within UI
@@ -5349,7 +5408,7 @@ Waiting 30 minutes.`;
       }
 
       function generateDispatchNotes(conditions) {
-        let notes = "Step 5: Dispatch Decision Analysis\n\n";
+        let notes = "Dispatch: Decision Analysis\n\n";
 
         if (conditions.shouldDispatch) {
           notes += "DISPATCH REQUIRED:\n";
@@ -5451,7 +5510,8 @@ Waiting 30 minutes.`;
           : [];
       }
 
-      function logDispatchDecision() {
+      function logDispatchDecision(stepId) {
+        // ← Add stepId parameter
         // Comprehensive logging for dispatch decisions
         const decision = document.getElementById("dispatch-decision").value;
         const gasReading = getCurrentGasReading();
@@ -5462,7 +5522,9 @@ Waiting 30 minutes.`;
             services.length > 0 ? services.join(", ") : "Emergency Services";
 
           let logMessage =
-            "Step 5: Dispatch decision - YES. Services: " + servicesText;
+            getStepLabel(stepId) +
+            ": Dispatch decision - YES. Services: " +
+            servicesText;
 
           if (currentAlert && currentAlert.id === "gas-high-threshold") {
             logMessage +=
@@ -5481,7 +5543,9 @@ Waiting 30 minutes.`;
           const reasonText = skipReason.options[skipReason.selectedIndex].text;
 
           let logMessage =
-            "Step 5: Dispatch decision - NO. Reason: " + reasonText;
+            getStepLabel(stepId) +
+            ": Dispatch decision - NO. Reason: " +
+            reasonText;
 
           if (currentAlert && currentAlert.id === "gas-high-threshold") {
             logMessage +=
@@ -5754,7 +5818,7 @@ Waiting 30 minutes.`;
             }) + " MDT";
 
           return (
-            "Step 5: Unable to dispatch - " +
+            "Dispatch: Unable to dispatch - " +
             failedCondition +
             " (checked at " +
             timestamp +
@@ -5763,7 +5827,12 @@ Waiting 30 minutes.`;
         }
       }
 
-      function generateDispatchProtocolLog(decision, reason, selectedService) {
+      function generateDispatchProtocolLog(
+        decision,
+        reason,
+        selectedService,
+        stepId
+      ) {
         // Get all panel data
         const locationElement = document.getElementById("device-location");
         const coordinatesElement =
@@ -5794,11 +5863,13 @@ Waiting 30 minutes.`;
 
         if (decision === "yes") {
           logEntry =
-            "Step 5: Called dispatch. Dispatched " +
+            getStepLabel(stepId) +
+            ": Called dispatch. Dispatched " +
             (selectedService || "Emergency Services") +
             " to the following location:";
         } else {
-          logEntry = "Step 5: Unable to dispatch - " + reason + ".";
+          logEntry =
+            getStepLabel(stepId) + ": Unable to dispatch - " + reason + ".";
         }
 
         // Always add location data with proper spacing
@@ -6023,10 +6094,10 @@ Waiting 30 minutes.`;
 
         // Resolution can be triggered by: Call User, Send Message, Contact ECs, or Dispatch
         const resolutionActions = [
-          "Call User",
-          "Send Message",
-          "Contact Emergency Contacts",
-          "Dispatch Services",
+          "call-user",
+          "message-device",
+          "call-emergency-contacts",
+          "dispatch",
         ];
         return stepConfig && resolutionActions.includes(stepConfig.action);
       }
@@ -6079,7 +6150,7 @@ Waiting 30 minutes.`;
           }
 
           // Auto-evaluate dispatch conditions if next step is dispatch
-          if (nextStep.action === "Dispatch Services") {
+          if (nextStep.action === "dispatch") {
             setTimeout(() => {
               checkDispatchConditions(nextStepId);
             }, 500);
@@ -6146,7 +6217,7 @@ Waiting 30 minutes.`;
       }
 
       function autoPopulateDispatchNote(stepId) {
-        const serviceSelect = document.getElementById("dispatch-service");
+        const serviceSelect = document.getElementById("dispatch");
         const textarea = document.getElementById(stepId + "-note");
         const selectedService = serviceSelect?.value;
 
@@ -6334,7 +6405,7 @@ Waiting 30 minutes.`;
           }
 
           // Auto-evaluate dispatch conditions if next step is dispatch
-          if (nextStep.action === "Dispatch Services") {
+          if (nextStep.action === "dispatch") {
             setTimeout(() => {
               checkDispatchConditions(nextStepId);
               silentlyUpdateDispatchConditions(); // Auto-evaluate dispatch conditions
