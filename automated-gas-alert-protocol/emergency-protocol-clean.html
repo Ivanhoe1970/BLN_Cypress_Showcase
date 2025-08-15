@@ -2874,24 +2874,52 @@
       }
 
       function validatePostButton(stepId) {
-        const note = document.getElementById(stepId + "-note");
+        const stepEl = document.getElementById(stepId);
+        if (!stepEl) return;
 
-        // Find button by looking in the step's container instead of by ID
-        const stepElement = document.getElementById(stepId);
-        const button = stepElement
-          ? stepElement.querySelector(
-              'button[class*="btn"]:not([onclick*="startStep"])'
-            )
-          : null;
+        // Prefer the actual Post Note button inside this step
+        const button =
+          stepEl.querySelector('button[onclick*="postNote"]') ||
+          stepEl.querySelector(
+            'button[class*="btn"]:not([onclick*="startStep"])'
+          );
+        if (!button) return;
 
-        if (!note || !button) return;
+        // Prefer the step-specific note box; fall back to any textarea inside the step
+        let note =
+          document.getElementById(stepId + "-note") ||
+          stepEl.querySelector("textarea");
+        const hasText = !!(note && note.value.trim().length > 0);
 
-        const hasText = note.value.trim().length > 0;
+        let enable = false;
 
-        // Set button state based on textarea content
-        button.disabled = !hasText;
+        if (stepId === "step-5") {
+          const decision = (
+            document.getElementById("dispatch-decision")?.value || ""
+          ).toLowerCase();
+          const skip = (
+            document.getElementById("skip-reason")?.value || ""
+          ).toLowerCase();
 
-        if (hasText) {
+          if (decision === "no") {
+            // Enable if a skip reason is selected OR the note has content
+            enable = !!skip || hasText;
+          } else if (decision === "yes") {
+            // Keep simple: allow posting notes when dispatching
+            // (tighten here if you later require a selected service)
+            enable = true;
+          } else {
+            // Unknown/blank decision → fall back to text requirement
+            enable = hasText;
+          }
+        } else {
+          // Default rule for all other steps: require note text
+          enable = hasText;
+        }
+
+        // Apply state + visual style (preserve your existing classes)
+        button.disabled = !enable;
+        if (enable) {
           button.classList.remove("btn-secondary");
           button.classList.add("btn-success");
         } else {
@@ -3221,6 +3249,53 @@
       const CYCLE_LINE =
         "🔄 Repeating STEPS 1, 2, 3 & 4 until someone is reached.";
 
+      // Status helpers for gas
+      function _gasStatus(id) {
+        return (document.getElementById(id)?.textContent || "").toUpperCase();
+      }
+      function isGasCurrentlyNormalized() {
+        const dangerO2 = /ENRICHED|DEPLETED/.test(_gasStatus("o2-status"));
+        const dangerOthers =
+          /\bHIGH\b/.test(_gasStatus("h2s-status")) ||
+          /\bHIGH\b/.test(_gasStatus("co-status")) ||
+          /\bHIGH\b/.test(_gasStatus("lel-status"));
+        return !(dangerO2 || dangerOthers);
+      }
+      function buildGasSnapshotWithTs() {
+        try {
+          let block =
+            typeof getGasSnapshotFromPanel === "function"
+              ? getGasSnapshotFromPanel()
+              : "";
+          if (!block) return "";
+          const now = new Date();
+          const ts =
+            typeof FORMATTERS?.timestampMST === "function"
+              ? FORMATTERS.timestampMST(now)
+              : new Intl.DateTimeFormat("en-US", {
+                  timeZone: "America/Denver",
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: false,
+                }).format(now) + " MDT";
+          return block.replace(/(Gas Reading:\s*[^\n]+)/i, `$1 (${ts})`);
+        } catch {
+          return "";
+        }
+      }
+
+      function _squashResolveLine(s) {
+        // Turn any preceding newline(s) before the canonical resolve text into a single space
+        return String(s).replace(
+          /\n{1,2}\s*Gas readings back to normal\. Resolving alert\./,
+          " Gas readings back to normal. Resolving alert."
+        );
+      }
+
       function postNote(stepId) {
         console.log(
           "=== postNote called for:",
@@ -3296,8 +3371,27 @@
           currentAlert.id
         );
         const currentStep = protocolConfig.steps.find((s) => s.id === stepId);
-        const isGas =
-          typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
+        const isGas = (() => {
+          try {
+            // Primary: explicit check
+            if (typeof isGasAlert === "function" && isGasAlert(currentAlert))
+              return true;
+
+            // Fallback A: if a Gas Readings (Live) panel exists
+            const hasPanel = !!Array.from(document.querySelectorAll("*")).find(
+              (el) => /Gas Readings\s*\(Live\)/i.test(el.textContent || "")
+            );
+            if (hasPanel) return true;
+
+            // Fallback B: if we can build a snapshot, assume gas context
+            if (typeof getGasSnapshotFromPanel === "function") {
+              const probe = getGasSnapshotFromPanel();
+              if (probe && /Gas Type:\s*(H₂S|O₂|CO|LEL)/i.test(probe))
+                return true;
+            }
+          } catch {}
+          return false;
+        })();
 
         // Unified logger: never crash if addGasLogEntry is missing
         const logStep = (text) => {
@@ -3393,9 +3487,51 @@
             }
 
             if (!msg.endsWith(".")) msg += ".";
-            // NOTE: No gas snapshot in NO-dispatch path (snapshot is for resolving notes only)
-            msg += `\n\n${CYCLE_TEXT}`;
 
+            // Exception: when this is a gas alert and skip-reason is “gas-normalized”, append snapshot
+            if (isGas) {
+              const skipReasonVal = (
+                document.getElementById("skip-reason")?.value || ""
+              ).toLowerCase();
+              const looksGasNormalized =
+                skipReasonVal === "gas-normalized" ||
+                /gas level(s)?\s*(have\s*)?(returned|back)\s*to\s*normal|gas .*normal/i.test(
+                  reasonText
+                );
+
+              if (looksGasNormalized && !/Gas Type:\s/i.test(msg)) {
+                let block = "";
+                try {
+                  block =
+                    typeof getGasSnapshotFromPanel === "function"
+                      ? getGasSnapshotFromPanel()
+                      : "";
+                  if (block) {
+                    const now = new Date();
+                    const ts =
+                      typeof FORMATTERS?.timestampMST === "function"
+                        ? FORMATTERS.timestampMST(now)
+                        : new Intl.DateTimeFormat("en-US", {
+                            timeZone: "America/Denver",
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: false,
+                          }).format(now) + " MDT";
+                    block = block.replace(
+                      /(Gas Reading:\s*[^\n]+)/i,
+                      `$1 (${ts})`
+                    );
+                    msg += `\n\n${block}`;
+                  }
+                } catch {}
+              }
+            }
+
+            msg += `\n\n${CYCLE_TEXT}`;
             logStep(msg);
 
             // complete step UI
@@ -3432,6 +3568,12 @@
             if (typeof validatePostButton === "function")
               validatePostButton(stepId);
 
+            // Keep Step 5 UI in sync after NO-dispatch
+            if (typeof silentlyUpdateDispatchConditions === "function") {
+              silentlyUpdateDispatchConditions();
+              requestAnimationFrame(silentlyUpdateDispatchConditions);
+            }
+
             setTimeout(() => restartProtocolCycle(), 1000);
             return;
           }
@@ -3455,7 +3597,6 @@
             if (!msg.endsWith(".")) msg += ".";
             // NOTE: No gas snapshot here (resolution-only policy)
             msg += `\n\n${CYCLE_TEXT}`;
-
             logStep(msg);
 
             const stepEl = document.getElementById(stepId);
@@ -3489,6 +3630,11 @@
             if (typeof validatePostButton === "function")
               validatePostButton(stepId);
 
+            if (typeof silentlyUpdateDispatchConditions === "function") {
+              silentlyUpdateDispatchConditions();
+              requestAnimationFrame(silentlyUpdateDispatchConditions);
+            }
+
             setTimeout(() => restartProtocolCycle(), 1000);
             return;
           }
@@ -3497,48 +3643,80 @@
         // ── Normal (non-dispatch OR dispatch "yes") ────────────────────────────────
         let msg = `${stepLabel}: ${actionText}`;
 
-        // Append Gas snapshot ONLY for resolving notes in gas alerts
-        // (and only if it hasn't already been added to the note)
-        if (
-          isGas &&
-          /resolving alert/i.test(msg) &&
-          !/Gas Type:\s/i.test(msg)
-        ) {
-          const block =
-            typeof getGasSnapshotFromPanel === "function"
-              ? getGasSnapshotFromPanel()
-              : "";
-          if (block) {
-            const now = new Date();
-            const ts =
-              typeof FORMATTERS?.timestampMST === "function"
-                ? FORMATTERS.timestampMST(now)
-                : new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/Denver",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  }).format(now) + " MDT";
+        // Resolving outcome semantics
+        const RESOLVING_OUTCOMES = new Set([
+          "confirmed-ok",
+          "user-callback",
+          "ec-callback",
+          "device-no",
+          "issue-resolved",
+          "false-alarm",
+        ]);
+        const isResolvingOutcome = RESOLVING_OUTCOMES.has(selectedOutcome);
 
-            const blockWithTs = block.replace(
-              /(Gas Reading:\s*[^\n]+)/i,
-              `$1 (${ts})`
-            );
+        // We may suppress resolution if gas still dangerous
+        let suppressResolutionFlow = false;
 
-            // Avoid repeating "Resolving alert." if it's already in the note
-            const alreadyResolving = /resolving alert/i.test(msg);
-            const preface = alreadyResolving
-              ? "Gas readings back to normal."
-              : "Gas readings back to normal. Resolving alert.";
+        if (isResolvingOutcome) {
+          if (isGas) {
+            // Determine if gas is normalized (based on UI status pills)
+            const U = (id) =>
+              (document.getElementById(id)?.textContent || "").toUpperCase();
+            const dangerO2 = /ENRICHED|DEPLETED/.test(U("o2-status"));
+            const dangerOthers =
+              /\bHIGH\b/.test(U("h2s-status")) ||
+              /\bHIGH\b/.test(U("co-status")) ||
+              /\bHIGH\b/.test(U("lel-status"));
+            const normalized = !(dangerO2 || dangerOthers);
 
-            msg += `\n\n${preface}\n\n${blockWithTs}`;
+            if (normalized) {
+              if (!/[.?!]$/.test(msg)) msg += ".";
+              // Append the canonical resolving preface + a fresh gas snapshot with timestamp
+              let block = "";
+              try {
+                block =
+                  typeof getGasSnapshotFromPanel === "function"
+                    ? getGasSnapshotFromPanel()
+                    : "";
+                if (block) {
+                  const now = new Date();
+                  const ts =
+                    typeof FORMATTERS?.timestampMST === "function"
+                      ? FORMATTERS.timestampMST(now)
+                      : new Intl.DateTimeFormat("en-US", {
+                          timeZone: "America/Denver",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          hour12: false,
+                        }).format(now) + " MDT";
+                  block = block.replace(
+                    /(Gas Reading:\s*[^\n]+)/i,
+                    `$1 (${ts})`
+                  );
+                }
+              } catch {}
+              msg +=
+                `\n\nGas readings back to normal. Resolving alert.` +
+                (block ? `\n\n${block}` : "");
+            } else {
+              // Gas still dangerous → do not resolve, add a warning
+              if (!/[.?!]$/.test(msg)) msg += ".";
+              msg += `\n\n⚠️ Gas levels are not back to normal yet. Continuing protocol.`;
+              suppressResolutionFlow = true;
+            }
+          } else {
+            // Non-gas: always append simple resolve text (once)
+            if (!/resolving alert/i.test(msg)) {
+              if (!/[.?!]$/.test(msg)) msg += ".";
+              msg += " Resolving alert.";
+            }
           }
         }
-
+        msg = _squashResolveLine(msg);
         logStep(msg);
 
         // complete step UI
@@ -3575,13 +3753,15 @@
         if (typeof validatePostButton === "function")
           validatePostButton(stepId);
 
-        // shortcut: confirmed OK outcomes
-        const isConfirmedOK =
-          selectedOutcome === "confirmed-ok" ||
-          selectedOutcome === "ec-callback" ||
-          selectedOutcome === "user-callback";
-        if (isConfirmedOK) {
+        // shortcut: confirmed OK / resolving outcomes
+        const isConfirmedOK = isResolvingOutcome;
+        if (isConfirmedOK && !suppressResolutionFlow) {
           triggerResolutionFlow(stepId, "User confirmed okay");
+          // Keep Step 5 consistent after a resolving note
+          if (typeof silentlyUpdateDispatchConditions === "function") {
+            silentlyUpdateDispatchConditions();
+            requestAnimationFrame(silentlyUpdateDispatchConditions);
+          }
           return;
         }
 
@@ -3660,6 +3840,7 @@
         enableNextStep(stepId);
         if (typeof silentlyUpdateDispatchConditions === "function") {
           silentlyUpdateDispatchConditions();
+          requestAnimationFrame(silentlyUpdateDispatchConditions);
         }
 
         // Normalize gas after the configured step (fires once)
@@ -4875,6 +5056,7 @@
               '<label for="skip-reason" style="display: block; font-weight: bold; margin-bottom: 8px; color: #856404;">Unmet Dispatch Condition:</label>' +
               '<select id="skip-reason" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">' +
               '<option value="">-- System will determine --</option>' +
+              '<option value="gas-normalized">Gas levels back to normal</option>' +
               '<option value="device-offline">Device offline (last comm > 30 min, battery ≤ 10%, or signal ≤ 10%)</option>' +
               '<option value="location-stale">Location not valid or current</option>' +
               '<option value="device-moving">Device not stationary (≥ 5 km/h)</option>' +
@@ -5874,7 +6056,6 @@
         const parseAbsMins = (txt) => {
           const raw = String(txt || "").trim();
           if (!raw) return NaN;
-          // normalize: remove " at " and trailing timezone token (MDT/MST/CDT/UTC/etc)
           const norm = raw
             .replace(" at ", " ")
             .replace(/\s([A-Z]{2,4})\.?$/, "");
@@ -5921,7 +6102,7 @@
           conditions.primarySkipReason ||= "ec-confirmed-ok";
         }
 
-        // Gas alerts also carry through (unchanged)
+        // (kept for backward compatibility with this specific id)
         if (currentAlert && currentAlert.id === "gas-high-threshold") {
           if (typeof isGasLevelHigh === "function" && isGasLevelHigh()) {
             conditions.passingConditions.push("Gas levels remain HIGH");
@@ -5932,7 +6113,6 @@
         }
 
         // ── universal dispatch gates (apply to ALL protocols) ───────────────────
-        // Thresholds (use centralized constants if present)
         const CT = window.CONNECTIVITY_THRESHOLDS || {
           lastCommMins: 30,
           batteryPct: 10,
@@ -5988,7 +6168,6 @@
           conditions.failingReasons.push(
             `location not current (${minsLocAge} min old)`
           );
-          // prefer location-stale over generic offline if not set yet
           conditions.primarySkipReason ||= "location-stale";
         }
 
@@ -5998,8 +6177,29 @@
           conditions.failingReasons.push(
             `device not stationary (speed ${speedKph} km/h)`
           );
-          // prefer moving as most specific if not set yet
           conditions.primarySkipReason ||= "device-moving";
+        }
+
+        // ── GAS POLICY (override when safe) ──────────────────────────────────────
+        // O₂: ENRICHED or DEPLETED → danger
+        // H₂S / CO / LEL: HIGH → danger
+        let anyGasDanger = false;
+        let isGasNow = false;
+        try {
+          isGasNow =
+            typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
+          if (isGasNow) {
+            const U = (id) =>
+              (document.getElementById(id)?.textContent || "").toUpperCase();
+            const dangerO2 = /ENRICHED|DEPLETED/.test(U("o2-status"));
+            const dangerOthers =
+              /\bHIGH\b/.test(U("h2s-status")) ||
+              /\bHIGH\b/.test(U("co-status")) ||
+              /\bHIGH\b/.test(U("lel-status"));
+            anyGasDanger = !!(dangerO2 || dangerOthers);
+          }
+        } catch (e) {
+          console.warn("Gas rule check failed:", e);
         }
 
         // ── final decision ───────────────────────────────────────────────────────
@@ -6007,13 +6207,55 @@
         const locationOK = !isLocStale;
         const motionOK = !isMoving;
 
-        conditions.shouldDispatch =
+        const baseDecision =
           conditions.passingConditions.length > 0 &&
           !userConfirmedOK &&
-          !ecConfirmedOK &&
-          connectivityOK &&
-          locationOK &&
-          motionOK;
+          !ecConfirmedOK;
+
+        const gatesOK = connectivityOK && locationOK && motionOK;
+
+        // If this is a gas alert and gas is NOT dangerous anymore,
+        // force NO dispatch and annotate the reason. (This overrides baseDecision.)
+        try {
+          const isGas =
+            typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
+          if (isGas && !anyGasDanger) {
+            conditions.shouldDispatch = false;
+
+            if (
+              !conditions.failingReasons.includes(
+                "Gas levels returned to normal"
+              )
+            ) {
+              conditions.failingReasons.unshift(
+                "Gas levels returned to normal"
+              );
+            }
+            conditions.primarySkipReason ||= "gas-normalized";
+
+            return conditions; // ← early return: we're done
+          }
+        } catch {
+          /* no-op */
+        }
+
+        // Otherwise: base rule OR gas danger can promote to YES, but always pass universal gates
+        conditions.shouldDispatch = (baseDecision || anyGasDanger) && gatesOK;
+
+        // Post-decision annotations (nice-to-have clarity)
+        try {
+          const isGas =
+            typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
+          if (isGas && anyGasDanger) {
+            if (
+              !conditions.passingConditions.includes("Gas levels dangerous")
+            ) {
+              conditions.passingConditions.unshift("Gas levels dangerous");
+            }
+          }
+        } catch {
+          /* no-op */
+        }
 
         return conditions;
       }
@@ -6038,6 +6280,8 @@
         }
 
         const newValue = conditions.shouldDispatch ? "yes" : "no";
+
+        // Only do heavy UI updates when value actually changes
         if (dispatchDropdown.value !== newValue) {
           dispatchDropdown.value = newValue;
 
@@ -6055,26 +6299,96 @@
             if (serviceContainer) serviceContainer.style.display = "none";
             if (skipContainer) skipContainer.style.display = "block";
 
-            // auto-populate skip reason
+            // --- auto-populate skip reason ----------------------------
             if (unmetDropdown) {
               const key = (conditions.primarySkipReason || "").toLowerCase();
               const firstFail = (
                 conditions.failingReasons?.[0] || ""
               ).toLowerCase();
-              unmetDropdown.value =
+
+              // Pick the best-fit reason (now includes gas)
+              let auto =
                 key ||
-                (firstFail.includes("offline")
+                (firstFail.includes("gas level") ||
+                firstFail.includes("gas-normal")
+                  ? "gas-normalized"
+                  : firstFail.includes("offline")
                   ? "device-offline"
                   : firstFail.includes("location")
-                  ? "location-invalid"
+                  ? "location-stale"
                   : firstFail.includes("moving")
                   ? "device-moving"
-                  : unmetDropdown.value || "");
+                  : "");
+
+              if (auto) unmetDropdown.value = auto;
+
+              // --- (nice-to-have) prefill Step 5 note automatically ---
+              const noteBox =
+                document.getElementById("step-5-note") ||
+                document.querySelector(
+                  "#skip-reason-container textarea, #service-type-container textarea"
+                );
+
+              if (noteBox) {
+                if (unmetDropdown.value === "gas-normalized") {
+                  // Build gas snapshot with timestamp
+                  let block = "";
+                  try {
+                    block =
+                      typeof getGasSnapshotFromPanel === "function"
+                        ? getGasSnapshotFromPanel()
+                        : "";
+                    if (block) {
+                      const now = new Date();
+                      const ts =
+                        typeof FORMATTERS?.timestampMST === "function"
+                          ? FORMATTERS.timestampMST(now)
+                          : new Intl.DateTimeFormat("en-US", {
+                              timeZone: "America/Denver",
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                              hour12: false,
+                            }).format(now) + " MDT";
+                      block = block.replace(
+                        /(Gas Reading:\s*[^\n]+)/i,
+                        `$1 (${ts})`
+                      );
+                    }
+                  } catch {}
+
+                  noteBox.value =
+                    "Gas levels back to normal." +
+                    (block ? `\n\n${block}` : "");
+                } else if (!noteBox.value.trim()) {
+                  // Fallback: copy the selected reason label to notes
+                  const label =
+                    unmetDropdown.options[unmetDropdown.selectedIndex]?.text ||
+                    "";
+                  if (label) noteBox.value = label;
+                }
+              }
             }
+          }
+
+          // Notify any listeners and re-validate Step 5 immediately
+          dispatchDropdown.dispatchEvent(
+            new Event("change", { bubbles: true })
+          );
+          if (typeof validatePostButton === "function") {
+            validatePostButton("step-5");
+          }
+        } else {
+          // Even if value didn't change, ensure Step 5 button reflects current state
+          if (newValue === "no" && typeof validatePostButton === "function") {
+            validatePostButton("step-5");
           }
         }
 
-        // color-coding
+        // --- color-coding (unchanged) --------------------------------
         if (dispatchDropdown.value === "yes") {
           dispatchDropdown.style.backgroundColor = "#d4edda";
           dispatchDropdown.style.borderColor = "#28a745";
@@ -6329,88 +6643,52 @@
       function checkDispatchConditions(stepId) {
         console.log("checkDispatchConditions called for:", stepId);
 
-        // Add visual enhancement (make step-agnostic)
-        enhanceStepVisual(stepId); // Remove "Step5" from function name
+        // Visual tweaks (kept)
+        try {
+          enhanceStepVisual(stepId);
+        } catch (e) {
+          /* no-op */
+        }
 
-        // Get the actual dispatch conditions using connectivity data
-        const result = evaluateDispatchConditionsFromConnectivity();
-
-        const dispatchDropdown = document.getElementById("dispatch-decision");
+        // Show the outcome section for whatever step invoked this
         const outcomeSection = document.getElementById(stepId + "-outcome");
+        if (outcomeSection) outcomeSection.style.display = "block";
 
-        console.log("Dispatch conditions result:", result);
+        // 👇 Single source of truth: let the unified updater compute & set everything
+        const runUnified = () => {
+          if (typeof silentlyUpdateDispatchConditions === "function") {
+            silentlyUpdateDispatchConditions(); // sets dropdown, skip reason, textarea (gas), fires change
+          }
+        };
 
-        if (!dispatchDropdown || !outcomeSection) {
-          console.error("Required elements not found");
-          console.error(
-            "Looking for:",
-            stepId + "-outcome",
-            "and dispatch-decision"
+        // Do it now and on the next paint to beat any race with DOM rendering
+        runUnified();
+        requestAnimationFrame(runUnified);
+        setTimeout(runUnified, 0);
+
+        // (Optional) keep resolution reason auto-fill if empty
+        try {
+          const resolutionSelect = document.getElementById("resolution-reason");
+          if (resolutionSelect && !resolutionSelect.value) {
+            const resolutionType =
+              typeof determineResolutionType === "function"
+                ? determineResolutionType(currentAlert)
+                : "";
+            if (resolutionType) resolutionSelect.value = resolutionType;
+          }
+        } catch (e) {
+          console.warn(
+            "checkDispatchConditions: resolution select fill failed:",
+            e
           );
-          return;
         }
 
-        // Show outcome section for any step
-        outcomeSection.style.display = "block";
-
-        // Auto-populate based on conditions
-        if (result.canDispatch) {
-          dispatchDropdown.value = "yes";
-          // Auto-update resolution using centralized logic
-          const resolutionSelect = document.getElementById("resolution-reason");
-          if (resolutionSelect && !resolutionSelect.value) {
-            const resolutionType = determineResolutionType(currentAlert);
-            resolutionSelect.value = resolutionType;
-          }
-        } else {
-          dispatchDropdown.value = "no";
-          // Auto-update resolution using centralized logic
-          const resolutionSelect = document.getElementById("resolution-reason");
-          if (resolutionSelect && !resolutionSelect.value) {
-            const resolutionType = determineResolutionType(currentAlert);
-            resolutionSelect.value = resolutionType;
-          }
-
-          // Auto-select the first failed reason
-          setTimeout(() => {
-            const skipReasonSelect = document.getElementById("skip-reason");
-            if (skipReasonSelect && result.failedReasons.length > 0) {
-              const reason = result.failedReasons[0];
-              if (
-                reason.includes("Location unavailable") ||
-                reason.includes("too old") ||
-                reason.includes("location")
-              ) {
-                skipReasonSelect.value = "location-stale";
-              } else if (
-                reason.includes("Device offline") ||
-                reason.includes("offline")
-              ) {
-                skipReasonSelect.value = "device-offline";
-              } else if (
-                reason.includes("Device moving") ||
-                reason.includes("too fast") ||
-                reason.includes("moving")
-              ) {
-                skipReasonSelect.value = "device-moving";
-              }
-
-              console.log("Auto-selected skip reason:", skipReasonSelect.value);
-            }
-          }, 100);
-        }
-
-        // Trigger the display logic
-        handleDispatchDecision();
-
-        // Auto-populate notes with evaluation summary (use dynamic stepId)
-        setTimeout(() => {
-          const notesArea = document.getElementById(stepId + "-note");
-          if (notesArea && !notesArea.value.trim()) {
-            notesArea.value = generateDispatchAnalysisNotes(result);
-            validatePostButton(stepId);
-          }
-        }, 200);
+        // NOTE:
+        // - We no longer call evaluateDispatchConditionsFromConnectivity() here.
+        // - We do not directly set #dispatch-decision or #skip-reason here.
+        //   silentlyUpdateDispatchConditions() already sets them AND dispatches a 'change' event.
+        // - We do not call handleDispatchDecision() here; any listeners bound to the
+        //   dropdown's change event will run because the unified updater fires it.
       }
 
       function evaluateDispatchConditionsFromConnectivity() {
@@ -6892,6 +7170,10 @@
         } catch (e) {
           console.warn("triggerGasNormalization failed:", e);
         }
+
+        if (typeof silentlyUpdateDispatchConditions === "function") {
+          silentlyUpdateDispatchConditions();
+        }
       }
 
       function triggerResolutionFlow(
@@ -7089,30 +7371,37 @@ Waiting 30 minutes.`;
       }
 
       function determineResolutionType(alertData) {
-        // Dimension 1: Alert Type - EXPANDABLE
-        let alertCategory;
+        // 1) Category: gas alerts are "incident", non-gas are "false-alert"
+        const isGas =
+          (typeof isGasAlert === "function" && isGasAlert(alertData)) ||
+          /(^gas-|h2s|co|o2|lel)/i.test(alertData?.id || "") ||
+          /h2s|co|o2|lel/i.test(alertData?.gasType || "");
 
-        if (isGasAlert(alertData)) {
-          alertCategory = "incident";
-        } else {
-          alertCategory = "false-alert";
+        let category = isGas ? "incident" : "false-alert";
+
+        // Optional: if your pre-alert banner sets a flag, prefer that category
+        if (
+          alertData?.isPreAlert === true ||
+          window.currentAlert?.isPreAlert === true
+        ) {
+          category = "pre-alert";
         }
 
-        // Future expansion:
-        // Demo/Training
-        // System Test
-        // Pre-alert
-        // Multiple alert
-        // System Maintenance
+        // 2) Dispatch suffix: prefer explicit global, then dropdown, default to "no"
+        let hasDispatch =
+          typeof window.dispatchMade !== "undefined"
+            ? !!window.dispatchMade
+            : null;
 
-        // Dimension 2: Dispatch Status - CHECK SYSTEM STATE
-        const hasDispatch = dispatchMade;
+        if (hasDispatch === null) {
+          const dd = document.getElementById("dispatch-decision");
+          if (dd) hasDispatch = dd.value === "yes";
+        }
+        if (hasDispatch === null) hasDispatch = false;
 
-        // Build resolution string dynamically
-        const dispatchSuffix = hasDispatch
-          ? "with-dispatch"
-          : "without-dispatch";
-        return `${alertCategory}-${dispatchSuffix}`;
+        const suffix = hasDispatch ? "with-dispatch" : "without-dispatch";
+
+        return `${category}-${suffix}`;
       }
     </script>
   </body>
