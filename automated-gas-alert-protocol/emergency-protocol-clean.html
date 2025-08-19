@@ -1585,6 +1585,20 @@
 
       let alertsFromJSON = null;
 
+      function isAnyGasDangerousNow() {
+        const pills = document.querySelectorAll("[id$='-status']");
+        for (const el of pills) {
+          const id = (el.id || "").toLowerCase(); // e.g., 'h2s-status'
+          const txt = (el.textContent || "").trim().toUpperCase(); // e.g., 'HIGH'
+          if (id.startsWith("o2-")) {
+            if (/ENRICHMENT|DEPLETION/.test(txt)) return true;
+          } else if (/HIGH/.test(txt)) {
+            return true; // h2s / co / lel / any future gas with HIGH
+          }
+        }
+        return false; // all normal
+      }
+
       // Load JSON data when page loads
       document.addEventListener("DOMContentLoaded", function () {
         // Load JSON alerts
@@ -1685,6 +1699,7 @@
             protocolFile: "gas-emergency-protocol",
             gasType: "h2s-high",
             testType: "spontaneous",
+            gasNormalization: { enabled: false },
             deviceConditions: {
               lastComm: 5,
               battery: 85,
@@ -1702,6 +1717,7 @@
             protocolFile: "gas-emergency-protocol",
             gasType: "h2s-high",
             testType: "response",
+            gasNormalization: { enabled: false },
             deviceConditions: {
               lastComm: 5,
               battery: 85,
@@ -1745,12 +1761,12 @@
             gasType: "default",
             testType: "spontaneous",
             deviceConditions: {
-              lastComm: 45, // 45 minutes ago (BAD - offline too long)
-              battery: 5, // 5% (BAD - low battery)
-              signal: 8, // 8% (BAD - weak signal)
-              locationAge: 2,
-              deviceSpeed: 0.0,
-              deviceStatus: "Offline",
+              lastComm: 1, // 1 minute ago (GOOD - online)
+              battery: 85, // 85% (GOOD - high battery)
+              signal: 70, // 70% (GOOD - strong signal)
+              locationAge: 2880, // 2 days old (BAD - stale location)
+              deviceSpeed: 0.0, // Stationary (GOOD)
+              deviceStatus: "Online",
             },
           },
           "fall-detection": {
@@ -2352,21 +2368,21 @@
           ? `<strong>${label}</strong><br>${contactName}`
           : `<strong>${label}</strong>`;
 
-        // ✅ Build dropdown with ORIGINAL options only (removed dispatch-specific options)
+        // ✅ Build dropdown with ORIGINAL options only
         const controls = document.querySelector(".timer-controls");
         controls.innerHTML = `
-    <select data-cy="global-cancel-dropdown" onchange="handleGlobalTimerCancellation(this.value)" 
-            class="btn btn-secondary" 
-            style="padding: 8px 16px; font-size: 0.8em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; width: 100%;"            
-            aria-label="Cancel response timer">
-        <option value="">Cancel Timer</option>
-        <option value="user-callback">User called in and confirmed they are okay</option>
-        <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
-        <option value="ec-callback-30min">Emergency contact called in - Will contact user and call back (30 min timer)</option>
-        <option value="device-offline">Device went offline</option>
-        <option value="custom">Type reason</option>
-    </select>
-  `;
+  <select data-cy="global-cancel-dropdown" onchange="handleGlobalTimerCancellation(this.value)"
+          class="btn btn-secondary"
+          style="padding: 8px 16px; font-size: 0.8em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; width: 100%;"
+          aria-label="Cancel response timer">
+      <option value="">Cancel Timer</option>
+      <option value="user-callback">User called in and confirmed they are okay</option>
+      <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+      <option value="ec-callback-30min">Emergency contact called in - Will contact user and call back (30 min timer)</option>
+      <option value="device-offline">Device went offline</option>
+      <option value="custom">Type reason</option>
+  </select>
+`;
 
         // ✅ Start visual state
         globalTimer.classList.remove("timer-inactive");
@@ -2401,8 +2417,21 @@
             globalTimerInterval = null;
             globalTimerEndTime = null;
 
-            display.textContent = "00:00";
-            info.innerHTML = `<strong>⏰ Timer expired</strong>`;
+            // Reset to inactive state like cancelGlobalTimer
+            display.textContent = "--:--";
+            info.innerHTML = "<strong>No active timer</strong>";
+
+            const timer = document.getElementById("globalTimer");
+            if (timer) {
+              timer.classList.remove("timer-active");
+              timer.classList.add("timer-inactive");
+            }
+
+            // Disable cancel button
+            const cancelBtn = document.getElementById("cancelTimerBtn");
+            if (cancelBtn) {
+              cancelBtn.disabled = true;
+            }
 
             // 🔊 Optional audio
             try {
@@ -2427,7 +2456,10 @@
             }
 
             // Clear dropdown after expiry
-            document.querySelector(".timer-controls").innerHTML = "";
+            const timerControls = document.querySelector(".timer-controls");
+            if (timerControls) {
+              timerControls.innerHTML = "";
+            }
 
             if (activeTimerData && activeTimerData.stepId) {
               // Handle timer expiration based on type
@@ -2455,7 +2487,7 @@
                   `Step ${stepNum}: Timer expired. Proceeding to next step.`,
                   "step"
                 );
-                markStepComplete(activeTimerData.stepId);
+                markStepCompleted(activeTimerData.stepId);
 
                 // Check if this step has dispatch action (dispatch steps don't have next steps)
                 const protocolConfig = ProtocolFactory.getProtocolConfig(
@@ -2469,9 +2501,13 @@
                   enableNextStep(activeTimerData.stepId);
                 }
               }
-            } else {
-              // Non-step timers (if any)
-              const expiredMessage = `⏰ TIMER EXPIRED: ${activeTimerData.label}`;
+            } else if (activeTimerData) {
+              // Non-step timers - FIXED: Use description instead of label
+              const label =
+                activeTimerData.description ||
+                activeTimerData.contactName ||
+                "Unknown Timer";
+              const expiredMessage = `⏰ TIMER EXPIRED: ${label}`;
               addLogEntry(expiredMessage, "timer");
             }
 
@@ -2483,11 +2519,13 @@
                 "timer"
               );
             }
+
+            // Clear activeTimerData to prevent further issues
+            activeTimerData = null;
           }
         }
-
-        updateDisplay();
-        globalTimerInterval = setInterval(updateDisplay, 1000);
+        updateDisplay(); // Initial display update
+        globalTimerInterval = setInterval(updateDisplay, 1000); // Start the timer interval
       }
 
       function handleGlobalTimerCancellation(reason) {
@@ -2538,7 +2576,7 @@
           // Mark the originating step as completed before triggering resolution
           if (currentStepId && canStepTriggerResolution(currentStepId)) {
             console.log("Marking step as completed:", currentStepId);
-            markStepComplete(currentStepId);
+            markStepCompleted(currentStepId);
 
             // Also mark main step as completed if this is a sub-step
             if (
@@ -2550,7 +2588,7 @@
                 currentStepId.lastIndexOf("-")
               );
               console.log(`Also marking main ${mainStepId} as completed`);
-              markStepComplete(mainStepId);
+              markStepCompleted(mainStepId);
             }
 
             console.log("Step marked as completed, now triggering resolution");
@@ -2598,81 +2636,37 @@
           } else {
             console.error("NO STEP ID - Resolution flow failed!");
           }
-        } else if (reason === "ec-callback-cancel-dispatch") {
-          // Option 1: EC confirmed user is okay - RESOLVE IMMEDIATELY
-          addLogEntry(
-            "Emergency contact called in, advised to cancel dispatch. They confirmed user is okay. Resolving alert.",
-            "step"
-          );
-
-          // Use unified resolution flow for immediate resolution
-          if (currentStepId) {
-            triggerResolutionFlow(
-              currentStepId,
-              "EC cancelled dispatch and confirmed user okay"
-            );
-          }
-        } else if (reason === "ec-callback-cancel-dispatch-30min") {
-          // Option 2: EC will check on user - START 30-MIN TIMER
-          addLogEntry(
-            "Emergency contact called in, advised to cancel dispatch. They will check on user and call back within 30 minutes.",
-            "step"
-          );
-
-          // Cancel dispatch timer and start new 30-minute EC callback timer
-          if (currentStepId) {
-            startGlobalTimer(
-              "ec-callback",
-              "EC Callback",
-              "Emergency Contact",
-              1800
-            );
-          }
-
-          // Mark current step as "Waiting" for EC callback
-          const statusBadge = document.getElementById(
-            currentStepId + "-status"
-          );
-          if (statusBadge) {
-            statusBadge.textContent = "Waiting";
-            statusBadge.className = "status-badge waiting";
-          }
-
-          // Update timer info display
-          const info = document.getElementById("timerInfo");
-          if (info) {
-            info.innerHTML = "<strong>Waiting for EC callback</strong>";
-          }
-
-          // Don't resolve - just wait for EC callback
-          return;
         } else if (reason === "ec-callback-30min") {
           addLogEntry(
             "Emergency contact called in, will check on user and call back within 30 minutes.",
             "step"
           );
-          // Start new 30-minute timer
-          if (currentStepId) {
-            startGlobalTimer(
-              "ec-callback",
-              "EC Callback",
-              "Emergency Contact",
-              1800
-            );
-          }
 
-          // Update timer info display to something better than "Timer cancelled"
-          const info = document.getElementById("timerInfo");
-          if (info) {
-            info.innerHTML = "<strong>Waiting for EC callback</strong>";
+          // Only start new timer if no dispatch is active
+          if (!dispatchMade || !globalTimerInterval) {
+            if (currentStepId) {
+              startGlobalTimer(
+                "ec-callback",
+                "EC Callback",
+                "Emergency Contact",
+                1800
+              );
+            }
+
+            // Update timer info display
+            const info = document.getElementById("timerInfo");
+            if (info) {
+              info.innerHTML = "<strong>Waiting for EC callback</strong>";
+            }
           }
+          // If dispatch is active, do nothing (keep timer running)
 
           // Don't show "Timer cancelled" - return early
           return;
         } else if (reason === "device-offline") {
           addLogEntry("Device went offline", "step");
           if (currentStepId) {
-            markStepComplete(currentStepId);
+            markStepCompleted(currentStepId);
             enableNextStep(currentStepId);
           }
         } else if (reason === "custom") {
@@ -2680,7 +2674,7 @@
           if (customReason) {
             addLogEntry("Timer cancelled: " + customReason, "step");
             if (currentStepId) {
-              markStepComplete(currentStepId);
+              markStepCompleted(currentStepId);
               enableNextStep(currentStepId);
             }
           }
@@ -2705,10 +2699,7 @@
         if (dropdown) dropdown.value = "";
 
         // Clear activeTimerData ONLY if not starting a new timer
-        if (
-          reason !== "ec-callback-30min" &&
-          reason !== "ec-callback-cancel-dispatch-30min"
-        ) {
+        if (reason !== "ec-callback-30min") {
           activeTimerData = null;
         }
       }
@@ -2736,7 +2727,23 @@
         }
 
         addLogEntry("Timer cancelled", "timer");
-        // stopTabFlashing();
+
+        // ===== ADD THESE LINES TO STOP SOUNDS =====
+        // Stop tab flashing
+        if (window.tabFlashInterval) {
+          clearInterval(window.tabFlashInterval);
+          window.tabFlashInterval = null;
+          document.title =
+            window.originalTitle ||
+            "Enhanced Blackline Live - Alert Management";
+        }
+
+        // Stop beeping sounds
+        if (window.beepTimeouts && Array.isArray(window.beepTimeouts)) {
+          window.beepTimeouts.forEach((timeout) => clearTimeout(timeout));
+          window.beepTimeouts = [];
+        }
+        // ===== END SOUND STOPPING =====
       }
 
       // ═══════════════════════════════════════════════════════════════
@@ -2862,6 +2869,14 @@
               timerDuration
             );
             console.log("startGlobalTimer call completed");
+
+            // Add status badge logic
+            const statusBadge = document.getElementById(stepId + "-status");
+            if (statusBadge) {
+              statusBadge.textContent = "Waiting";
+              statusBadge.className = "status-badge waiting";
+              console.log("Step status set to Waiting");
+            }
           } else {
             if (!timerDuration)
               console.log(`No timer duration found for ${stepId}`);
@@ -2893,7 +2908,11 @@
 
         let enable = false;
 
-        if (stepId === "step-5") {
+        // Check if this step contains dispatch action (action-based detection)
+        const hasDispatchElements =
+          stepEl.querySelector("#dispatch-decision") !== null;
+
+        if (hasDispatchElements) {
           const decision = (
             document.getElementById("dispatch-decision")?.value || ""
           ).toLowerCase();
@@ -2928,6 +2947,161 @@
         }
       }
 
+      // UNIVERSAL HELPER FUNCTIONS (add these at the top of the function)
+      function handleCallDeviceOutcome(
+        selectedValue,
+        currentUser,
+        currentAlert
+      ) {
+        let noteText = "";
+        let shouldScrollToResolution = false;
+
+        if (selectedValue === "confirmed-ok") {
+          noteText = `Spoke with ${
+            currentUser?.name || "user"
+          }. Confirmed they are okay. Resolving alert.`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "user-callback") {
+          noteText = `User called in. Confirmed they are okay.`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "no-answer") {
+          noteText = `Called device. No answer`;
+        } else if (selectedValue === "unable-to-call") {
+          noteText = `Unable to call, device offline`;
+        }
+
+        return { noteText, shouldScrollToResolution };
+      }
+
+      function handleCallUserOutcome(selectedValue, currentUser, currentAlert) {
+        let noteText = "";
+        let shouldScrollToResolution = false;
+
+        if (selectedValue === "confirmed-ok") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }. Confirmed they are okay. Resolving alert.`.trim();
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback") {
+          noteText = `Emergency contact called in and confirmed ${
+            currentUser?.name || "user"
+          } is okay. Resolving alert.`; // ✅ ADDED PERIOD
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "user-callback") {
+          noteText = `User called in. Confirmed they are okay. Resolving alert.`; // ✅ ADDED PERIOD
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback-30min") {
+          noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
+        } else if (selectedValue === "no-answer-voicemail") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }, no answer. Left voicemail`.trim();
+        } else if (selectedValue === "no-answer-already-left") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }, no answer. Voicemail had already been left`.trim();
+        } else if (selectedValue === "no-answer-mailbox-full") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }, no answer. Unable to leave voicemail, mailbox full`.trim();
+        } else if (selectedValue === "no-answer-unable-voicemail") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }, no answer. Unable to leave voicemail`.trim();
+        } else if (selectedValue === "no-answer-mailbox-not-setup") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }, no answer. Unable to leave voicemail, mailbox not set up yet`.trim();
+        } else if (selectedValue === "no-phone-number") {
+          noteText = `Unable to call, user has no phone number assigned`;
+        } else if (selectedValue === "number-disconnected") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }. Number has been changed, disconnected or no longer in service`.trim();
+        } else if (selectedValue === "unable-to-connect") {
+          noteText = `Called ${currentUser?.name || "user"} at ${
+            currentUser?.mobile || ""
+          }. Unable to connect`.trim();
+        }
+
+        return { noteText, shouldScrollToResolution };
+      }
+
+      function handleCallEmergencyContactsOutcome(
+        selectedValue,
+        currentUser,
+        currentAlert,
+        ecIndex = 0
+      ) {
+        let noteText = "";
+        let shouldScrollToResolution = false;
+
+        // Get the specific emergency contact
+        const userKey = currentAlert?.user;
+        const contact =
+          userKey &&
+          AlertDataManager.usersData[userKey]?.emergencyContacts?.length >
+            ecIndex
+            ? AlertDataManager.usersData[userKey].emergencyContacts[ecIndex]
+            : null;
+
+        const contactName = contact ? contact.name : "Emergency Contact";
+        const contactPhone = contact ? contact.phone : "";
+
+        if (selectedValue === "confirmed-ok") {
+          noteText = `Called ${contactName} at ${contactPhone}. Confirmed ${
+            currentUser?.name || "user"
+          } is okay`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback") {
+          noteText = "Emergency contact called in and confirmed user is okay";
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback-30min-outbound") {
+          noteText = `Called ${contactName} at ${contactPhone}. EC will check on user and call back within 30 minutes`;
+          shouldScrollToResolution = false;
+        } else if (selectedValue === "no-answer-voicemail") {
+          noteText = `Called ${contactName} at ${contactPhone}. No answer, left voicemail`;
+        } else if (selectedValue === "no-answer-already-left") {
+          noteText = `Called ${contactName} at ${contactPhone}. No answer, voicemail already left`;
+        } else if (selectedValue === "no-answer-unable") {
+          noteText = `Called ${contactName} at ${contactPhone}. No answer, unable to leave voicemail`;
+        } else if (selectedValue === "no-answer-box-full") {
+          noteText = `Called ${contactName} at ${contactPhone}. No answer, voicemail box full`;
+        } else if (selectedValue === "no-answer-not-set") {
+          noteText = `Called ${contactName} at ${contactPhone}. No answer, voicemail not set up`;
+        } else if (selectedValue === "wrong-number") {
+          noteText = `Called ${contactName} at ${contactPhone}. Wrong number`;
+        } else if (selectedValue === "unable-to-connect") {
+          noteText = `Called ${contactName} at ${contactPhone}. Unable to connect`;
+        } else if (selectedValue === "number-invalid") {
+          noteText = `Called ${contactName} at ${contactPhone}. Number invalid, changed, or out of service`;
+        }
+
+        return { noteText, shouldScrollToResolution };
+      }
+
+      function handleDispatchOutcome(selectedValue, currentUser, currentAlert) {
+        let noteText = "";
+        let shouldScrollToResolution = false;
+
+        if (selectedValue === "user-callback") {
+          noteText = `User called in. Confirmed they are okay. Resolving alert`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback") {
+          noteText = `Emergency contact called in and confirmed user is okay. Resolving alert`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback-cancel-dispatch") {
+          noteText = `Emergency contact called in, advised to cancel dispatch. They confirmed user is okay / will check on user. Resolving alert`;
+          shouldScrollToResolution = true;
+        } else if (selectedValue === "ec-callback-cancel-dispatch-30min") {
+          noteText = `Emergency contact called in, advised to cancel dispatch. They will check on user and call back within 30 minutes`;
+        } else if (selectedValue === "ec-callback-30min") {
+          noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
+        }
+
+        return { noteText, shouldScrollToResolution };
+      }
+
       function autoPopulateFromDropdown(stepId) {
         const select = document.getElementById(stepId + "-select");
         const note = document.getElementById(stepId + "-note");
@@ -2936,6 +3110,12 @@
         if (!select || !note) return;
 
         const selectedValue = select.value;
+        console.log(
+          "DEBUG: selectedValue =",
+          selectedValue,
+          "for stepId =",
+          stepId
+        );
         if (!selectedValue) return;
 
         let noteText = "";
@@ -2945,6 +3125,10 @@
         const protocolConfig = ProtocolFactory.getProtocolConfig(
           currentAlert.id
         );
+        if (!protocolConfig) {
+          console.warn("No protocol config found for alert:", currentAlert.id);
+          return;
+        }
 
         // Handle sub-step IDs (step-1-1, step-1-2, etc.)
         let actualStepId = stepId;
@@ -2968,134 +3152,90 @@
           }
         }
 
-        const currentStep = protocolConfig.steps.find((s) => s.id === stepId);
+        const currentStep =
+          protocolConfig.steps.find((s) => s.id === stepId) ||
+          protocolConfig.steps.find((s) => s.id === actualStepId);
         const stepAction = subStepAction || currentStep?.action;
 
         console.log("DEBUG: stepId =", stepId, "stepAction =", stepAction);
 
-        // ACTION-BASED LOGIC
+        // ═══════════════════════════════════════════════════════════
+        // ACTION-BASED LOGIC (Primary approach)
+        // ═══════════════════════════════════════════════════════════
         if (stepAction === "call-device") {
-          if (selectedValue === "confirmed-ok") {
-            noteText = `Spoke with ${
-              currentUser?.name || "user"
-            }. Confirmed they are okay. Resolving alert.`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay.`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "no-answer") {
-            noteText = `Called device. No answer`;
-          } else if (selectedValue === "unable-to-call") {
-            noteText = `Unable to call, device offline`;
-          }
+          const result = handleCallDeviceOutcome(
+            selectedValue,
+            currentUser,
+            currentAlert
+          );
+          noteText = result.noteText;
+          shouldScrollToResolution = result.shouldScrollToResolution;
+        } else if (stepAction === "message-device") {
+          const result = handleMessageDeviceOutcome(
+            selectedValue,
+            currentUser,
+            currentAlert
+          );
+          noteText = result.noteText;
+          shouldScrollToResolution = result.shouldScrollToResolution;
         } else if (stepAction === "call-user") {
-          if (selectedValue === "confirmed-ok") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }. Confirmed they are okay. Resolving alert.`.trim();
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback") {
-            noteText = `Emergency contact called in and confirmed ${
-              currentUser?.name || "user"
-            } is okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback-30min") {
-            noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
-          } else if (selectedValue === "no-answer-voicemail") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }, no answer. Left voicemail`.trim();
-          } else if (selectedValue === "no-answer-already-left") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }, no answer. Voicemail had already been left`.trim();
-          } else if (selectedValue === "no-answer-mailbox-full") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }, no answer. Unable to leave voicemail, mailbox full`.trim();
-          } else if (selectedValue === "no-answer-unable-voicemail") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }, no answer. Unable to leave voicemail`.trim();
-          } else if (selectedValue === "no-answer-mailbox-not-setup") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }, no answer. Unable to leave voicemail, mailbox not set up yet`.trim();
-          } else if (selectedValue === "no-phone-number") {
-            noteText = `Unable to call, user has no phone number assigned`;
-          } else if (selectedValue === "number-disconnected") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }. Number has been changed, disconnected or no longer in service`.trim();
-          } else if (selectedValue === "unable-to-connect") {
-            noteText = `Called ${currentUser?.name || "user"} at ${
-              currentUser?.mobile || ""
-            }. Unable to connect`.trim();
-          }
+          const result = handleCallUserOutcome(
+            selectedValue,
+            currentUser,
+            currentAlert
+          );
+          noteText = result.noteText;
+          shouldScrollToResolution = result.shouldScrollToResolution;
         } else if (
           stepAction === "call-emergency-contacts" ||
           stepId === getEmergencyContactsStepId() ||
           stepId.startsWith(getEmergencyContactsStepId() + "-")
         ) {
-          if (selectedValue === "confirmed-ok") {
-            noteText = `Emergency contact called in. Confirmed user is okay and advised to resolve alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback") {
-            noteText = `Emergency contact called in and confirmed user is okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback-30min") {
-            noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
-          } else if (selectedValue === "no-answer") {
-            noteText = `No answer from contacts`;
-          } else if (selectedValue === "completed") {
-            noteText = `Contacted emergency contacts`;
-          } else if (selectedValue === "no-answer-voicemail") {
-            noteText = `No answer, left voicemail`;
-          } else if (selectedValue === "no-answer-unable") {
-            noteText = `No answer, unable to leave voicemail`;
-          } else if (selectedValue === "wrong-number") {
-            noteText = `Wrong number`;
-          } else if (selectedValue === "unable-to-connect") {
-            noteText = `Unable to connect`;
+          // Extract EC index from stepId (e.g., "step-4-1" -> ecIndex = 0)
+          let ecIndex = 0;
+          if (stepId.includes("-")) {
+            const parts = stepId.split("-");
+            if (parts.length >= 3) {
+              ecIndex = parseInt(parts[2]) - 1; // Convert 1-based to 0-based index
+            }
           }
+
+          const result = handleCallEmergencyContactsOutcome(
+            selectedValue,
+            currentUser,
+            currentAlert,
+            ecIndex
+          );
+          noteText = result.noteText;
+          shouldScrollToResolution = result.shouldScrollToResolution;
         } else if (stepAction === "dispatch") {
-          if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback") {
-            noteText = `Emergency contact called in and confirmed user is okay. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback-cancel-dispatch") {
-            noteText = `Emergency contact called in, advised to cancel dispatch. They confirmed user is okay / will check on user. Resolving alert`;
-            shouldScrollToResolution = true;
-          } else if (selectedValue === "ec-callback-cancel-dispatch-30min") {
-            noteText = `Emergency contact called in, advised to cancel dispatch. They will check on user and call back within 30 minutes`;
-          } else if (selectedValue === "ec-callback-30min") {
-            noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
-          }
+          const result = handleDispatchOutcome(
+            selectedValue,
+            currentUser,
+            currentAlert
+          );
+          noteText = result.noteText;
+          shouldScrollToResolution = result.shouldScrollToResolution;
         }
-        // FALLBACKS for protocols without action defined
-        else if (stepId === "step-1") {
+
+        // ═══════════════════════════════════════════════════════════
+        // STEP-BASED FALLBACKS (For protocols without proper actions)
+        // ═══════════════════════════════════════════════════════════
+        else if (stepId === "step-1" || actualStepId === "step-1") {
           if (selectedValue === "confirmed-ok") {
             noteText = `Spoke with ${
               currentUser?.name || "user"
-            }. Confirmed they are okay. Resolving alert`;
+            }. Confirmed they are okay`;
             shouldScrollToResolution = true;
           } else if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay. Resolving alert`;
+            noteText = `User called in. Confirmed they are okay`;
             shouldScrollToResolution = true;
           } else if (selectedValue === "no-answer") {
             noteText = `Called device. No answer`;
           } else if (selectedValue === "unable-to-call") {
             noteText = `Unable to call, device offline`;
           }
-        } else if (stepId === "step-2") {
+        } else if (stepId === "step-2" || actualStepId === "step-2") {
           if (selectedValue === "unable-to-send") {
             noteText = `Unable to send text message, device offline`;
           } else if (selectedValue === "no-response") {
@@ -3110,7 +3250,7 @@
             noteText = `Received message "False alarm" from device. User confirmed okay`;
             shouldScrollToResolution = true;
           }
-        } else if (stepId === "step-3") {
+        } else if (stepId === "step-3" || actualStepId === "step-3") {
           if (selectedValue === "confirmed-ok") {
             noteText = `Called ${currentUser?.name || "user"} at ${
               currentUser?.mobile || ""
@@ -3119,10 +3259,10 @@
           } else if (selectedValue === "ec-callback") {
             noteText = `Emergency contact called in and confirmed ${
               currentUser?.name || "user"
-            } is okay. Resolving alert`.trim();
+            } is okay`;
             shouldScrollToResolution = true;
           } else if (selectedValue === "user-callback") {
-            noteText = `User called in. Confirmed they are okay. Resolving alert`;
+            noteText = `User called in. Confirmed they are okay`;
             shouldScrollToResolution = true;
           } else if (selectedValue === "ec-callback-30min") {
             noteText = `Emergency contact called in, will check on user and call back within 30 minutes`;
@@ -3155,26 +3295,51 @@
           }
         }
 
-        // FINAL FALLBACK: if we still have no note, use the dropdown's label
+        // ═══════════════════════════════════════════════════════════
+        // FINAL FALLBACK: Use dropdown label if no noteText generated
+        // ═══════════════════════════════════════════════════════════
         if (!noteText) {
           const label =
             select.options[select.selectedIndex]?.text || selectedValue;
           noteText = label;
+          console.warn(
+            "Using fallback noteText for stepId:",
+            stepId,
+            "action:",
+            stepAction,
+            "noteText:",
+            noteText
+          );
         }
 
-        // ─────────────────────────────────────────────────────────
-        // Append Gas snapshot ONLY for resolving notes in gas alerts
-        // (No new helpers: reuse getGasSnapshotFromPanel)
-        // ─────────────────────────────────────────────────────────
+        // ═══════════════════════════════════════════════════════════
+        // GAS ALERT ENHANCEMENTS (Add gas data for resolving outcomes)
+        // ═══════════════════════════════════════════════════════════
+        console.log("DEBUG GAS CHECK:");
+        console.log("- isGasAlert:", window.isGasAlert?.(currentAlert));
+        console.log("- noteText:", noteText);
+        console.log(
+          "- confirmed regex test:",
+          /confirmed.*okay/i.test(noteText) ||
+            /confirmed user is okay/i.test(noteText)
+        );
+        console.log("- Gas Type test:", !/Gas Type:\s/i.test(noteText));
+
         if (
           window.isGasAlert?.(currentAlert) &&
-          /resolving alert/i.test(noteText) &&
+          (/confirmed.*okay/i.test(noteText) ||
+            /confirmed user is okay/i.test(noteText)) &&
           !/Gas Type:\s/i.test(noteText)
         ) {
+          console.log("DEBUG GAS: Gas section triggered!");
+
           const gasBlockRaw =
             typeof getGasSnapshotFromPanel === "function"
               ? getGasSnapshotFromPanel()
               : "";
+
+          console.log("DEBUG GAS: gasBlockRaw =", gasBlockRaw);
+
           if (gasBlockRaw) {
             const now = new Date();
             const ts =
@@ -3196,16 +3361,34 @@
               `$1 (${ts})`
             );
 
-            // Avoid repeating "Resolving alert." if it's already in the note
-            const alreadyResolving = /resolving alert/i.test(noteText);
-            const preface = alreadyResolving
-              ? "Gas readings back to normal."
-              : "Gas readings back to normal. Resolving alert.";
+            // Check actual gas levels instead of hardcoding "back to normal"
+            const gasStillHigh =
+              typeof isAnyGasDangerousNow === "function"
+                ? isAnyGasDangerousNow()
+                : !isGasCurrentlyNormalized();
 
-            noteText += `\n\n${preface}\n\n${gasBlockWithTs}`;
+            if (gasStillHigh) {
+              // Gas is still HIGH - add warning instead
+              const warningText = "⚠️ Gas levels still HIGH.";
+              noteText += `\n\n${warningText}\n\n${gasBlockWithTs}`;
+            } else {
+              // Gas is actually normal - use the original logic
+              const alreadyResolving = /confirmed they are okay/i.test(
+                noteText
+              );
+              const preface = alreadyResolving
+                ? "Gas readings back to normal."
+                : "Gas readings back to normal. Resolving alert.";
+              noteText += `\n\n${preface}\n\n${gasBlockWithTs}`;
+            }
+          } else {
+            console.log("DEBUG GAS: No gasBlockRaw data!");
           }
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // SET NOTE VALUE AND VALIDATE
+        // ═══════════════════════════════════════════════════════════
         note.value = noteText;
         console.log("Setting noteText:", noteText);
 
@@ -3297,50 +3480,74 @@
       }
 
       function postNote(stepId) {
-        console.log(
-          "=== postNote called for:",
-          stepId,
-          "at",
-          new Date().toISOString()
-        );
-
-        // ── ensure protocolState shape ─────────────────────────────────────────────
+        // Ensure protocolState exists
         if (!window.protocolState) window.protocolState = {};
         if (!Array.isArray(protocolState.completedSteps))
           protocolState.completedSteps = [];
 
-        // ── helpers: robust element resolution ─────────────────────────────────────
+        // Element resolution helpers
         const resolveIO = (id) => {
           const tryBases = [id];
-          const m = id.match(/^(step-\d+)-\d+$/); // sub-step fallback: step-1-1 -> step-1
+          let actionKey = "";
+
+          try {
+            const cfg = ProtocolFactory.getProtocolConfig(currentAlert.id);
+            if (/^action-/.test(id)) {
+              actionKey = id.replace(/^action-/, "");
+            } else {
+              const baseStepId = id.match(/^(step-\d+)/)?.[1] || id;
+              const stepObj =
+                cfg?.steps?.find((s) => s.id === id) ||
+                cfg?.steps?.find((s) => s.id === baseStepId);
+              if (stepObj?.action) actionKey = stepObj.action;
+            }
+          } catch {}
+
+          if (actionKey) tryBases.unshift(`action-${actionKey}`);
+
+          const m = id.match(/^(step-\d+)-\d+$/);
           if (m) tryBases.push(m[1]);
 
           let note = null,
             select = null;
+
           for (const base of tryBases) {
             note = note || document.getElementById(base + "-note");
             select = select || document.getElementById(base + "-select");
           }
+
           if (!note || !select) {
-            const container = document.getElementById(id);
+            const container =
+              (actionKey &&
+                document.querySelector(`[data-action="${actionKey}"]`)) ||
+              document.getElementById(id);
             if (container) {
-              note = note || container.querySelector("textarea");
-              select = select || container.querySelector("select");
+              const key =
+                container.getAttribute?.("data-action") || actionKey || "";
+              note =
+                note ||
+                container.querySelector(
+                  `textarea[data-action="${key}"], textarea`
+                );
+              select =
+                select ||
+                container.querySelector(`select[data-action="${key}"], select`);
             }
           }
-          return { note, select };
+
+          return { note, select, actionKey };
         };
 
-        let { note, select } = resolveIO(stepId);
+        let { note, select, actionKey } = resolveIO(stepId);
 
-        // If note is empty, try to auto-populate once from the dropdown
+        // Auto-populate if empty
         if (
           note &&
           !note.value.trim() &&
           typeof autoPopulateFromDropdown === "function"
         ) {
           autoPopulateFromDropdown(stepId);
-          ({ note, select } = resolveIO(stepId)); // re-resolve
+          ({ note, select, actionKey } = resolveIO(stepId));
         }
 
         if (!note || !note.value.trim()) {
@@ -3348,12 +3555,13 @@
           return;
         }
 
-        // ── text helpers ───────────────────────────────────────────────────────────
+        // Helper functions
         const stepLabel = (() => {
           const raw = String(stepId).replace(/^step-/, "");
           const parts = raw.split("-").filter(Boolean);
-          return "Step " + parts.join(".");
+          return /^step-/.test(stepId) ? "Step " + parts.join(".") : "";
         })();
+
         const stripLeadingStepPrefix = (text) =>
           String(text)
             .replace(/^Step\s+\d+(?:\.\d+)?:\s*/i, "")
@@ -3362,38 +3570,27 @@
         const selectedOutcome = select ? select.value : "";
         const rawMessage = note.value.trim();
         const actionText = stripLeadingStepPrefix(rawMessage);
+        const actionLabel =
+          (actionKey &&
+            (window.ACTION_LABELS?.[actionKey] ||
+              actionKey.replace(/-/g, " "))) ||
+          "";
 
-        console.log("Selected outcome:", selectedOutcome);
-        console.log("Log actionText (prefix stripped):", actionText);
-
-        // ── config ─────────────────────────────────────────────────────────────────
+        // Get protocol config
         const protocolConfig = ProtocolFactory.getProtocolConfig(
           currentAlert.id
         );
-        const currentStep = protocolConfig.steps.find((s) => s.id === stepId);
-        const isGas = (() => {
-          try {
-            // Primary: explicit check
-            if (typeof isGasAlert === "function" && isGasAlert(currentAlert))
-              return true;
+        const currentStep =
+          protocolConfig.steps.find((s) => s.id === stepId) ||
+          protocolConfig.steps.find(
+            (s) => s.id === stepId.split("-").slice(0, 2).join("-")
+          ) ||
+          protocolConfig.steps.find((s) => s.action === actionKey);
 
-            // Fallback A: if a Gas Readings (Live) panel exists
-            const hasPanel = !!Array.from(document.querySelectorAll("*")).find(
-              (el) => /Gas Readings\s*\(Live\)/i.test(el.textContent || "")
-            );
-            if (hasPanel) return true;
+        // Check if gas alert
+        const isGas = window.isGasAlert?.(currentAlert) || false;
 
-            // Fallback B: if we can build a snapshot, assume gas context
-            if (typeof getGasSnapshotFromPanel === "function") {
-              const probe = getGasSnapshotFromPanel();
-              if (probe && /Gas Type:\s*(H₂S|O₂|CO|LEL)/i.test(probe))
-                return true;
-            }
-          } catch {}
-          return false;
-        })();
-
-        // Unified logger: never crash if addGasLogEntry is missing
+        // Unified logger (gas data already appended by autoPopulateFromDropdown)
         const logStep = (text) => {
           if (isGas && typeof addGasLogEntry === "function") {
             addGasLogEntry(text, stepId);
@@ -3402,13 +3599,79 @@
           }
         };
 
-        // Standard cycle line
         const CYCLE_TEXT =
           typeof CYCLE_LINE === "string"
             ? CYCLE_LINE
             : "🔄 Repeating STEPS 1, 2, 3 & 4 until someone is reached.";
 
-        // ── DISPATCH (action-based) ────────────────────────────────────────────────
+        // Mark step as completed - HELPER FUNCTION INSIDE postNote (uses closure)
+        const markStepCompleted = (targetStepId = stepId) => {
+          const stepEl = document.getElementById(targetStepId); // ← Use parameter
+          const statusBadge = document.getElementById(targetStepId + "-status"); // ← Use parameter
+
+          if (stepEl) {
+            stepEl.classList.remove("active");
+            stepEl.classList.add("completed");
+            stepEl.style.opacity = "0.8";
+            const actionButton = stepEl.querySelector(
+              'button:not([onclick*="postNote"])'
+            );
+            if (actionButton) {
+              actionButton.disabled = true;
+              actionButton.classList.remove("btn-primary");
+              actionButton.classList.add("btn-secondary");
+            }
+            stepEl
+              .querySelectorAll("select")
+              .forEach((sel) => (sel.disabled = true));
+          }
+
+          if (statusBadge) {
+            statusBadge.textContent = "Completed";
+            statusBadge.className = "status-badge completed";
+          }
+
+          if (typeof stopTabFlashing === "function") stopTabFlashing();
+          protocolState.completedSteps.push(targetStepId); // ← Use parameter
+        };
+
+        // Reset form inputs - HELPER FUNCTION
+        const resetFormInputs = () => {
+          note.value = "";
+          if (select) select.value = "";
+          note.disabled = false;
+
+          // Clear dispatch dropdowns if this was a dispatch step
+          const dispatchDropdown = document.getElementById("dispatch-decision");
+          if (dispatchDropdown) {
+            dispatchDropdown.value = "";
+          }
+
+          const serviceDropdown = document.getElementById("service-type");
+          if (serviceDropdown) {
+            serviceDropdown.value = "";
+          }
+
+          // Update dispatch UI visibility
+          const serviceContainer = document.getElementById(
+            "service-type-container"
+          );
+          if (serviceContainer) {
+            serviceContainer.style.display = "none";
+          }
+
+          const skipContainer = document.getElementById(
+            "skip-reason-container"
+          );
+          if (skipContainer) {
+            skipContainer.style.display = "block";
+          }
+
+          if (typeof validatePostButton === "function")
+            validatePostButton(stepId);
+        };
+
+        // DISPATCH HANDLING
         if (currentStep && currentStep.action === "dispatch") {
           const decisionEl = document.getElementById("dispatch-decision");
           const dispatchDecision = decisionEl ? decisionEl.value : "";
@@ -3424,7 +3687,6 @@
             const svcEl = document.getElementById("dispatch");
             const selectedService = svcEl ? (svcEl.value || "").trim() : "";
 
-            // Build comprehensive NO-dispatch log (prefer generator, fallback inline)
             let msg;
             try {
               if (typeof generateDispatchProtocolLog === "function") {
@@ -3438,24 +3700,14 @@
                 throw new Error("generateDispatchProtocolLog not available");
               }
             } catch (e) {
-              console.error("generateDispatchProtocolLog failed:", e);
-
-              // Inline fallback reading the Connectivity Panel
               const lastTxt =
                 document.getElementById("last-comm-time")?.textContent || "";
               const battTxt =
                 document.getElementById("battery-level")?.textContent || "";
               const sigTxt =
                 document.getElementById("signal-strength")?.textContent || "";
-              const locEl = document.getElementById("device-location");
-              const coordEl = document.getElementById("device-coordinates");
-              const speedEl = document.getElementById("device-speed");
-              const tsEl = document.getElementById("location-timestamp");
 
-              const num = (s) => {
-                const m = String(s).match(/-?\d+(\.\d+)?/);
-                return m ? Number(m[0]) : NaN;
-              };
+              const parts = [];
               const parseMins = (t) => {
                 const s = String(t).toLowerCase();
                 const m = s.match(/(\d+)\s*min/);
@@ -3465,30 +3717,31 @@
                 const a = s.match(/(\d+).*ago/);
                 return a ? +a[1] : NaN;
               };
+              const num = (s) => {
+                const m = String(s).match(/-?\d+(\.\d+)?/);
+                return m ? Number(m[0]) : NaN;
+              };
 
               const mins = parseMins(lastTxt);
               const b = num(battTxt);
               const sg = num(sigTxt);
-              const parts = [];
+
               if (!Number.isNaN(mins)) parts.push(`last comm ${mins} min ago`);
               if (!Number.isNaN(b)) parts.push(`battery ${b}%`);
               if (!Number.isNaN(sg)) parts.push(`signal ${sg}%`);
+
               const finalReason =
                 /offline/i.test(reasonText) && parts.length
                   ? `device offline (${parts.join(", ")})`
                   : reasonText;
-
-              msg = `${stepLabel}: Unable to dispatch - ${finalReason}.`;
-              msg += `\n\nLast Known Location`;
-              if (locEl) msg += `\nAddress: ${locEl.textContent}`;
-              if (coordEl) msg += `\nCoordinates: ${coordEl.textContent}`;
-              if (speedEl) msg += `\nSpeed: ${speedEl.textContent}`;
-              if (tsEl) msg += `\nLast Location Date/Time: ${tsEl.textContent}`;
+              msg = `${stepLabel}${
+                actionLabel ? ` (${actionLabel})` : ""
+              }: Unable to dispatch - ${finalReason}.`;
             }
 
             if (!msg.endsWith(".")) msg += ".";
 
-            // Exception: when this is a gas alert and skip-reason is “gas-normalized”, append snapshot
+            // Gas normalized check for dispatch skip
             if (isGas) {
               const skipReasonVal = (
                 document.getElementById("skip-reason")?.value || ""
@@ -3534,41 +3787,9 @@
             msg += `\n\n${CYCLE_TEXT}`;
             logStep(msg);
 
-            // complete step UI
-            const stepEl = document.getElementById(stepId);
-            const statusBadge = document.getElementById(stepId + "-status");
-            if (stepEl) {
-              stepEl.classList.remove("active");
-              stepEl.classList.add("completed");
-              stepEl.style.opacity = "0.8";
-              const actionButton = stepEl.querySelector(
-                'button:not([onclick*="postNote"])'
-              );
-              if (actionButton) {
-                actionButton.disabled = true;
-                actionButton.classList.remove("btn-primary");
-                actionButton.classList.add("btn-secondary");
-              }
-              stepEl
-                .querySelectorAll("select")
-                .forEach((sel) => (sel.disabled = true));
-            }
-            if (statusBadge) {
-              statusBadge.textContent = "Completed";
-              statusBadge.className = "status-badge completed";
-            }
+            markStepCompleted(); // Uses closure - no parameter
+            resetFormInputs();
 
-            if (typeof stopTabFlashing === "function") stopTabFlashing();
-            protocolState.completedSteps.push(stepId);
-
-            // reset IO
-            note.value = "";
-            if (select) select.value = "";
-            note.disabled = false;
-            if (typeof validatePostButton === "function")
-              validatePostButton(stepId);
-
-            // Keep Step 5 UI in sync after NO-dispatch
             if (typeof silentlyUpdateDispatchConditions === "function") {
               silentlyUpdateDispatchConditions();
               requestAnimationFrame(silentlyUpdateDispatchConditions);
@@ -3577,10 +3798,126 @@
             setTimeout(() => restartProtocolCycle(), 1000);
             return;
           }
-          // "yes" → fall through (actual dispatch log handled by callDispatch)
+
+          // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
+          if (dispatchDecision === "yes") {
+            const serviceDropdown = document.getElementById("service-type");
+            const serviceName = serviceDropdown
+              ? serviceDropdown.options[serviceDropdown.selectedIndex]?.text ||
+                "Emergency Services"
+              : "Emergency Services";
+
+            // Start 30-minute dispatch follow-up timer
+            if (typeof startGlobalTimer === "function") {
+              startGlobalTimer(stepId, "Dispatch Follow-up", serviceName, 1800);
+              addLogEntry(
+                `⏰ Started 30-minute dispatch follow-up timer for ${serviceName}`,
+                "timer"
+              );
+
+              // Disable only the Post Note button
+              const postBtn = document.getElementById(stepId + "-post-btn");
+              if (postBtn) {
+                postBtn.disabled = true;
+                postBtn.classList.remove("btn-success");
+                postBtn.classList.add("btn-secondary");
+              }
+
+              // Set step status to "Waiting" after other processing completes
+              setTimeout(() => {
+                const statusBadge = document.getElementById(stepId + "-status");
+                if (statusBadge) {
+                  statusBadge.textContent = "Waiting";
+                  statusBadge.className = "status-badge waiting";
+                  statusBadge.style.background = "#ffc107";
+                  statusBadge.style.color = "#000";
+                }
+              }, 200); // Small delay to ensure it runs after other status updates
+
+              // Scroll to timer
+              setTimeout(() => {
+                const timerElement = document.getElementById("globalTimer");
+                if (timerElement) {
+                  timerElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                }
+              }, 100);
+
+              // Ensure callback section stays active
+              const callbackDropdown = document.querySelector(
+                'select[data-cy="global-cancel-dropdown"]'
+              );
+              if (callbackDropdown) {
+                callbackDropdown.disabled = false;
+              }
+            }
+          }
+
+          // Ensure callback section stays fully active
+          setTimeout(() => {
+            // Enable the callback dropdown
+            const callbackDropdown = document.querySelector(
+              'select[data-cy="global-cancel-dropdown"]'
+            );
+            if (callbackDropdown) {
+              callbackDropdown.disabled = false;
+              callbackDropdown.style.opacity = "1";
+              callbackDropdown.style.pointerEvents = "auto";
+            }
+
+            // Also try alternative selectors in case the dropdown has a different structure
+            const allSelects = document.querySelectorAll(
+              "#" + stepId + " select"
+            );
+            allSelects.forEach((select) => {
+              // Only enable selects that are NOT the dispatch decision or service type
+              if (
+                !select.id.includes("dispatch-decision") &&
+                !select.id.includes("service-type")
+              ) {
+                select.disabled = false;
+                select.style.opacity = "1";
+                select.style.pointerEvents = "auto";
+              }
+            });
+          }, 300); // Longer delay to ensure it runs after all other processing
+
+          // Clear dispatch form fields AFTER timer starts
+          setTimeout(() => {
+            // Clear "Dispatch conditions met?" dropdown
+            const dispatchDecision =
+              document.getElementById("dispatch-decision");
+            if (dispatchDecision) {
+              dispatchDecision.value = "";
+              dispatchDecision.disabled = true;
+            }
+
+            // Clear "Dispatch Service Type:" dropdown
+            const serviceDropdown = document.getElementById("service-type");
+            if (serviceDropdown) {
+              serviceDropdown.value = "";
+            }
+
+            // Update UI visibility
+            const serviceContainer = document.getElementById(
+              "service-type-container"
+            );
+            if (serviceContainer) {
+              serviceContainer.style.display = "none";
+            }
+
+            const skipContainer = document.getElementById(
+              "skip-reason-container"
+            );
+            if (skipContainer) {
+              skipContainer.style.display = "block";
+            }
+          }, 400); // After all other processing completes
         }
 
-        // ── Legacy unable-to-dispatch outcome (back-compat) ────────────────────────
+        // Legacy unable-to-dispatch outcome
         if (
           (currentStep && currentStep.action === "dispatch") ||
           (["step-4", "step-5"].includes(stepId) &&
@@ -3591,44 +3928,16 @@
             try {
               msg = generateDispatchProtocolLog("no", actionText, "", stepId);
             } catch (e) {
-              console.error("generateDispatchProtocolLog failed (legacy):", e);
-              msg = `${stepLabel}: ${actionText}.`;
+              msg = `${stepLabel}${
+                actionLabel ? ` (${actionLabel})` : ""
+              }: ${actionText}.`;
             }
             if (!msg.endsWith(".")) msg += ".";
-            // NOTE: No gas snapshot here (resolution-only policy)
             msg += `\n\n${CYCLE_TEXT}`;
             logStep(msg);
 
-            const stepEl = document.getElementById(stepId);
-            const statusBadge = document.getElementById(stepId + "-status");
-            if (stepEl) {
-              stepEl.classList.remove("active");
-              stepEl.classList.add("completed");
-              stepEl.style.opacity = "0.8";
-              const actionButton = stepEl.querySelector(
-                'button:not([onclick*="postNote"])'
-              );
-              if (actionButton) {
-                actionButton.disabled = true;
-                actionButton.classList.remove("btn-primary");
-                actionButton.classList.add("btn-secondary");
-              }
-              stepEl
-                .querySelectorAll("select")
-                .forEach((sel) => (sel.disabled = true));
-            }
-            if (statusBadge) {
-              statusBadge.textContent = "Completed";
-              statusBadge.className = "status-badge completed";
-            }
-
-            if (typeof stopTabFlashing === "function") stopTabFlashing();
-            protocolState.completedSteps.push(stepId);
-
-            note.value = "";
-            if (select) select.value = "";
-            if (typeof validatePostButton === "function")
-              validatePostButton(stepId);
+            markStepCompleted(); // Uses closure - no parameter
+            resetFormInputs();
 
             if (typeof silentlyUpdateDispatchConditions === "function") {
               silentlyUpdateDispatchConditions();
@@ -3640,10 +3949,227 @@
           }
         }
 
-        // ── Normal (non-dispatch OR dispatch "yes") ────────────────────────────────
-        let msg = `${stepLabel}: ${actionText}`;
+        // NORMAL PROCESSING
+        let body = (actionText || "").trim();
 
-        // Resolving outcome semantics
+        // Special cases for "Unable to call" patterns
+        if (/^unable to call\b/i.test(body)) {
+          if (currentStep?.action === "call-device") {
+            body = `Attempted to call device. ${body.replace(
+              /^unable to call\s*[:,]?\s*/i,
+              "Unable to call, "
+            )}`;
+          } else if (currentStep?.action === "call-user") {
+            body = `Attempted to call user. ${body.replace(
+              /^unable to call\s*[:,]?\s*/i,
+              "Unable to call, "
+            )}`;
+          }
+        }
+
+        // Handle inbound callbacks
+        const inboundCb =
+          /^\s*(user called in|ec called in|emergency contact called in|callback received)\b/i.test(
+            body
+          );
+
+        if (
+          currentStep?.action === "call-device" &&
+          !/^called device\b/i.test(body) &&
+          !/^attempted to call device\b/i.test(body) &&
+          !inboundCb
+        ) {
+          body = `Called device. ${body.charAt(0).toUpperCase()}${body.slice(
+            1
+          )}`;
+        }
+
+        // Emergency contact ordinal injection
+        if (currentStep?.action === "call-emergency-contacts") {
+          console.log("DEBUG EC TRANSFORM: Original body =", body);
+
+          const ecOrdinal = (() => {
+            if (Number.isInteger(currentStep?.meta?.ecIndex))
+              return currentStep.meta.ecIndex;
+            const el = document.getElementById(stepId);
+            if (el && el.parentElement) {
+              const cfg = ProtocolFactory.getProtocolConfig(currentAlert.id);
+              const siblings = Array.from(
+                el.parentElement.querySelectorAll('[id^="step-"]')
+              ).filter(
+                (n) =>
+                  (cfg?.steps || []).find((xx) => xx.id === n.id)?.action ===
+                  "call-emergency-contacts"
+              );
+              const idx = siblings.indexOf(el);
+              if (idx >= 0) return idx + 1;
+            }
+            const m = String(stepId).match(/step-\d+-(\d+)/i);
+            return m ? parseInt(m[1], 10) : 1;
+          })();
+
+          // Get emergency contact details
+          const getECDetails = (index) => {
+            if (
+              currentUser?.emergencyContacts &&
+              currentUser.emergencyContacts[index - 1]
+            ) {
+              const contact = currentUser.emergencyContacts[index - 1];
+              return { name: contact.name, phone: contact.phone };
+            }
+            return { name: "emergency contact", phone: "" };
+          };
+
+          const ecDetails = getECDetails(ecOrdinal);
+          console.log("DEBUG EC TRANSFORM: ecOrdinal =", ecOrdinal);
+          console.log("DEBUG EC TRANSFORM: ecDetails =", ecDetails);
+
+          // Check for inbound calls first - remove prefix and handle skipping
+          if (/called in/i.test(body)) {
+            // Remove "Emergency Contact X:" prefix for inbound calls
+            body = body.replace(/^emergency contact \d+:\s*/i, "");
+
+            // Handle resolution and skipping for confirmed okay inbound calls
+            if (
+              /emergency contact called in and confirmed.*is okay/i.test(body)
+            ) {
+              const mainStepId = stepId.split("-").slice(0, 2).join("-"); // "step-4"
+              const currentSubStep = parseInt(stepId.split("-")[2], 10); // 1
+
+              // Skip remaining sub-steps
+              for (let i = currentSubStep + 1; i <= 10; i++) {
+                const nextSubStepId = `${mainStepId}-${i}`;
+                const nextSubStep = document.getElementById(nextSubStepId);
+                if (nextSubStep) {
+                  nextSubStep.style.opacity = "0.5";
+                  nextSubStep.style.pointerEvents = "none";
+                  const statusBadge = document.getElementById(
+                    nextSubStepId + "-status"
+                  );
+                  if (statusBadge) {
+                    statusBadge.textContent = "Skipped";
+                    statusBadge.className = "status-badge skipped";
+                    statusBadge.style.background = "#6c757d";
+                    statusBadge.style.color = "white";
+                  }
+                }
+              }
+
+              // Complete main step
+              const mainStep = document.getElementById(mainStepId);
+              if (mainStep) {
+                const mainStatusBadge = document.getElementById(
+                  mainStepId + "-status"
+                );
+                if (mainStatusBadge) {
+                  mainStatusBadge.textContent = "Completed";
+                  mainStatusBadge.className = "status-badge completed";
+                }
+              }
+
+              // Skip subsequent main steps
+              const currentMainStepNum = parseInt(mainStepId.split("-")[1], 10); // 4
+              for (let i = currentMainStepNum + 1; i <= 10; i++) {
+                const nextMainStepId = `step-${i}`;
+                const nextMainStep = document.getElementById(nextMainStepId);
+                if (nextMainStep) {
+                  nextMainStep.style.opacity = "0.5";
+                  nextMainStep.style.pointerEvents = "none";
+                  const statusBadge = document.getElementById(
+                    nextMainStepId + "-status"
+                  );
+                  if (statusBadge) {
+                    statusBadge.textContent = "Skipped";
+                    statusBadge.className = "status-badge skipped";
+                    statusBadge.style.background = "#6c757d";
+                    statusBadge.style.color = "white";
+                  }
+                }
+              }
+            }
+          } else if (
+            (/^called\s+emergency contact/i.test(body) ||
+              /^emergency contact \d+:/i.test(body) ||
+              /^called\s+[A-Za-z\s]+\s+at\s+\+/i.test(body)) && // NEW: Match "Called Name at +phone"
+            !/^called\s+EC\d+\b/i.test(body) &&
+            !/called in/i.test(body)
+          ) {
+            // Handle outbound calls - add EC details
+            if (/^emergency contact \d+:/i.test(body)) {
+              // Remove the prefix and any existing "Called [name] at [phone]" part
+              body = body.replace(/^emergency contact \d+:\s*/i, "");
+              body = body.replace(/^called\s+[^.]+at\s+\+[^.]+\.\s*/i, "");
+              body = `Called EC${ecOrdinal} ${ecDetails.name} at ${ecDetails.phone}. ${body}`;
+            } else if (/^called\s+[A-Za-z\s]+\s+at\s+\+/i.test(body)) {
+              // NEW: Handle "Called Name at +phone" format
+              body = body.replace(/^called\s+/i, `Called EC${ecOrdinal} `);
+            } else {
+              body = body.replace(
+                /^called\s+/i,
+                `Called EC${ecOrdinal} ${ecDetails.name} at ${ecDetails.phone}. `
+              );
+            }
+            // Clean up any redundant text
+            body = body.replace(/\s*emergency contact[.,]?\s*/gi, ". ");
+            body = body.replace(/\.\s*\./g, ".");
+          }
+        }
+
+        if (!/[.!?]$/.test(body)) body += ".";
+
+        // Add gas data for emergency contact resolving outcomes
+        if (
+          window.isGasAlert?.(currentAlert) &&
+          currentStep?.action === "call-emergency-contacts" &&
+          (/confirmed.*okay/i.test(body) ||
+            /confirmed user is okay/i.test(body)) &&
+          !/Gas Type:\s/i.test(body)
+        ) {
+          const gasBlockRaw =
+            typeof getGasSnapshotFromPanel === "function"
+              ? getGasSnapshotFromPanel()
+              : "";
+
+          if (gasBlockRaw) {
+            const now = new Date();
+            const ts =
+              typeof FORMATTERS?.timestampMST === "function"
+                ? FORMATTERS.timestampMST(now)
+                : new Intl.DateTimeFormat("en-US", {
+                    timeZone: "America/Denver",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                  }).format(now) + " MDT";
+
+            const gasBlockWithTs = gasBlockRaw.replace(
+              /(Gas Reading:\s*[^\n]+)/i,
+              `$1 (${ts})`
+            );
+
+            const gasStillHigh =
+              typeof isAnyGasDangerousNow === "function"
+                ? isAnyGasDangerousNow()
+                : !isGasCurrentlyNormalized();
+
+            if (gasStillHigh) {
+              const warningText = "⚠️ Gas levels still HIGH.";
+              body += `\n\n${warningText}\n\n${gasBlockWithTs}`;
+            } else {
+              const preface = "Gas readings back to normal.";
+              body += `\n\n${preface}\n\n${gasBlockWithTs}`;
+            }
+          }
+        }
+
+        // Don't add step label for inbound calls
+        let msg = /called in/i.test(body) ? body : `${stepLabel}: ${body}`;
+
+        // Resolving outcome handling
         const RESOLVING_OUTCOMES = new Set([
           "confirmed-ok",
           "user-callback",
@@ -3652,14 +4178,14 @@
           "issue-resolved",
           "false-alarm",
         ]);
-        const isResolvingOutcome = RESOLVING_OUTCOMES.has(selectedOutcome);
-
-        // We may suppress resolution if gas still dangerous
+        const isResolvingOutcome =
+          RESOLVING_OUTCOMES.has(selectedOutcome) ||
+          /emergency contact called in and confirmed.*is okay/i.test(body) ||
+          /user called in.*confirmed they are okay/i.test(body);
         let suppressResolutionFlow = false;
 
         if (isResolvingOutcome) {
           if (isGas) {
-            // Determine if gas is normalized (based on UI status pills)
             const U = (id) =>
               (document.getElementById(id)?.textContent || "").toUpperCase();
             const dangerO2 = /ENRICHED|DEPLETED/.test(U("o2-status"));
@@ -3671,7 +4197,6 @@
 
             if (normalized) {
               if (!/[.?!]$/.test(msg)) msg += ".";
-              // Append the canonical resolving preface + a fresh gas snapshot with timestamp
               let block = "";
               try {
                 block =
@@ -3703,61 +4228,87 @@
                 `\n\nGas readings back to normal. Resolving alert.` +
                 (block ? `\n\n${block}` : "");
             } else {
-              // Gas still dangerous → do not resolve, add a warning
               if (!/[.?!]$/.test(msg)) msg += ".";
-              msg += `\n\n⚠️ Gas levels are not back to normal yet. Continuing protocol.`;
               suppressResolutionFlow = true;
+
+              const resSection =
+                document.querySelector(".resolution-section") ||
+                document.getElementById("resolution-section") ||
+                document.querySelector('[data-cy="resolution-section"]');
+              resSection?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+
+              const resolutionSelect =
+                document.getElementById("resolution-reason");
+              if (resolutionSelect && !resolutionSelect.value) {
+                resolutionSelect.value = "incident-without-dispatch";
+              }
+
+              const resolveBtn =
+                document.getElementById("resolve-alert-btn") ||
+                document.querySelector('[data-cy="resolve-alert-btn"]');
+              if (resolveBtn) {
+                resolveBtn.disabled = false;
+                resolveBtn.focus();
+              }
+
+              if (
+                currentAlert?.gasNormalization?.enabled &&
+                currentAlert.gasNormalization.triggerAfterStep === stepId &&
+                !currentAlert._norm
+              ) {
+                currentAlert._norm = 1;
+                setTimeout(() => triggerGasNormalization(currentAlert), 3000);
+              }
+
+              msg = msg.replace(/\s*Resolving alert\.?/gi, "");
+              if (typeof _squashResolveLine === "function")
+                msg = _squashResolveLine(msg);
+
+              logStep(msg);
+              markStepCompleted(); // Uses closure - no parameter
+              resetFormInputs();
+              return;
             }
           } else {
-            // Non-gas: always append simple resolve text (once)
             if (!/resolving alert/i.test(msg)) {
               if (!/[.?!]$/.test(msg)) msg += ".";
               msg += " Resolving alert.";
             }
           }
         }
-        msg = _squashResolveLine(msg);
+
+        if (typeof _squashResolveLine === "function")
+          msg = _squashResolveLine(msg);
         logStep(msg);
 
-        // complete step UI
-        const stepEl = document.getElementById(stepId);
-        const statusBadge = document.getElementById(stepId + "-status");
-        if (stepEl) {
-          stepEl.classList.remove("active");
-          stepEl.classList.add("completed");
-          stepEl.style.opacity = "0.8";
-          const actionButton = stepEl.querySelector(
-            'button:not([onclick*="postNote"])'
-          );
-          if (actionButton) {
-            actionButton.disabled = true;
-            actionButton.classList.remove("btn-primary");
-            actionButton.classList.add("btn-secondary");
+        // Timer logic for EC callback
+        if (
+          selectedOutcome === "ec-callback-30min" ||
+          selectedOutcome === "ec-callback-30min-outbound"
+        ) {
+          if (typeof startGlobalTimer === "function") {
+            startGlobalTimer(stepId, "EC Callback", "Emergency Contact", 1800);
+
+            const statusBadge = document.getElementById(stepId + "-status");
+            if (statusBadge) {
+              statusBadge.textContent = "Waiting";
+              statusBadge.className = "status-badge waiting";
+            }
+
+            resetFormInputs();
+            return; // Exit early - don't mark completed
           }
-          stepEl
-            .querySelectorAll("select")
-            .forEach((sel) => (sel.disabled = true));
-        }
-        if (statusBadge) {
-          statusBadge.textContent = "Completed";
-          statusBadge.className = "status-badge completed";
         }
 
-        if (typeof stopTabFlashing === "function") stopTabFlashing();
-        protocolState.completedSteps.push(stepId);
+        markStepCompleted(); // Uses closure - no parameter
+        resetFormInputs();
 
-        // reset IO
-        note.value = "";
-        if (select) select.value = "";
-        note.disabled = false;
-        if (typeof validatePostButton === "function")
-          validatePostButton(stepId);
-
-        // shortcut: confirmed OK / resolving outcomes
         const isConfirmedOK = isResolvingOutcome;
         if (isConfirmedOK && !suppressResolutionFlow) {
           triggerResolutionFlow(stepId, "User confirmed okay");
-          // Keep Step 5 consistent after a resolving note
           if (typeof silentlyUpdateDispatchConditions === "function") {
             silentlyUpdateDispatchConditions();
             requestAnimationFrame(silentlyUpdateDispatchConditions);
@@ -3765,9 +4316,9 @@
           return;
         }
 
-        // sub-step progression
+        // Sub-step progression
         if (stepId.includes("-") && stepId.split("-").length === 3) {
-          const parts = stepId.split("-"); // ["step","3","1"]
+          const parts = stepId.split("-");
           const mainStepId = `${parts[0]}-${parts[1]}`;
           const subStepNum = parseInt(parts[2], 10);
 
@@ -3775,12 +4326,20 @@
             (s) => s.id === mainStepId
           );
           if (mainStep && mainStep.action === "combined-device-user-call") {
+            console.log("Combined step logic triggered");
+            console.log("stepId:", stepId);
+            console.log("mainStepId:", mainStepId);
+            console.log("selectedOutcome:", selectedOutcome);
+
             if (
               selectedOutcome === "no-answer" ||
               selectedOutcome === "unable-to-call"
             ) {
               const nextSubStepId = `${mainStepId}-${subStepNum + 1}`;
               const nextSubStep = document.getElementById(nextSubStepId);
+              console.log("nextSubStepId:", nextSubStepId);
+              console.log("nextSubStep exists:", !!nextSubStep);
+
               if (nextSubStep) {
                 const nextButton = nextSubStep.querySelector(
                   'button:not([onclick*="postNote"])'
@@ -3792,12 +4351,14 @@
                 }
                 return;
               } else {
-                markStepComplete(mainStepId);
+                console.log("No next substep, marking main step completed");
+                markStepCompleted(mainStepId);
                 enableNextStep(mainStepId);
                 return;
               }
             }
-            markStepComplete(mainStepId);
+            console.log("Non-no-answer outcome, marking main step completed");
+            markStepCompleted(mainStepId);
             enableNextStep(mainStepId);
             return;
           } else if (
@@ -3805,12 +4366,14 @@
             mainStep.action === "call-emergency-contacts"
           ) {
             if (
-              selectedOutcome === "no-answer" ||
-              selectedOutcome === "no-answer-voicemail" ||
-              selectedOutcome === "no-answer-unable" ||
-              selectedOutcome === "unable-to-connect" ||
-              selectedOutcome === "wrong-number" ||
-              selectedOutcome === "number-invalid"
+              [
+                "no-answer",
+                "no-answer-voicemail",
+                "no-answer-unable",
+                "unable-to-connect",
+                "wrong-number",
+                "number-invalid",
+              ].includes(selectedOutcome)
             ) {
               const nextSubStepId = `${mainStepId}-${subStepNum + 1}`;
               const nextSubStep = document.getElementById(nextSubStepId);
@@ -3825,25 +4388,25 @@
                 }
                 return;
               } else {
-                markStepComplete(mainStepId);
+                markStepCompleted(mainStepId); // GLOBAL function call - needs parameter
                 enableNextStep(mainStepId);
                 return;
               }
             }
-            markStepComplete(mainStepId);
+            markStepCompleted(mainStepId); // GLOBAL function call - needs parameter
             enableNextStep(mainStepId);
             return;
           }
         }
 
-        // normal progression & refresh dispatch UI
+        // Normal progression
         enableNextStep(stepId);
         if (typeof silentlyUpdateDispatchConditions === "function") {
           silentlyUpdateDispatchConditions();
           requestAnimationFrame(silentlyUpdateDispatchConditions);
         }
 
-        // Normalize gas after the configured step (fires once)
+        // Gas normalization trigger
         if (
           currentAlert?.gasNormalization?.enabled &&
           currentAlert.gasNormalization.triggerAfterStep === stepId &&
@@ -3852,21 +4415,21 @@
           currentAlert._norm = 1;
           setTimeout(() => triggerGasNormalization(currentAlert), 3000);
         }
+
+        // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
+        const decisionEl = document.getElementById("dispatch-decision");
+        const dispatchDecision = decisionEl ? decisionEl.value : "";
       }
 
-      function markStepComplete(stepId) {
+      function markStepCompleted(stepId) {
         const step = document.getElementById(stepId);
         const statusBadge = document.getElementById(stepId + "-status");
 
-        // Visual state
         if (step) {
           step.classList.add("completed");
           step.classList.remove("active");
-
-          // Keep step interactive but visually completed
           step.style.opacity = "0.8";
 
-          // Disable only the main action button (not Post Note)
           const actionButton = step.querySelector(
             'button:not([onclick*="postNote"])'
           );
@@ -3876,45 +4439,23 @@
             actionButton.classList.add("btn-secondary");
           }
 
-          // Disable dropdowns; keep textareas and Post Note enabled
           step
             .querySelectorAll("select")
             .forEach((select) => (select.disabled = true));
         }
 
-        // Safe badge update (don’t nuke other classes unintentionally)
+        // ✅ PROPER BADGE CLASS HANDLING - This fixes the yellow badge issue
         if (statusBadge) {
           statusBadge.textContent = "Completed";
-          statusBadge.classList.remove("active");
-          statusBadge.classList.add("completed");
-          if (!statusBadge.classList.contains("status-badge")) {
-            statusBadge.classList.add("status-badge");
-          }
+          statusBadge.className = "status-badge completed"; // Clean replacement of all classes
         }
 
-        // Bookkeeping (init + avoid duplicates)
         if (!window.protocolState) window.protocolState = {};
         if (!Array.isArray(protocolState.completedSteps))
           protocolState.completedSteps = [];
         if (!protocolState.completedSteps.includes(stepId))
           protocolState.completedSteps.push(stepId);
 
-        // Re-evaluate dispatch conditions after step completion
-        if (typeof silentlyUpdateDispatchConditions === "function") {
-          silentlyUpdateDispatchConditions();
-        }
-
-        // ── Generic gas normalization trigger (fires once after configured step) ──
-        if (
-          currentAlert?.gasNormalization?.enabled &&
-          currentAlert.gasNormalization.triggerAfterStep === stepId &&
-          !currentAlert._norm
-        ) {
-          currentAlert._norm = 1; // prevent repeat
-          setTimeout(() => triggerGasNormalization(currentAlert), 3000);
-        }
-
-        // Enable and scroll to next step
         if (typeof enableNextStep === "function") {
           enableNextStep(stepId);
         }
@@ -4158,6 +4699,9 @@
       }
 
       function completeResolution(reason, overrideReason) {
+        // Cancel any active timer when resolving alert
+        cancelGlobalTimer();
+
         // Simple resolution log based on whether it's an override or normal
         if (overrideReason) {
           addLogEntry(
@@ -4197,7 +4741,40 @@
         }, 100);
       }
 
-      function resolveAlert() {
+      function resolveAlert(stepId) {
+        // ⛔️ Guard first: Gas alert + any dangerous reading → force override modal
+        if (
+          typeof isGasAlert === "function" &&
+          isGasAlert(currentAlert) &&
+          (typeof isAnyGasDangerousNow === "function"
+            ? isAnyGasDangerousNow()
+            : typeof isGasLevelHigh === "function"
+            ? isGasLevelHigh()
+            : false)
+        ) {
+          // Prefer programmatic opener; fallback to button
+          if (typeof openResolutionOverrideModal === "function") {
+            openResolutionOverrideModal({ stepId, gas: "GAS HIGH" });
+          } else if (typeof showOverrideModal === "function") {
+            showOverrideModal();
+          } else {
+            (
+              document.getElementById("override-resolution-btn") ||
+              document.querySelector('[data-cy="override-resolution-btn"]')
+            )?.click();
+          }
+
+          // Optional: focus the modal's reason select right away
+          requestAnimationFrame(() => {
+            (
+              document.getElementById("override-reason") ||
+              document.querySelector('[data-cy="override-reason"]')
+            )?.focus();
+          });
+          return; // Modal will handle confirm → then call completeResolution(...)
+        }
+
+        // --- Existing logic (unchanged) ---
         const reasonSelect = document.querySelector(
           ".resolution-section select"
         );
@@ -4205,16 +4782,13 @@
 
         // If no resolution reason selected, auto-determine it
         if (!reason) {
-          reason = determineResolutionType(currentAlert);
+          reason =
+            typeof determineResolutionType === "function"
+              ? determineResolutionType(currentAlert)
+              : "resolved";
           if (reasonSelect) {
             reasonSelect.value = reason;
           }
-        }
-
-        // Check if gas levels are high and require override
-        if (currentAlert && isGasAlert(currentAlert) && isGasLevelHigh()) {
-          showOverrideModal();
-          return;
         }
 
         // LOCK UI: Disable and grey-out all elements except Cancel Resolution and Add Note
@@ -4578,7 +5152,7 @@
             .filter(Boolean);
           const mainLine = lines[0];
 
-          let formatted = `<div class="dispatch-summary" style="color: #dc3545; font-weight: bold;">❌ ${mainLine}</div>`;
+          let formatted = `<div class="dispatch-summary" style="color: #dc3545; font-weight: bold;">${mainLine}</div>`;
 
           lines.slice(1).forEach((line) => {
             if (!line) return;
@@ -4909,6 +5483,7 @@
                 '<option value="confirmed-ok">Confirmed user is okay</option>' +
                 '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
                 '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+                '<option value="ec-callback-30min-outbound">EC will check on user and call back within 30 minutes</option>' +
                 '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
                 '<option value="no-answer-voicemail">No answer, left voicemail</option>' +
                 '<option value="no-answer-unable">No answer, unable to leave voicemail</option>' +
@@ -5074,18 +5649,6 @@
               '-post-btn">✅ Post Note</button>' +
               "</div>" +
               '<label for="' +
-              step.id +
-              '-select" style="display: block; margin-bottom: 8px; font-weight: bold;">User/EC Callback During Dispatch Wait:</label>' +
-              '<select id="' +
-              step.id +
-              '-select" onchange="autoPopulateFromDropdown(\'' +
-              step.id +
-              '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-              '<option value="">Select outcome</option>' +
-              '<option value="user-callback">User called in and confirmed they are okay</option>' +
-              '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-              '<option value="ec-callback-cancel-dispatch-30min">Emergency contact called in, advised to cancel dispatch. They will check on user and call back within 30 minutes</option>' +
-              "</select>" +
               '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;">' +
               "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
               "</div>";
@@ -5242,67 +5805,30 @@
 
         // GROUP 1: RESOLUTION OUTCOMES
         if (selectedValue === "confirmed-ok") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Confirmed user is okay and advised to resolve alert";
+          noteText = "Confirmed user is okay and advised to resolve alert";
           shouldScrollToResolution = true;
         } else if (selectedValue === "ec-callback") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Emergency contact called in and confirmed user is okay";
+          noteText = "Emergency contact called in and confirmed user is okay";
           shouldScrollToResolution = true;
         } else if (selectedValue === "user-callback") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": User called in. Confirmed they are okay";
+          noteText = "User called in. Confirmed they are okay";
           shouldScrollToResolution = true;
         } else if (selectedValue === "ec-callback-30min") {
           noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Emergency contact called in, will check on user and call back within 30 minutes.";
+            "Emergency contact called in, will check on user and call back within 30 minutes.";
           // Should start 30-min timer
 
           // GROUP 2: CONTINUE PROTOCOL OUTCOMES
         } else if (selectedValue === "no-answer-voicemail") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Called " +
-            contact.name +
-            " at " +
-            contact.phone +
-            ". No answer, left voicemail";
+          noteText = `Called ${contact.name} at ${contact.phone}. No answer, left voicemail`;
         } else if (selectedValue === "no-answer-unable") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Called " +
-            contact.name +
-            " at " +
-            contact.phone +
-            ". No answer, unable to leave voicemail";
+          noteText = `Called ${contact.name} at ${contact.phone}. No answer, unable to leave voicemail`;
         } else if (selectedValue === "wrong-number") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Called " +
-            contact.name +
-            " at " +
-            contact.phone +
-            ". Wrong number";
+          noteText = `Called ${contact.name} at ${contact.phone}. Wrong number`;
         } else if (selectedValue === "unable-to-connect") {
-          noteText =
-            "Step 4." +
-            (ecIndex + 1) +
-            ": Called " +
-            contact.name +
-            " at " +
-            contact.phone +
-            ". Unable to connect";
+          noteText = `Called ${contact.name} at ${contact.phone}. Unable to connect`;
+        } else if (selectedValue === "ec-callback-30min-outbound") {
+          noteText = `Called ${contact.name} at ${contact.phone}. EC will check on user and call back within 30 minutes`;
         }
 
         if (noteText) {
@@ -5450,6 +5976,31 @@
               // Fallback: just show relative
               lastEl.textContent = rel;
             }
+          }
+        }
+
+        // Location timestamp: calculate from locationAge
+        if (typeof dc.locationAge === "number") {
+          const locationEl = document.getElementById("location-timestamp");
+          if (locationEl) {
+            const now = new Date();
+            const locationTime = new Date(
+              now.getTime() - dc.locationAge * 60 * 1000
+            );
+            const formattedTime =
+              locationTime.toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              }) +
+              " at " +
+              locationTime.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }) +
+              " MDT";
+            locationEl.textContent = formattedTime;
           }
         }
 
@@ -6028,12 +6579,15 @@
         }
       }
 
+      /**
+       * Evaluate if dispatch should be recommended based on technical conditions
+       */
       function evaluateDispatchConditions() {
         const conditions = {
           shouldDispatch: false,
           passingConditions: [],
           failingReasons: [],
-          primarySkipReason: null, // "device-offline" | "location-stale" | "device-moving" | ...
+          primarySkipReason: null,
         };
 
         // ── helpers (local only) ────────────────────────────────────────────────
@@ -6065,54 +6619,32 @@
             : Math.floor((Date.now() - d.getTime()) / 60000);
         };
 
-        // ── contact attempt / confirmations ─────────────────────────────────────
-        const completed = Array.isArray(protocolState?.completedSteps)
-          ? protocolState.completedSteps
-          : [];
-        const userContactAttempted = completed.some((id) =>
-          /^step-(1|2|3)(?:$|-)/.test(id)
-        ); // includes sub-steps
+        // ── user confirmation check (triggers resolution flow) ──────────────────
         const userConfirmedOK =
           typeof checkIfUserConfirmedOK === "function" &&
           checkIfUserConfirmedOK();
-        const ecStepId =
-          typeof getEmergencyContactsStepId === "function"
-            ? getEmergencyContactsStepId()
-            : null;
-        const ecContactCompleted = ecStepId && completed.includes(ecStepId);
         const ecConfirmedOK =
           typeof checkIfECConfirmedUserOK === "function" &&
           checkIfECConfirmedUserOK();
 
-        if (userContactAttempted && !userConfirmedOK) {
-          conditions.passingConditions.push("No contact with user established");
-        } else if (userConfirmedOK) {
+        // If user confirmed OK → trigger resolution flow (no dispatch needed)
+        if (userConfirmedOK) {
           conditions.failingReasons.push("User confirmed they are okay");
-          conditions.primarySkipReason ||= "user-confirmed-ok";
-        } else {
-          conditions.failingReasons.push("Contact attempts not completed");
+          conditions.primarySkipReason = "user-confirmed-ok";
+          conditions.shouldDispatch = false;
+          return conditions; // Early exit → resolution flow
         }
 
-        if (ecContactCompleted && !ecConfirmedOK) {
-          conditions.passingConditions.push("Emergency contact unsuccessful");
-        } else if (ecConfirmedOK) {
+        if (ecConfirmedOK) {
           conditions.failingReasons.push(
             "Emergency contact confirmed user is okay"
           );
-          conditions.primarySkipReason ||= "ec-confirmed-ok";
+          conditions.primarySkipReason = "ec-confirmed-ok";
+          conditions.shouldDispatch = false;
+          return conditions; // Early exit → resolution flow
         }
 
-        // (kept for backward compatibility with this specific id)
-        if (currentAlert && currentAlert.id === "gas-high-threshold") {
-          if (typeof isGasLevelHigh === "function" && isGasLevelHigh()) {
-            conditions.passingConditions.push("Gas levels remain HIGH");
-          } else {
-            conditions.failingReasons.push("Gas levels returned to normal");
-            conditions.primarySkipReason ||= "gas-levels-normal";
-          }
-        }
-
-        // ── universal dispatch gates (apply to ALL protocols) ───────────────────
+        // ── universal dispatch gates (technical readiness only) ─────────────────
         const CT = window.CONNECTIVITY_THRESHOLDS || {
           lastCommMins: 30,
           batteryPct: 10,
@@ -6136,10 +6668,10 @@
         const minsLastComm = parseMins(lastCommEl?.textContent);
         const batt = toNum(batteryEl?.textContent);
         const signal = toNum(signalEl?.textContent);
-        const minsLocAge = parseMins(locTsEl?.textContent);
+        const minsLocAge = parseAbsMins(locTsEl?.textContent);
         const speedKph = toNum(speedEl?.textContent);
 
-        // 1) device offline
+        // 1) device offline check
         let isOffline = false;
         const offlineBits = [];
         if (!Number.isNaN(minsLastComm) && minsLastComm > CT.lastCommMins) {
@@ -6162,16 +6694,25 @@
           conditions.primarySkipReason ||= "device-offline";
         }
 
-        // 2) location not current (> 5 min by default)
+        // 2) location not current check
         const isLocStale = !Number.isNaN(minsLocAge) && minsLocAge > LT;
         if (isLocStale) {
-          conditions.failingReasons.push(
-            `location not current (${minsLocAge} min old)`
-          );
+          let ageText;
+          if (minsLocAge < 60) {
+            ageText = `${minsLocAge} min old`;
+          } else if (minsLocAge < 1440) {
+            const hours = Math.floor(minsLocAge / 60);
+            ageText = `${hours} hour${hours === 1 ? "" : "s"} old`;
+          } else {
+            const days = Math.floor(minsLocAge / 1440);
+            ageText = `${days} day${days === 1 ? "" : "s"} old`;
+          }
+
+          conditions.failingReasons.push(`location not current (${ageText})`);
           conditions.primarySkipReason ||= "location-stale";
         }
 
-        // 3) device not stationary (> 5 km/h by default)
+        // 3) device not stationary check
         const isMoving = !Number.isNaN(speedKph) && speedKph > MOV;
         if (isMoving) {
           conditions.failingReasons.push(
@@ -6181,8 +6722,6 @@
         }
 
         // ── GAS POLICY (override when safe) ──────────────────────────────────────
-        // O₂: ENRICHED or DEPLETED → danger
-        // H₂S / CO / LEL: HIGH → danger
         let anyGasDanger = false;
         let isGasNow = false;
         try {
@@ -6202,26 +6741,17 @@
           console.warn("Gas rule check failed:", e);
         }
 
-        // ── final decision ───────────────────────────────────────────────────────
+        // ── final technical readiness decision ──────────────────────────────────
         const connectivityOK = !isOffline;
         const locationOK = !isLocStale;
         const motionOK = !isMoving;
 
-        const baseDecision =
-          conditions.passingConditions.length > 0 &&
-          !userConfirmedOK &&
-          !ecConfirmedOK;
-
-        const gatesOK = connectivityOK && locationOK && motionOK;
-
-        // If this is a gas alert and gas is NOT dangerous anymore,
-        // force NO dispatch and annotate the reason. (This overrides baseDecision.)
+        // If this is a gas alert and gas is NOT dangerous anymore, force NO dispatch
         try {
           const isGas =
             typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
           if (isGas && !anyGasDanger) {
             conditions.shouldDispatch = false;
-
             if (
               !conditions.failingReasons.includes(
                 "Gas levels returned to normal"
@@ -6232,17 +6762,27 @@
               );
             }
             conditions.primarySkipReason ||= "gas-normalized";
-
-            return conditions; // ← early return: we're done
+            return conditions; // Early return
           }
         } catch {
           /* no-op */
         }
 
-        // Otherwise: base rule OR gas danger can promote to YES, but always pass universal gates
-        conditions.shouldDispatch = (baseDecision || anyGasDanger) && gatesOK;
+        // Suggest "Yes" if all technical conditions are met
+        conditions.shouldDispatch = connectivityOK && locationOK && motionOK;
 
-        // Post-decision annotations (nice-to-have clarity)
+        // Add positive conditions for clarity
+        if (connectivityOK) {
+          conditions.passingConditions.push("Device connectivity OK");
+        }
+        if (locationOK) {
+          conditions.passingConditions.push("Location data current");
+        }
+        if (motionOK) {
+          conditions.passingConditions.push("Device stationary");
+        }
+
+        // For gas alerts, add gas status
         try {
           const isGas =
             typeof isGasAlert === "function" ? isGasAlert(currentAlert) : false;
@@ -6322,9 +6862,11 @@
 
               if (auto) unmetDropdown.value = auto;
 
-              // --- (nice-to-have) prefill Step 5 note automatically ---
+              // --- auto-populate note box (dynamic step detection) ---
+              const dispatchStep = dispatchDropdown.closest(".step");
               const noteBox =
-                document.getElementById("step-5-note") ||
+                dispatchStep?.querySelector("textarea") ||
+                document.getElementById(dispatchStep?.id + "-note") ||
                 document.querySelector(
                   "#skip-reason-container textarea, #service-type-container textarea"
                 );
@@ -6374,17 +6916,29 @@
             }
           }
 
-          // Notify any listeners and re-validate Step 5 immediately
+          // Notify any listeners and re-validate with dynamic step detection
           dispatchDropdown.dispatchEvent(
             new Event("change", { bubbles: true })
           );
-          if (typeof validatePostButton === "function") {
-            validatePostButton("step-5");
+
+          // Dynamic step detection for validation
+          const dispatchStep = dispatchDropdown.closest(".step");
+          const dispatchStepId = dispatchStep?.id;
+
+          if (typeof validatePostButton === "function" && dispatchStepId) {
+            validatePostButton(dispatchStepId);
           }
         } else {
-          // Even if value didn't change, ensure Step 5 button reflects current state
-          if (newValue === "no" && typeof validatePostButton === "function") {
-            validatePostButton("step-5");
+          // Even if value didn't change, ensure dispatch button reflects current state
+          const dispatchStep = dispatchDropdown.closest(".step");
+          const dispatchStepId = dispatchStep?.id;
+
+          if (
+            newValue === "no" &&
+            typeof validatePostButton === "function" &&
+            dispatchStepId
+          ) {
+            validatePostButton(dispatchStepId);
           }
         }
 
@@ -7182,7 +7736,7 @@
       ) {
         // 1. Mark current step complete
         if (fromStepId) {
-          markStepComplete(fromStepId);
+          markStepCompleted(fromStepId);
         }
 
         // 2. Block all remaining steps
@@ -7340,21 +7894,21 @@
 
           const dispatchNote = `Step ${stepNumber}: Called dispatch, spoke to ___. Dispatched ${selectedService} to the following location:
 
-Last Location Date/Time: ${todaysTimestamp} (just now)
+      Last Location Date/Time: ${todaysTimestamp} (just now)
 
-Approximate Address: ${location}
+      Approximate Address: ${location}
 
-Latitude / Longitude: ${coordinates}
+      Latitude / Longitude: ${coordinates}
 
-Speed: ${speed}
+      Speed: ${speed}
 
-Last Communication: ${lastComm}
+      Last Communication: ${lastComm}
 
-Battery: ${battery}
+      Battery: ${battery}
 
-Signal Strength: ${signal}
+      Signal Strength: ${signal}
 
-Waiting 30 minutes.`;
+      Waiting 30 minutes.`;
 
           textarea.value = dispatchNote;
           validatePostButton(stepId);
