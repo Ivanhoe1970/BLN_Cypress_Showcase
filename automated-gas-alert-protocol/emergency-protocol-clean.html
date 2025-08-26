@@ -1587,6 +1587,179 @@
         currentSOSStep: 1,
       };
 
+      // ==================================================================================
+      // ENHANCED ADD NOTE SYSTEM - PHASE 1: PATTERN DETECTION
+      // ==================================================================================
+
+      // Note type detection patterns
+      const NOTE_PATTERNS = {
+        resolution: {
+          patterns: [
+            /confirmed.*(?:they are|user is|he is|she is).*(?:ok|okay|safe|fine)/i,
+            /alert.*(?:can be|should be).*resolved/i,
+            /user.*(?:is safe|is ok|is okay|is fine)/i,
+            /false.*alert/i,
+            /no.*(?:emergency|incident)/i,
+            /everything.*(?:is fine|is ok|is okay)/i,
+            /issue.*resolved/i,
+            /all.*clear/i,
+            /equipment.*malfunction/i,
+            /device.*error/i,
+          ],
+          action: "resolution",
+          priority: "high",
+        },
+
+        callback: {
+          patterns: [
+            /(?:will|going to).*(?:call back|check.*back|get back)/i,
+            /(?:calling|checking).*(?:back|in).*(\d+).*(?:min|minute)/i,
+            /will.*(?:check on|contact).*(?:user|them)/i,
+            /(?:call back|check back).*(?:in|within).*(\d+)/i,
+          ],
+          action: "timer",
+          priority: "medium",
+        },
+
+        dispatch: {
+          patterns: [
+            /(?:request|need|send).*dispatch/i,
+            /(?:emergency|ambulance|fire|police).*(?:needed|required)/i,
+            /(?:send|need).*(?:help|assistance).*(?:immediately|urgent)/i,
+            /cannot.*(?:reach|contact).*user/i,
+          ],
+          action: "dispatch",
+          priority: "urgent",
+        },
+
+        sos: {
+          patterns: [
+            /(?:user said|user confirmed).*(?:help|emergency)/i,
+            /(?:real|actual).*(?:emergency|incident)/i,
+            /user.*(?:needs|requesting).*help/i,
+          ],
+          action: "sos",
+          priority: "urgent",
+        },
+      };
+
+      // Time extraction patterns
+      const TIME_PATTERNS = {
+        minutes: /(\d+).*(?:min|minute)/i,
+        hours: /(\d+).*(?:hour|hr)/i,
+        specific: /(?:in|within).*(\d+).*(?:min|hour)/i,
+      };
+
+      // ==================================================================================
+      // ENHANCED ADD NOTE SYSTEM - PHASE 2: ANALYSIS FUNCTIONS
+      // ==================================================================================
+
+      // Analyze note content for patterns and intent
+      function analyzeNote(noteText) {
+        const analysis = {
+          type: "general",
+          actions: [],
+          priority: "normal",
+          timeframe: null,
+          confidence: 0,
+        };
+
+        // Check each pattern category
+        for (const [category, config] of Object.entries(NOTE_PATTERNS)) {
+          for (const pattern of config.patterns) {
+            if (pattern.test(noteText)) {
+              analysis.type = category;
+              analysis.actions.push(config.action);
+              analysis.priority = config.priority;
+              analysis.confidence = calculateConfidence(noteText, pattern);
+              break;
+            }
+          }
+          if (analysis.type !== "general") break;
+        }
+
+        // Extract timeframe if this is a callback note
+        if (analysis.type === "callback") {
+          analysis.timeframe = extractTimeframe(noteText);
+        }
+
+        return analysis;
+      }
+
+      // Extract timeframe from callback notes
+      function extractTimeframe(noteText) {
+        let minutes = 30; // default
+
+        const minuteMatch = TIME_PATTERNS.minutes.exec(noteText);
+        const hourMatch = TIME_PATTERNS.hours.exec(noteText);
+
+        if (minuteMatch) {
+          minutes = parseInt(minuteMatch[1]);
+          // Enforce limits: 5 min minimum, 30 min maximum
+          minutes = Math.max(5, Math.min(30, minutes));
+        } else if (hourMatch) {
+          minutes = parseInt(hourMatch[1]) * 60;
+          // Convert hours but still enforce 30 min max
+          minutes = Math.min(30, minutes);
+        }
+
+        return minutes;
+      }
+
+      // Extract contact name from note text
+      function extractContactName(noteText) {
+        // Look for common patterns: "EC John", "Sarah called", "Mike will check"
+        const patterns = [
+          /EC\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+          /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:called|will|is)/i,
+          /(?:called|contacted)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+        ];
+
+        for (const pattern of patterns) {
+          const match = pattern.exec(noteText);
+          if (match) {
+            return match[1].trim();
+          }
+        }
+
+        return null;
+      }
+
+      // Calculate confidence score for pattern matching
+      function calculateConfidence(noteText, pattern) {
+        const match = pattern.exec(noteText);
+        if (!match) return 0;
+
+        // Base confidence on match length and specific keywords
+        let confidence = 0.6;
+
+        // Higher confidence for specific keywords
+        const highConfidenceWords = [
+          "confirmed",
+          "safe",
+          "okay",
+          "resolved",
+          "false alert",
+        ];
+        const mediumConfidenceWords = ["fine", "ok", "good", "no emergency"];
+
+        for (const word of highConfidenceWords) {
+          if (noteText.toLowerCase().includes(word)) {
+            confidence += 0.2;
+            break;
+          }
+        }
+
+        for (const word of mediumConfidenceWords) {
+          if (noteText.toLowerCase().includes(word)) {
+            confidence += 0.1;
+            break;
+          }
+        }
+
+        return Math.min(confidence, 1.0);
+      }
+
       const gasReadingsData = {
         "h2s-high": {
           h2s: { value: 17.9, status: "HIGH" },
@@ -1660,7 +1833,9 @@
         updateGasReadings("default");
         startGasMonitoring();
 
-        // ADD MANUAL NOTES VALIDATION:
+        // ==================================================================================
+        // ENHANCED MANUAL NOTES VALIDATION WITH PREVIEW:
+        // ==================================================================================
         const manualNotesTextarea = document.getElementById("manual-notes");
         const manualNotesButton = document.querySelector(
           'button[onclick="addManualNote()"]'
@@ -1671,17 +1846,61 @@
           manualNotesButton.disabled = true;
           manualNotesButton.classList.add("btn-secondary");
           manualNotesButton.classList.remove("btn-success");
+          manualNotesButton.textContent = "Post Note";
 
-          // Enable/disable based on content
+          // Enhanced input validation with note type preview
           manualNotesTextarea.addEventListener("input", function () {
-            if (this.value.trim().length > 0) {
+            const noteText = this.value.trim();
+
+            if (noteText.length > 0) {
+              // Enable button
               manualNotesButton.disabled = false;
               manualNotesButton.classList.remove("btn-secondary");
               manualNotesButton.classList.add("btn-success");
+
+              // Analyze note for preview
+              const analysis = analyzeNote(noteText);
+
+              // Update button text and color based on note type
+              let buttonText = "Post Note";
+              manualNotesButton.classList.remove(
+                "btn-success",
+                "btn-warning",
+                "btn-danger"
+              );
+
+              switch (analysis.type) {
+                case "resolution":
+                  buttonText = "✅ Post Resolution Note";
+                  manualNotesButton.classList.add("btn-warning");
+                  break;
+                case "callback":
+                  buttonText = `⏰ Post Note (${analysis.timeframe}min timer)`;
+                  manualNotesButton.classList.add("btn-success");
+                  break;
+                case "dispatch":
+                  buttonText = "🚨 Post Dispatch Note";
+                  manualNotesButton.classList.add("btn-danger");
+                  break;
+                case "sos":
+                  buttonText = "🆘 Post SOS Note";
+                  manualNotesButton.classList.add("btn-danger");
+                  break;
+                default:
+                  buttonText = "Post Note";
+                  manualNotesButton.classList.add("btn-success");
+              }
+              manualNotesButton.textContent = buttonText;
             } else {
+              // Disable button and reset text
               manualNotesButton.disabled = true;
               manualNotesButton.classList.add("btn-secondary");
-              manualNotesButton.classList.remove("btn-success");
+              manualNotesButton.classList.remove(
+                "btn-success",
+                "btn-warning",
+                "btn-danger"
+              );
+              manualNotesButton.textContent = "Post Note";
             }
           });
         }
@@ -2665,6 +2884,26 @@
                   `⏰ Emergency contact callback timer expired. Proceeding to next step.`,
                   "step"
                 );
+
+                // Find and activate the emergency contacts step
+                const ecStep = document.querySelector(
+                  '[data-action="call-emergency-contacts"]'
+                );
+                if (ecStep) {
+                  // Activate the step
+                  ecStep.classList.add("active");
+                  const statusBadge = ecStep.querySelector(".status-badge");
+                  if (statusBadge) {
+                    statusBadge.textContent = "Active";
+                    statusBadge.className = "status-badge active";
+                  }
+
+                  // Visual highlighting
+                  ecStep.style.border = "2px solid #ffc107";
+
+                  addLogEntry("EC follow-up required", "system");
+                }
+
                 // Check if this step has dispatch action (dispatch steps don't have next steps)
                 const protocolConfig = ProtocolFactory.getProtocolConfig(
                   currentAlert.id
@@ -4533,7 +4772,7 @@
           "device-no",
           "issue-resolved",
           "false-alarm",
-          "im-ok"
+          "im-ok",
         ]);
         const isResolvingOutcome =
           RESOLVING_OUTCOMES.has(selectedOutcome) ||
@@ -7113,22 +7352,323 @@
         document.getElementById("demo-panel").classList.remove("show");
       }
 
+      // Enhanced addManualNote function with intelligent parsing
       function addManualNote() {
         const noteText = document.getElementById("manual-notes").value.trim();
+        if (!noteText) {
+          alert("Please enter a note first");
+          return;
+        }
 
-        console.log("Adding note:", noteText);
-        addLogEntry(noteText, "general");
+        // Analyze the note content
+        const analysis = analyzeNote(noteText);
+
+        // Log the note with specialist identification
+        const timestamp = formatTimestamp();
+        let logEntry = `[${timestamp}] ${noteText}`;
+
+        // For gas alerts, append gas snapshot to resolution notes
+        if (
+          currentAlert &&
+          (currentAlert.is_gas_alert || isGasAlert(currentAlert))
+        ) {
+          console.log(
+            "DEBUG: Gas alert detected, analysis.type:",
+            analysis.type
+          );
+
+          // Check if this is a resolution note and append gas data
+          if (analysis.type === "resolution") {
+            console.log(
+              "DEBUG: Resolution type detected, getting gas snapshot..."
+            );
+
+            try {
+              // Use the exact same approach as autoPopulateFromDropdown function
+              let gasBlockRaw =
+                typeof getGasSnapshotFromPanel === "function"
+                  ? getGasSnapshotFromPanel()
+                  : "";
+
+              console.log("DEBUG: gasBlockRaw:", gasBlockRaw);
+
+              if (gasBlockRaw) {
+                console.log("DEBUG: Gas block found, adding timestamp...");
+
+                const now = new Date();
+                const ts =
+                  typeof FORMATTERS?.timestampMST === "function"
+                    ? FORMATTERS.timestampMST(now)
+                    : new Intl.DateTimeFormat("en-US", {
+                        timeZone: "America/Denver",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                      }).format(now) + " MDT";
+
+                const gasBlockWithTs = gasBlockRaw.replace(
+                  /(Gas Reading:\s*[^\n]+)/i,
+                  `$1 (${ts})`
+                );
+
+                const preface = "Gas readings back to normal.";
+                logEntry += `\n\n${preface}\n\n${gasBlockWithTs}`;
+
+                console.log("DEBUG: Final logEntry with gas data:", logEntry);
+              } else {
+                console.log(
+                  "DEBUG: No gas block returned from getGasSnapshotFromPanel"
+                );
+              }
+            } catch (e) {
+              console.log("Gas snapshot error:", e);
+            }
+          }
+          addGasLogEntry(logEntry);
+        } else {
+          console.log("DEBUG: Not a gas alert, using regular log");
+          addLogEntry(logEntry, "specialist");
+        }
+
+        // Handle intelligent actions for ALL alert types (moved to run for both gas and non-gas)
+        handleIntelligentActions(analysis, noteText);
+
+        // Clear the textarea and reset button
         document.getElementById("manual-notes").value = "";
-
-        // Re-disable button after posting (like other steps)
         const button = document.querySelector(
           'button[onclick="addManualNote()"]'
         );
         if (button) {
           button.disabled = true;
           button.classList.add("btn-secondary");
-          button.classList.remove("btn-success");
+          button.classList.remove("btn-success", "btn-warning", "btn-danger");
+          button.textContent = "Post Note";
         }
+
+        // Show confirmation of actions taken
+        showActionConfirmation(analysis);
+      }
+
+      // Handle intelligent actions based on note analysis
+      function handleIntelligentActions(analysis, noteText) {
+        switch (analysis.type) {
+          case "resolution":
+            handleResolutionNote(noteText, analysis.confidence);
+            break;
+
+          case "callback":
+            handleCallbackNote(noteText, analysis.timeframe);
+            break;
+
+          case "dispatch":
+            handleDispatchNote(noteText);
+            break;
+
+          case "sos":
+            handleSOSNote(noteText);
+            break;
+        }
+      }
+
+      // Enhanced format timestamp function
+      function formatTimestamp() {
+        const now = new Date();
+        return (
+          now.toLocaleTimeString("en-US", {
+            hour12: false,
+            timeZone: "America/Denver",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }) + " MST"
+        );
+      }
+
+      // Handle resolution-ready notes
+      function handleResolutionNote(noteText, confidence) {
+        // Auto-populate resolution dropdown if not already set
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect && !resolutionSelect.value) {
+          const resolutionType =
+            typeof determineResolutionType === "function"
+              ? determineResolutionType(currentAlert)
+              : "false-alert-without-dispatch";
+          resolutionSelect.value = resolutionType;
+        }
+
+        // Highlight resolution section
+        const resolutionSection = document.querySelector(".resolution-section");
+        if (resolutionSection) {
+          resolutionSection.style.border = "3px solid #28a745";
+          resolutionSection.style.background = "rgba(40, 167, 69, 0.1)";
+
+          // Add pulsing animation for high confidence
+          if (confidence > 0.8) {
+            resolutionSection.style.animation = "pulse 2s infinite";
+            setTimeout(() => {
+              resolutionSection.style.animation = "none";
+            }, 10000);
+          }
+        }
+
+        // Auto-scroll to resolution
+        setTimeout(() => {
+          resolutionSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 500);
+
+        // Add resolution indicator to log
+        addLogEntry(
+          "🔔 RESOLUTION READY: Note indicates alert can be resolved",
+          "system"
+        );
+      }
+
+      // Handle callback timer notes
+      function handleCallbackNote(noteText, timeframeMinutes) {
+        // Extract contact name from note
+        const contactName = extractContactName(noteText);
+        const timeframeSeconds = timeframeMinutes * 60;
+
+        // Start callback timer
+        if (typeof startGlobalTimer === "function") {
+          startGlobalTimer(
+            "ec-callback",
+            "EC Callback Timer",
+            contactName || "Emergency Contact",
+            timeframeSeconds,
+            "callback"
+          );
+        }
+
+        // Add timer confirmation to log
+        addLogEntry(
+          `⏰ AUTO-TIMER: ${timeframeMinutes} minute callback timer started for ${
+            contactName || "Emergency Contact"
+          }`,
+          "system"
+        );
+      }
+
+      // Handle dispatch request notes
+      function handleDispatchNote(noteText) {
+        // Highlight dispatch section if it exists
+        const dispatchSection = document.querySelector('[id*="dispatch"]');
+        if (dispatchSection) {
+          dispatchSection.style.border = "3px solid #dc3545";
+          dispatchSection.style.background = "rgba(220, 53, 69, 0.1)";
+        }
+
+        // Add dispatch indicator to log
+        addLogEntry(
+          "🚨 DISPATCH REQUESTED: Specialist note indicates dispatch needed",
+          "system"
+        );
+
+        // Auto-scroll to dispatch section
+        setTimeout(() => {
+          dispatchSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 500);
+      }
+
+      // Handle SOS confirmation notes
+      function handleSOSNote(noteText) {
+        // Add SOS indicator to log
+        addLogEntry(
+          "🆘 SOS CONFIRMED: Real emergency situation detected",
+          "system"
+        );
+
+        // Could trigger immediate dispatch or escalation here
+        if (typeof triggerImmediateDispatch === "function") {
+          triggerImmediateDispatch();
+        }
+      }
+
+      // Show confirmation of actions taken
+      function showActionConfirmation(analysis) {
+        if (analysis.type === "general") return;
+
+        let message = "";
+        switch (analysis.type) {
+          case "resolution":
+            message =
+              "✅ Note detected as RESOLUTION READY - Resolution section highlighted";
+            break;
+          case "callback":
+            message = `⏰ Callback timer started for ${analysis.timeframe} minutes`;
+            break;
+          case "dispatch":
+            message =
+              "🚨 Dispatch request detected - Dispatch section highlighted";
+            break;
+          case "sos":
+            message =
+              "🆘 SOS situation detected - Emergency protocols activated";
+            break;
+        }
+
+        // Show temporary notification
+        showTemporaryNotification(message, analysis.priority);
+      }
+
+      // Show temporary notification (semi-transparent, no sound)
+      function showTemporaryNotification(message, priority = "normal") {
+        // Create notification element
+        const notification = document.createElement("div");
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          padding: 15px 20px;
+          border-radius: 8px;
+          color: white;
+          font-weight: bold;
+          z-index: 1000;
+          max-width: 400px;
+          backdrop-filter: blur(2px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          transform: translateX(100%);
+          transition: transform 0.3s ease-in-out;
+        `;
+
+        // Set semi-transparent color based on priority
+        const colors = {
+          urgent: "rgba(220, 53, 69, 0.9)", // Semi-transparent red
+          high: "rgba(255, 193, 7, 0.9)", // Semi-transparent orange
+          medium: "rgba(40, 167, 69, 0.9)", // Semi-transparent green
+          normal: "rgba(23, 162, 184, 0.9)", // Semi-transparent blue
+        };
+
+        notification.style.background = colors[priority] || colors.normal;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Slide in animation
+        setTimeout(() => {
+          notification.style.transform = "translateX(0)";
+        }, 10);
+
+        // Remove after 4 seconds with slide out animation
+        setTimeout(() => {
+          notification.style.transform = "translateX(100%)";
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }, 4000);
       }
 
       function sendManualMessage() {
