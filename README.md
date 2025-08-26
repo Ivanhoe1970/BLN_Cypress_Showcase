@@ -131,3 +131,8 @@ Easier onboarding for new QA/dev team members
 CI/CD parity with production containers
 
 🔧 Docker setup instructions can be added upon request or if the team decides to standardize automation containers.
+## Live Demo
+
+**Automated Emergency Response Platform**
+
+https://ivanhoe1970.github.io/BLN_Cypress_Showcase/automated-emergency-response-platform/automated-emergency-response-platform.html
