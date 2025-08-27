@@ -1129,6 +1129,54 @@
         border: 2px solid #dc3545 !important;
         background-color: #fff5f5 !important;
       }
+
+      /* ═══════════════════════════════════════════════════════════════════════════════
+   PRE-ALERT STYLING
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+      /* Disabled button styling for pre-alert condition */
+      .disabled-pre-alert {
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+      }
+
+      /* Disabled step container styling */
+      .step-disabled-pre-alert {
+        opacity: 0.6 !important;
+        position: relative;
+      }
+
+      /* Pre-alert resolution section highlighting */
+      [data-cy="resolution-section-pre-alert"] {
+        border: 2px solid #ffc107 !important;
+        background: rgba(255, 193, 7, 0.05) !important;
+      }
+
+      /* Animation for pre-alert resolution attention */
+      @keyframes preAlertPulse {
+        0%,
+        100% {
+          border-color: #ffc107;
+          box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        }
+        50% {
+          border-color: #ff9800;
+          box-shadow: 0 4px 16px rgba(255, 152, 0, 0.5);
+        }
+      }
+
+      /* System log entries for pre-alert */
+      .log-entry.system {
+        border-left-color: #6c757d;
+      }
+
+      /* Ensure resolution controls remain functional in pre-alert mode */
+      .resolution-section .btn-danger:not(.disabled-pre-alert),
+      .resolution-section select:not(.disabled-pre-alert) {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
     </style>
   </head>
   <body>
@@ -1226,6 +1274,13 @@
               title="Missed Check-In - Device Offline"
             >
               Missed Check-In (Offline)
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="loadAlert('pre-alert-test')"
+              title="Pre-Alert Test - Alert >24 hours old"
+            >
+              Pre-Alert (25h old)
             </button>
           </div>
         </div>
@@ -1548,6 +1603,533 @@
           );
         },
       };
+
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // PRE-ALERT DETECTION SYSTEM
+      // ═══════════════════════════════════════════════════════════════════════════════
+
+      const PRE_ALERT_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+      /**
+       * Comprehensive pre-alert detection with data integrity validation
+       * Only runs at alert initialization - not during runtime
+       */
+      function isPreAlert(alertData) {
+        try {
+          if (!alertData) {
+            addLogEntry("[PreAlert] No alert data provided", "system");
+            return false;
+          }
+
+          // Extract date with fallback chain
+          const dateField =
+            alertData.alert_date ||
+            alertData.alertDate ||
+            alertData.date ||
+            alertData.timestamp;
+          if (!dateField) {
+            addLogEntry(
+              `[PreAlert] No date field found. Available fields: ${Object.keys(
+                alertData
+              ).join(", ")}`,
+              "system"
+            );
+            return false;
+          }
+
+          const alertDate = new Date(dateField);
+          if (isNaN(alertDate.getTime())) {
+            addLogEntry(
+              `[PreAlert] Invalid date format: ${dateField}`,
+              "system"
+            );
+            return false;
+          }
+
+          // Data integrity check - reject future dates
+          const now = new Date();
+          if (alertDate > now) {
+            addLogEntry(
+              `[PreAlert] Data integrity error - alert date is in the future: ${alertDate.toISOString()}`,
+              "system"
+            );
+            return false;
+          }
+
+          // Calculate age and determine if pre-alert
+          const ageMs = now.getTime() - alertDate.getTime();
+          const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+          const isOld = ageMs > PRE_ALERT_THRESHOLD;
+
+          // Use existing logging system
+          addLogEntry(
+            `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
+            "system"
+          );
+
+          return isOld;
+        } catch (error) {
+          addLogEntry(`[PreAlert] Detection error: ${error.message}`, "system");
+          return false;
+        }
+      }
+
+      // Data Management System
+      class AlertDataManager {
+        static usersData = {
+          "zach-sowell": {
+            id: "373595",
+            name: "Zach Sowell",
+            device: "G7x-3571031421",
+            mobile: "+1 470-505-6195",
+            company: "WM - Corporate",
+            work: "+1 470-505-6195",
+            home: "+1 208-995-4975",
+            emergencyContacts: [
+              {
+                name: "Daniel Reyes",
+                phone: "+1-587-333-9271",
+                role: "Site Supervisor",
+              },
+              {
+                name: "Vanessa Liu",
+                phone: "+1-780-452-1189",
+                role: "Control Room Operator",
+              },
+            ],
+          },
+          "marcus-rodriguez": {
+            id: "428756",
+            name: "Marcus Rodriguez",
+            device: "G7x-2947182653",
+            mobile: "+1 403-555-0167",
+            company: "Enbridge Pipelines",
+            work: "+1 403-555-0167",
+            home: "+1 403-555-0168",
+            emergencyContacts: [
+              {
+                name: "Mike Chen",
+                phone: "+1-403-555-0123",
+                role: "Site Supervisor",
+              },
+              {
+                name: "Sarah Kim",
+                phone: "+1-403-555-0124",
+                role: "Safety Coordinator",
+              },
+            ],
+          },
+          "test-user": {
+            id: "TEST001",
+            name: "Test User",
+            device: "G7x-12345",
+            mobile: "+1-555-0123",
+            company: "Demo Company",
+            work: "+1-555-0124",
+            home: "+1-555-0125",
+            emergencyContacts: [
+              {
+                name: "Emergency Contact",
+                phone: "+1-555-0456",
+                role: "Primary Contact",
+              },
+            ],
+          },
+        };
+
+        static alertTypesData = {
+          "h2s-spontaneous": {
+            id: "h2s-spontaneous",
+            displayName:
+              "High threshold detected (H₂S) - Spontaneous - No Dispatch",
+            user: "zach-sowell",
+            deviceType: "G7c",
+            protocolFile: "gas-emergency-protocol",
+            gasType: "h2s-high",
+            testType: "spontaneous",
+            gasNormalization: { enabled: false },
+            deviceConditions: {
+              lastComm: 5,
+              battery: 85,
+              signal: 70,
+              locationAge: 4320, // 3 days old (BAD - stale location)
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+          },
+          "h2s-response": {
+            id: "h2s-response",
+            displayName:
+              "High threshold detected (H₂S) - Response - No Dispatch",
+            user: "zach-sowell",
+            deviceType: "G7c",
+            protocolFile: "gas-emergency-protocol",
+            gasType: "h2s-high",
+            testType: "response",
+            gasNormalization: { enabled: false },
+            deviceConditions: {
+              lastComm: 5,
+              battery: 85,
+              signal: 70,
+              locationAge: 2,
+              deviceSpeed: 95, // 95 km/h (BAD - moving too fast)
+              deviceStatus: "Online",
+            },
+          },
+          "co-spontaneous": {
+            id: "co-spontaneous",
+            displayName: "High threshold detected (CO) - Dispatch",
+            user: "marcus-rodriguez",
+            deviceType: "G7x",
+            protocolFile: "gas-emergency-protocol",
+            gasType: "co-high",
+            testType: "spontaneous",
+            deviceConditions: {
+              lastComm: 3,
+              battery: 78,
+              signal: 85,
+              locationAge: 1,
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+            gasNormalization: {
+              enabled: true,
+              triggerAfterStep: "step-1", // Trigger after Step 1 completes
+              targetLevels: {
+                co: {
+                  value: 0.5,
+                  status: "NORMAL",
+                },
+              },
+            },
+          },
+          // O₂ Test Alerts for 2-Minute Monitoring
+          "o2-depletion-resolves": {
+            id: "o2-depletion-resolves",
+            displayName: "O₂ Depletion - Auto-Resolution Demo",
+            user: "zach-sowell",
+            deviceType: "G7x",
+            protocolFile: "gas-monitoring-protocol",
+            gasType: "o2-low",
+            testType: "monitoring",
+            requiresMonitoring: true,
+            monitoringDuration: 120,
+            deviceConditions: {
+              lastComm: 2,
+              battery: 90,
+              signal: 85,
+              locationAge: 1,
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+            gasNormalization: {
+              enabled: true,
+              triggerAfterStep: "monitoring-start",
+              delay: 60000, // 1 minute - normalizes quickly
+              targetLevels: {
+                o2: {
+                  value: 20.9,
+                  status: "NORMAL",
+                },
+              },
+            },
+          },
+          "o2-enrichment-escalates": {
+            id: "o2-enrichment-escalates",
+            displayName: "O₂ Enrichment - Escalation Demo",
+            user: "marcus-rodriguez",
+            deviceType: "G7c",
+            protocolFile: "gas-monitoring-protocol",
+            gasType: "o2-high",
+            testType: "monitoring",
+            requiresMonitoring: true,
+            monitoringDuration: 120,
+            deviceConditions: {
+              lastComm: 3,
+              battery: 85,
+              signal: 75,
+              locationAge: 2,
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+            gasNormalization: { enabled: false }, // Stays dangerous
+          },
+          "fall-spontaneous": {
+            id: "fall-spontaneous",
+            displayName: "Fall detection - Spontaneous - No Dispatch",
+            user: "marcus-rodriguez",
+            deviceType: "G7x",
+            protocolFile: "fall-detection-protocol",
+            gasType: "default",
+            testType: "spontaneous",
+            deviceConditions: {
+              lastComm: 1, // 1 minute ago (GOOD - online)
+              battery: 85, // 85% (GOOD - high battery)
+              signal: 70, // 70% (GOOD - strong signal)
+              locationAge: 2880, // 2 days old (BAD - stale location)
+              deviceSpeed: 0.0, // Stationary (GOOD)
+              deviceStatus: "Online",
+            },
+          },
+          "fall-detection": {
+            id: "fall-detection",
+            displayName: "Fall detection detected - Dispatch",
+            user: "marcus-rodriguez",
+            deviceType: "G7c",
+            protocolFile: "fall-detection-protocol",
+            gasType: "default",
+            testType: "legacy",
+            deviceConditions: {
+              lastComm: 1,
+              battery: 92,
+              signal: 95,
+              locationAge: 0.5,
+              deviceSpeed: 2.1,
+              deviceStatus: "Online",
+            },
+          },
+          "sos-immediate": {
+            id: "sos-immediate",
+            displayName: "SOS alert - Immediate Help - Dispatch",
+            user: "zach-sowell",
+            deviceType: "G7x",
+            protocolFile: "sos-protocol",
+            gasType: "default",
+            testType: "immediate-help",
+            deviceConditions: {
+              lastComm: 2,
+              battery: 95,
+              signal: 98,
+              locationAge: 1,
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+          },
+          "no-motion": {
+            id: "no-motion",
+            displayName: "No motion detected - No Dispatch",
+            user: "marcus-rodriguez",
+            deviceType: "G7c",
+            protocolFile: "no-motion-protocol",
+            gasType: "default",
+            testType: "legacy",
+            deviceConditions: {
+              lastComm: 8,
+              battery: 25,
+              signal: 45,
+              locationAge: 180, // 3 hours old (BAD - stale location)
+              deviceSpeed: 0.0,
+              deviceStatus: "Online",
+            },
+          },
+          "gas-high-threshold": {
+            id: "gas-high-threshold",
+            displayName: "High threshold detected (H₂S) - Dispatch",
+            user: "zach-sowell",
+            deviceType: "G7c",
+            protocolFile: "gas-emergency-protocol",
+            gasType: "h2s-high",
+            testType: "legacy",
+            deviceConditions: {
+              lastComm: 4,
+              battery: 88,
+              signal: 82,
+              locationAge: 2,
+              deviceSpeed: 1.2,
+              deviceStatus: "Online",
+            },
+          },
+          "message-test": {
+            id: "message-test",
+            displayName: "Device Message Test - Dispatch",
+            user: "marcus-rodriguez",
+            deviceType: "G7x",
+            protocolFile: "no-motion-protocol",
+            gasType: "default",
+            testType: "response",
+            deviceConditions: {
+              lastComm: 1,
+              battery: 75,
+              signal: 88,
+              locationAge: 3,
+              deviceSpeed: 0.5,
+              deviceStatus: "Online",
+            },
+          },
+          "missed-check-in": {
+            id: "missed-check-in",
+            displayName: "Missed check-in - Device Online",
+            user: "zach-sowell",
+            deviceType: "G7x",
+            protocolFile: "missed-check-in-protocol",
+            gasType: "default",
+            testType: "response",
+            deviceConditions: {
+              lastComm: 12,
+              battery: 35,
+              signal: 22,
+              locationAge: 3,
+              deviceSpeed: 95.7,
+              deviceStatus: "Online",
+              lastCheckInTime: new Date(Date.now() - 135 * 60 * 1000),
+              checkInReminderTime: new Date(Date.now() - 15 * 60 * 1000),
+              alertTriggeredTime: new Date(),
+              checkInInterval: 120,
+              pendingInterval: 15,
+            },
+          },
+          "missed-check-in-offline": {
+            id: "missed-check-in-offline",
+            displayName: "Missed check-in - Device Offline",
+            user: "marcus-rodriguez",
+            deviceType: "G7x",
+            protocolFile: "missed-check-in-protocol",
+            gasType: "default",
+            testType: "response",
+            deviceConditions: {
+              lastComm: 47, // OFFLINE - exceeds 30 min
+              battery: 8, // OFFLINE - below 10%
+              signal: 3, // OFFLINE - below 10%
+              locationAge: 52, // STALE
+              deviceSpeed: 0,
+              deviceStatus: "Offline",
+              lastCheckInTime: new Date(Date.now() - 135 * 60 * 1000),
+              checkInReminderTime: new Date(Date.now() - 15 * 60 * 1000),
+              alertTriggeredTime: new Date(),
+              checkInInterval: 120,
+              pendingInterval: 15,
+            },
+          },
+          "pre-alert-test": {
+            id: "pre-alert-test",
+            displayName: "PRE-ALERT: Fall Detection - 25 Hours Old",
+            user: "test-user",
+            deviceType: "G7x",
+            protocolFile: "pre-alert-protocol",
+            gasType: "default",
+            testType: "pre-alert",
+            alert_date: new Date(
+              Date.now() - 25 * 60 * 60 * 1000
+            ).toISOString(), // 25 hours ago
+            alertDate: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // fallback field
+            deviceConditions: {
+              lastComm: 25 * 60, // 25 hours ago in minutes (OFFLINE)
+              battery: 15, // Low battery
+              signal: 8, // Poor signal
+              locationAge: 25 * 60, // 25 hours old location (STALE)
+              deviceSpeed: 0.0,
+              deviceStatus: "Offline",
+            },
+            isPreAlert: true, // Explicit flag for testing
+          },
+        };
+      }
+
+      /**
+       * Generate standardized pre-alert log message using existing formatters
+       */
+      function createPreAlertLogMessage(alertData) {
+        const alertDate = new Date(
+          alertData.alert_date || alertData.alertDate || alertData.date
+        );
+        const hoursAgo = Math.floor(
+          (Date.now() - alertDate.getTime()) / (1000 * 60 * 60)
+        );
+
+        // Use existing FORMATTERS for consistency with rest of system
+        const formattedDate =
+          typeof FORMATTERS?.timestampMST === "function"
+            ? FORMATTERS.timestampMST(alertDate)
+            : alertDate.toLocaleString("en-US", {
+                timeZone: "America/Denver",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }) + " MDT";
+
+        return `Pre-alert - alert triggered ${hoursAgo} hours ago. Resolving as per Blackline Safety policy.`;
+      }
+
+      // Add pre-alert log entry using the existing logging system
+      function addPreAlertLogEntry(alertData) {
+        const logMessage = createPreAlertLogMessage(alertData);
+        addLogEntry(logMessage, "system");
+      }
+
+      // Setup pre-alert resolution (auto-select and highlight)
+      function setupPreAlertResolution() {
+        console.log("[PreAlert] Setting up resolution for pre-alert");
+
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect) {
+          // Auto-select pre-alert resolution type
+          resolutionSelect.value = "pre-alert";
+
+          // Mark current alert as pre-alert
+          if (window.currentAlert) {
+            window.currentAlert.isPreAlert = true;
+          }
+          if (typeof currentAlert !== "undefined" && currentAlert) {
+            currentAlert.isPreAlert = true;
+          }
+
+          console.log('[PreAlert] Auto-selected "pre-alert" resolution reason');
+        }
+
+        // Use existing lockUIForResolution function if available
+        if (typeof lockUIForResolution === "function") {
+          lockUIForResolution();
+          console.log("[PreAlert] Used existing lockUIForResolution function");
+        }
+
+        // Mark all steps as completed
+        const allSteps = document.querySelectorAll('[id^="step-"]');
+        allSteps.forEach((step) => {
+          const statusBadge = step.querySelector(".status-badge");
+          if (statusBadge) {
+            statusBadge.textContent = "Completed";
+            statusBadge.className = "status-badge completed";
+            statusBadge.style.background = "#28a745";
+            statusBadge.style.color = "white";
+          }
+
+          step.classList.add("completed");
+          step.classList.remove("active");
+        });
+
+        // Subtle highlight for resolution section
+        const resolutionSection =
+          document.querySelector(".resolution-section") ||
+          document.getElementById("resolution-section");
+        if (resolutionSection) {
+          resolutionSection.style.border = "2px solid #ffc107";
+          resolutionSection.setAttribute(
+            "data-cy",
+            "resolution-section-pre-alert"
+          );
+
+          // Re-enable resolution controls after locking
+          const resolveButton = resolutionSection.querySelector(".btn-danger");
+          const resolutionDropdown = resolutionSection.querySelector("select");
+
+          if (resolveButton) {
+            resolveButton.disabled = false;
+            resolveButton.style.opacity = "1";
+          }
+          if (resolutionDropdown) {
+            resolutionDropdown.disabled = false;
+            resolutionDropdown.style.opacity = "1";
+          }
+
+          console.log(
+            "[PreAlert] Highlighted resolution section and enabled controls"
+          );
+        }
+      }
 
       // Global state variables
       let currentAlert = null;
@@ -1906,319 +2488,6 @@
         }
       });
 
-      // Data Management System
-      class AlertDataManager {
-        static usersData = {
-          "zach-sowell": {
-            id: "373595",
-            name: "Zach Sowell",
-            device: "G7x-3571031421",
-            mobile: "+1 470-505-6195",
-            company: "WM - Corporate",
-            work: "+1 470-505-6195",
-            home: "+1 208-995-4975",
-            emergencyContacts: [
-              {
-                name: "Daniel Reyes",
-                phone: "+1-587-333-9271",
-                role: "Site Supervisor",
-              },
-              {
-                name: "Vanessa Liu",
-                phone: "+1-780-452-1189",
-                role: "Control Room Operator",
-              },
-            ],
-          },
-          "marcus-rodriguez": {
-            id: "428756",
-            name: "Marcus Rodriguez",
-            device: "G7x-2947182653",
-            mobile: "+1 403-555-0167",
-            company: "Enbridge Pipelines",
-            work: "+1 403-555-0167",
-            home: "+1 403-555-0168",
-            emergencyContacts: [
-              {
-                name: "Mike Chen",
-                phone: "+1-403-555-0123",
-                role: "Site Supervisor",
-              },
-              {
-                name: "Sarah Kim",
-                phone: "+1-403-555-0124",
-                role: "Safety Coordinator",
-              },
-            ],
-          },
-        };
-
-        static alertTypesData = {
-          "h2s-spontaneous": {
-            id: "h2s-spontaneous",
-            displayName:
-              "High threshold detected (H₂S) - Spontaneous - No Dispatch",
-            user: "zach-sowell",
-            deviceType: "G7c",
-            protocolFile: "gas-emergency-protocol",
-            gasType: "h2s-high",
-            testType: "spontaneous",
-            gasNormalization: { enabled: false },
-            deviceConditions: {
-              lastComm: 5,
-              battery: 85,
-              signal: 70,
-              locationAge: 4320, // 3 days old (BAD - stale location)
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-          },
-          "h2s-response": {
-            id: "h2s-response",
-            displayName:
-              "High threshold detected (H₂S) - Response - No Dispatch",
-            user: "zach-sowell",
-            deviceType: "G7c",
-            protocolFile: "gas-emergency-protocol",
-            gasType: "h2s-high",
-            testType: "response",
-            gasNormalization: { enabled: false },
-            deviceConditions: {
-              lastComm: 5,
-              battery: 85,
-              signal: 70,
-              locationAge: 2,
-              deviceSpeed: 95, // 95 km/h (BAD - moving too fast)
-              deviceStatus: "Online",
-            },
-          },
-          "co-spontaneous": {
-            id: "co-spontaneous",
-            displayName: "High threshold detected (CO) - Dispatch",
-            user: "marcus-rodriguez",
-            deviceType: "G7x",
-            protocolFile: "gas-emergency-protocol",
-            gasType: "co-high",
-            testType: "spontaneous",
-            deviceConditions: {
-              lastComm: 3,
-              battery: 78,
-              signal: 85,
-              locationAge: 1,
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-            gasNormalization: {
-              enabled: true,
-              triggerAfterStep: "step-1", // Trigger after Step 1 completes
-              targetLevels: {
-                co: {
-                  value: 0.5,
-                  status: "NORMAL",
-                },
-              },
-            },
-          },
-          // O₂ Test Alerts for 2-Minute Monitoring
-          "o2-depletion-resolves": {
-            id: "o2-depletion-resolves",
-            displayName: "O₂ Depletion - Auto-Resolution Demo",
-            user: "zach-sowell",
-            deviceType: "G7x",
-            protocolFile: "gas-monitoring-protocol",
-            gasType: "o2-low",
-            testType: "monitoring",
-            requiresMonitoring: true,
-            monitoringDuration: 120,
-            deviceConditions: {
-              lastComm: 2,
-              battery: 90,
-              signal: 85,
-              locationAge: 1,
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-            gasNormalization: {
-              enabled: true,
-              triggerAfterStep: "monitoring-start",
-              delay: 60000, // 1 minute - normalizes quickly
-              targetLevels: {
-                o2: {
-                  value: 20.9,
-                  status: "NORMAL",
-                },
-              },
-            },
-          },
-          "o2-enrichment-escalates": {
-            id: "o2-enrichment-escalates",
-            displayName: "O₂ Enrichment - Escalation Demo",
-            user: "marcus-rodriguez",
-            deviceType: "G7c",
-            protocolFile: "gas-monitoring-protocol",
-            gasType: "o2-high",
-            testType: "monitoring",
-            requiresMonitoring: true,
-            monitoringDuration: 120,
-            deviceConditions: {
-              lastComm: 3,
-              battery: 85,
-              signal: 75,
-              locationAge: 2,
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-            gasNormalization: { enabled: false }, // Stays dangerous
-          },
-          "fall-spontaneous": {
-            id: "fall-spontaneous",
-            displayName: "Fall detection - Spontaneous - No Dispatch",
-            user: "marcus-rodriguez",
-            deviceType: "G7x",
-            protocolFile: "fall-detection-protocol",
-            gasType: "default",
-            testType: "spontaneous",
-            deviceConditions: {
-              lastComm: 1, // 1 minute ago (GOOD - online)
-              battery: 85, // 85% (GOOD - high battery)
-              signal: 70, // 70% (GOOD - strong signal)
-              locationAge: 2880, // 2 days old (BAD - stale location)
-              deviceSpeed: 0.0, // Stationary (GOOD)
-              deviceStatus: "Online",
-            },
-          },
-          "fall-detection": {
-            id: "fall-detection",
-            displayName: "Fall detection detected - Dispatch",
-            user: "marcus-rodriguez",
-            deviceType: "G7c",
-            protocolFile: "fall-detection-protocol",
-            gasType: "default",
-            testType: "legacy",
-            deviceConditions: {
-              lastComm: 1,
-              battery: 92,
-              signal: 95,
-              locationAge: 0.5,
-              deviceSpeed: 2.1,
-              deviceStatus: "Online",
-            },
-          },
-          "sos-immediate": {
-            id: "sos-immediate",
-            displayName: "SOS alert - Immediate Help - Dispatch",
-            user: "zach-sowell",
-            deviceType: "G7x",
-            protocolFile: "sos-protocol",
-            gasType: "default",
-            testType: "immediate-help",
-            deviceConditions: {
-              lastComm: 2,
-              battery: 95,
-              signal: 98,
-              locationAge: 1,
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-          },
-          "no-motion": {
-            id: "no-motion",
-            displayName: "No motion detected - No Dispatch",
-            user: "marcus-rodriguez",
-            deviceType: "G7c",
-            protocolFile: "no-motion-protocol",
-            gasType: "default",
-            testType: "legacy",
-            deviceConditions: {
-              lastComm: 8,
-              battery: 25,
-              signal: 45,
-              locationAge: 180, // 3 hours old (BAD - stale location)
-              deviceSpeed: 0.0,
-              deviceStatus: "Online",
-            },
-          },
-          "gas-high-threshold": {
-            id: "gas-high-threshold",
-            displayName: "High threshold detected (H₂S) - Dispatch",
-            user: "zach-sowell",
-            deviceType: "G7c",
-            protocolFile: "gas-emergency-protocol",
-            gasType: "h2s-high",
-            testType: "legacy",
-            deviceConditions: {
-              lastComm: 4,
-              battery: 88,
-              signal: 82,
-              locationAge: 2,
-              deviceSpeed: 1.2,
-              deviceStatus: "Online",
-            },
-          },
-          "message-test": {
-            id: "message-test",
-            displayName: "Device Message Test - Dispatch",
-            user: "marcus-rodriguez",
-            deviceType: "G7x",
-            protocolFile: "no-motion-protocol",
-            gasType: "default",
-            testType: "response",
-            deviceConditions: {
-              lastComm: 1,
-              battery: 75,
-              signal: 88,
-              locationAge: 3,
-              deviceSpeed: 0.5,
-              deviceStatus: "Online",
-            },
-          },
-          "missed-check-in": {
-            id: "missed-check-in",
-            displayName: "Missed check-in - Device Online",
-            user: "zach-sowell",
-            deviceType: "G7x",
-            protocolFile: "missed-check-in-protocol",
-            gasType: "default",
-            testType: "response",
-            deviceConditions: {
-              lastComm: 12,
-              battery: 35,
-              signal: 22,
-              locationAge: 3,
-              deviceSpeed: 95.7,
-              deviceStatus: "Online",
-              lastCheckInTime: new Date(Date.now() - 135 * 60 * 1000),
-              checkInReminderTime: new Date(Date.now() - 15 * 60 * 1000),
-              alertTriggeredTime: new Date(),
-              checkInInterval: 120,
-              pendingInterval: 15,
-            },
-          },
-          "missed-check-in-offline": {
-            id: "missed-check-in-offline",
-            displayName: "Missed check-in - Device Offline",
-            user: "marcus-rodriguez",
-            deviceType: "G7x",
-            protocolFile: "missed-check-in-protocol",
-            gasType: "default",
-            testType: "response",
-            deviceConditions: {
-              lastComm: 47, // OFFLINE - exceeds 30 min
-              battery: 8, // OFFLINE - below 10%
-              signal: 3, // OFFLINE - below 10%
-              locationAge: 52, // STALE
-              deviceSpeed: 0,
-              deviceStatus: "Offline",
-              lastCheckInTime: new Date(Date.now() - 135 * 60 * 1000),
-              checkInReminderTime: new Date(Date.now() - 15 * 60 * 1000),
-              alertTriggeredTime: new Date(),
-              checkInInterval: 120,
-              pendingInterval: 15,
-            },
-          },
-        };
-      }
-
       // Single source of truth for test alerts
       function resolveAlertById(id) {
         const map = AlertDataManager?.alertTypesData || {};
@@ -2393,6 +2662,41 @@
                 id: "step-4",
                 title:
                   "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, & 3 until contact made.",
+                action: "dispatch",
+              },
+            ],
+          },
+          "pre-alert-protocol": {
+            name: "Pre-Alert Protocol",
+            steps: [
+              {
+                id: "step-1",
+                title: "Call Device and Validate Need for Assistance",
+                action: "call-device",
+              },
+              {
+                id: "step-2",
+                title:
+                  "Send message 'Do you need help?' to device and wait 2 minutes",
+                action: "message-device",
+                timer: 120,
+              },
+              {
+                id: "step-3",
+                title:
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
+              },
+              {
+                id: "step-4",
+                title:
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
+              },
+              {
+                id: "step-5",
+                title:
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
                 action: "dispatch",
               },
             ],
@@ -3251,6 +3555,16 @@
       // ═══════════════════════════════════════════════════════════════
 
       function initializeAlert(alertConfig, userConfig) {
+        // NEW: Check for pre-alert condition FIRST (for direct calls)
+        if (alertConfig && isPreAlert(alertConfig)) {
+          addPreAlertLogEntry(alertConfig);
+          setupPreAlertResolution();
+          console.log(
+            "[PreAlert] Alert is >24h old, skipping protocol state setup"
+          );
+          return; // Skip protocol setup
+        }
+
         protocolState = {
           completedSteps: [],
           currentStep: 1,
@@ -5807,7 +6121,6 @@
       function formatAlertTime(alertDate) {
         const now = new Date();
         const diffMinutes = Math.floor((now - alertDate) / 60000);
-
         const timeStr =
           alertDate.toLocaleDateString("en-US", {
             month: "2-digit",
@@ -5822,14 +6135,21 @@
             hour12: false,
           }) +
           " MDT";
-
         let timeAgo = "";
+
         if (diffMinutes === 0) timeAgo = "(just now)";
         else if (diffMinutes === 1) timeAgo = "(-1 minute ago)";
         else if (diffMinutes < 60) timeAgo = `(-${diffMinutes} minutes ago)`;
         else if (diffMinutes < 1440)
           timeAgo = `(-${Math.floor(diffMinutes / 60)} hours ago)`;
         else timeAgo = `(-${Math.floor(diffMinutes / 1440)} days ago)`;
+
+        // NEW: Set pre-alert flag if alert is older than 24 hours (1440 minutes)
+        if (diffMinutes >= 1440) {
+          if (window.currentAlert) {
+            window.currentAlert.isPreAlert = true;
+          }
+        }
 
         return `${timeStr} ${timeAgo}`;
       }
@@ -6718,7 +7038,7 @@
         protocolHTML +=
           '<div class="resolution-section">' +
           '<div class="step-header">' +
-          "<h3>✅ RESOLUTION</h3>" +
+          "<h3> RESOLUTION</h3>" +
           '<span class="status-badge" id="resolution-status">Pending</span>' +
           "</div>" +
           '<select id="resolution-reason" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
@@ -6727,6 +7047,7 @@
           '<option value="false-alert-with-dispatch">False alert with dispatch</option>' +
           '<option value="incident-without-dispatch">Incident without dispatch</option>' +
           '<option value="incident-with-dispatch">Incident with dispatch</option>' +
+          '<option value="pre-alert">Pre-alert</option>' +
           "</select>" +
           '<div class="resolution-buttons">' +
           '<button class="btn btn-danger" onclick="resolveAlert()">✅ Resolve Alert</button>' +
@@ -7042,6 +7363,41 @@
           return;
         }
 
+        // NEW: Check for pre-alert condition FIRST
+        if (isPreAlert(alertConfig)) {
+          const userConfig = AlertDataManager.usersData[alertConfig.user];
+
+          // Set global state
+          currentAlert = alertConfig;
+          currentUser = userConfig;
+
+          // Clear existing logs
+          const logContainer = document.getElementById("protocolLog");
+          if (logContainer) logContainer.innerHTML = "";
+
+          // Handle pre-alert: log, disable steps, setup resolution
+          addPreAlertLogEntry(alertConfig);
+
+          // Basic UI setup
+          updateAlertHeader(alertConfig, userConfig);
+          updateGasReadings(alertConfig.gasType || alertType);
+
+          // Load protocol steps (they'll be marked completed by setupPreAlertResolution)
+          const protocolConfig = ProtocolFactory.getProtocolConfig(alertType);
+          loadProtocolSteps(protocolConfig, userConfig);
+
+          // Setup pre-alert resolution
+          setupPreAlertResolution();
+
+          document.getElementById("alert-header")?.classList.add("active");
+          document.getElementById("demo-panel")?.classList.remove("show");
+
+          console.log(
+            "[PreAlert] Alert is >24h old, completed pre-alert setup"
+          );
+          return; // Skip normal protocol loading
+        }
+
         const userConfig = AlertDataManager.usersData[alertConfig.user];
         const protocolConfig = ProtocolFactory.getProtocolConfig(alertType);
 
@@ -7233,11 +7589,38 @@
         const logContainer = document.getElementById("protocolLog");
         logContainer.innerHTML = "";
 
-        // Initialize UI
+        // NEW: Check for pre-alert condition FIRST
+        if (isPreAlert(alertData)) {
+          // Handle pre-alert: log, disable steps, setup resolution
+          addPreAlertLogEntry(alertData);
+          setupPreAlertResolution();
+
+          // Basic UI setup only (no protocol loading)
+          updateAlertHeader(currentAlert, currentUser);
+          document.getElementById("alert-header").classList.add("active");
+          document.getElementById("demo-panel").classList.remove("show");
+
+          console.log(
+            "[PreAlert] Alert is >24h old, skipping normal protocol loading"
+          );
+          return; // Skip normal protocol loading
+        }
+
+        // Continue with normal initialization for recent alerts
         addAlertSequenceLogs(currentUser);
         updateAlertHeader(currentAlert, currentUser);
         updateGasReadings(currentAlert.gasType || "default");
         const protocolConfig = protocolsData[currentAlert.protocolFile];
+        loadProtocolSteps(protocolConfig, currentUser);
+        initializeAlert(currentAlert, currentUser);
+        document.getElementById("alert-header").classList.add("active");
+        document.getElementById("demo-panel").classList.remove("show");
+
+        // Handle test scenarios
+        handleTestScenario(currentAlert);
+        updateAlertHeader(currentAlert, currentUser);
+        updateGasReadings(currentAlert.gasType || "default");
+        protocolConfig = protocolsData[currentAlert.protocolFile];
         loadProtocolSteps(protocolConfig, currentUser);
         initializeAlert(currentAlert, currentUser);
 
@@ -9959,7 +10342,6 @@
           (typeof isGasAlert === "function" && isGasAlert(alertData)) ||
           /(^gas-|h2s|co|o2|lel)/i.test(alertData?.id || "") ||
           /h2s|co|o2|lel/i.test(alertData?.gasType || "");
-
         let category = isGas ? "incident" : "false-alert";
 
         // Optional: if your pre-alert banner sets a flag, prefer that category
@@ -9967,7 +10349,7 @@
           alertData?.isPreAlert === true ||
           window.currentAlert?.isPreAlert === true
         ) {
-          category = "pre-alert";
+          return "pre-alert"; // Return directly without suffix
         }
 
         // 2) Dispatch suffix: only true when actually executed
@@ -9977,9 +10359,7 @@
           hasDispatch = true;
         }
         // Don't rely on dropdown value unless dispatchMade is explicitly true
-
         const suffix = hasDispatch ? "with-dispatch" : "without-dispatch";
-
         return `${category}-${suffix}`;
       }
     </script>
