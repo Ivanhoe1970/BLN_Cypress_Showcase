@@ -1,190 +1,172 @@
 // ========================================
-// LIVE BLACKLINE PORTAL COMMANDS
+// Custom Commands + Page Object Aliases
 // ========================================
 
-Cypress.Commands.add('loginViaApi', () => {
-  // Make the login request to the correct API endpoint
-  cy.request({
-    method: 'POST',
-    url: `${Cypress.env('API_BASE_URL')}/auth/login`,
-    body: {
-      username: Cypress.env('PORTAL_USERNAME'),
-      password: Cypress.env('PORTAL_PASSWORD')
+import EmergencyProtocolPage from '../pages/EmergencyProtocolPage'
+
+Cypress.Commands.add('gasPage', () =>
+  cy.wrap(EmergencyProtocolPage, { log: false })
+)
+
+Cypress.Commands.add('protocolPage', () =>
+  cy.wrap(EmergencyProtocolPage, { log: false })
+)
+
+// ========================================
+// LOCAL TESTING COMMANDS (Emergency Protocol)
+// ========================================
+
+Cypress.Commands.add('loadLocalAlert', (alertId) => {
+  cy.window({ timeout: 20000 }).then((win) => {
+    if (typeof win.loadAlert === "function") {
+      win.loadAlert(alertId);
+    } else {
+      throw new Error(`No alert loader found for id: ${alertId}`);
     }
-  }).then((response) => {
-    expect(response.status).to.eq(200);
-    // Store the authentication token
-    window.localStorage.setItem('authToken', response.body.token);
-    // Set the token in session storage as well if needed
-    window.sessionStorage.setItem('authToken', response.body.token);
   });
+  cy.get('[data-cy="alert-header"], #alert-header', { timeout: 10000 }).should("be.visible");
 });
 
-Cypress.Commands.add('loginViaUI', () => {
-  cy.visit('/login');
-  cy.get('#username').type(Cypress.env('PORTAL_USERNAME'));
-  cy.get('#password').type(Cypress.env('PORTAL_PASSWORD'));
-  cy.get('[data-cy="login-button"]').click();
-  cy.url().should('include', '/dashboard');
-});
-
-// ========================================
-// GAS MONITORING COMMANDS
-// ========================================
-
-Cypress.Commands.add('navigateToGasMonitoring', () => {
-  cy.get('[data-cy="nav-gas-monitoring"]').click();
-  cy.url().should('include', '/gas-monitoring');
-  cy.get('[data-cy="gas-monitoring-header"]').should('be.visible');
-});
-
-Cypress.Commands.add('selectDevice', (deviceId) => {
-  cy.get(`[data-cy="device-${deviceId}"]`).click();
-  cy.get('[data-cy="device-details"]').should('be.visible');
-});
-
-Cypress.Commands.add('triggerGasAlert', (alertType, gasLevel) => {
-  cy.request({
-    method: 'POST',
-    url: `${Cypress.env('API_BASE_URL')}/gas-alerts/simulate`,
-    headers: {
-      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
-    },
-    body: {
-      alertType: alertType,
-      gasLevel: gasLevel,
-      deviceId: Cypress.env('TEST_DEVICE_ID'),
-      timestamp: new Date().toISOString()
+Cypress.Commands.add('setGasLevel', (gasType, value, status = null) => {
+  cy.window().then((win) => {
+    if (typeof win.setGasLevel === 'function') {
+      win.setGasLevel(gasType, value);
+    } else {
+      const unit = gasType === 'o2' ? ' %vol' : gasType === 'lel' ? ' %LEL' : ' ppm';
+      const valueEl = document.getElementById(`${gasType}-value`);
+      const statusEl = document.getElementById(`${gasType}-status`);
+      
+      if (valueEl) valueEl.textContent = `${value}${unit}`;
+      if (statusEl && status) {
+        statusEl.textContent = status;
+        statusEl.className = `gas-status ${status.toLowerCase()}`;
+      }
     }
-  }).then((response) => {
-    expect(response.status).to.eq(200);
   });
 });
 
-Cypress.Commands.add('acknowledgeAlert', (alertId) => {
-  cy.get(`[data-cy="acknowledge-alert-${alertId}"]`).click();
-  cy.get('[data-cy="acknowledgment-modal"]').should('be.visible');
-  cy.get('[data-cy="acknowledge-comment"]').type('Alert acknowledged via automation');
-  cy.get('[data-cy="confirm-acknowledgment"]').click();
-  cy.get('[data-cy="acknowledgment-success"]').should('be.visible');
-});
-
-Cypress.Commands.add('verifyAlertStatus', (alertId, expectedStatus) => {
-  cy.get(`[data-cy="alert-${alertId}"]`).within(() => {
-    cy.get('[data-cy="alert-status"]').should('contain', expectedStatus);
+Cypress.Commands.add('setGasNormal', (gasType = 'h2s') => {
+  cy.window().then((win) => {
+    if (typeof win.setGasNormal === 'function') {
+      win.setGasNormal();
+    } else if (typeof win.triggerGasNormalization === 'function') {
+      const config = {
+        gasNormalization: {
+          enabled: true,
+          targetLevels: {}
+        }
+      };
+      config.gasNormalization.targetLevels[gasType] = { value: 0.5, status: 'NORMAL' };
+      win.triggerGasNormalization(config);
+    } else {
+      const statusEl = document.getElementById(`${gasType}-status`);
+      const valueEl = document.getElementById(`${gasType}-value`);
+      if (statusEl) {
+        statusEl.textContent = 'NORMAL';
+        statusEl.className = 'gas-status normal';
+      }
+      if (valueEl) valueEl.textContent = '0.50 ppm';
+    }
   });
 });
 
-// ========================================
-// GAS PROTOCOL COMMANDS
-// ========================================
-
-Cypress.Commands.add('initiateGasProtocol', (protocolType = 'emergency') => {
-  cy.get('[data-cy="initiate-protocol"]').click();
-  cy.get('[data-cy="protocol-type-selector"]').select(protocolType);
-  cy.get('[data-cy="confirm-protocol"]').click();
-  cy.get('[data-cy="protocol-initiated"]').should('be.visible');
+Cypress.Commands.add('setGasHigh', (gasType = 'h2s', value = 17.90) => {
+  cy.window().then((win) => {
+    if (typeof win.setGasHigh === 'function') {
+      win.setGasHigh();
+    } else {
+      const unit = gasType === 'o2' ? ' %vol' : gasType === 'lel' ? ' %LEL' : ' ppm';
+      const statusEl = document.getElementById(`${gasType}-status`);
+      const valueEl = document.getElementById(`${gasType}-value`);
+      if (statusEl) {
+        statusEl.textContent = 'HIGH';
+        statusEl.className = 'gas-status high';
+      }
+      if (valueEl) valueEl.textContent = `${value}${unit}`;
+    }
+  });
 });
 
-Cypress.Commands.add('verifyProtocolSteps', (expectedSteps) => {
-  expectedSteps.forEach((step, index) => {
-    cy.get(`[data-cy="protocol-step-${index + 1}"]`).within(() => {
-      cy.get('[data-cy="step-title"]').should('contain', step.title);
-      cy.get('[data-cy="step-description"]').should('contain', step.description);
+Cypress.Commands.add('simulateDeviceResponse', (message) => {
+  cy.window().then((win) => {
+    if (typeof win.testResponse === 'function') {
+      win.testResponse(message);
+    } else if (typeof win.simulateDeviceResponse === 'function') {
+      win.simulateDeviceResponse(message, true);
+    } else {
+      throw new Error('No device response simulator found on window');
+    }
+  });
+});
+
+Cypress.Commands.add('waitForTimer', (shouldBeActive = true) => {
+  if (shouldBeActive) {
+    cy.get('[data-cy="global-timer"], #globalTimer', { timeout: 10000 })
+      .should('not.have.class', 'timer-inactive');
+    cy.get('[data-cy="timer-display"], #timerDisplay')
+      .invoke('text').should('match', /\d{2}:\d{2}/);
+  } else {
+    cy.get('[data-cy="global-timer"], #globalTimer')
+      .should('have.class', 'timer-inactive');
+    cy.get('[data-cy="timer-display"], #timerDisplay')
+      .should('contain.text', '--:--');
+  }
+});
+
+Cypress.Commands.add('cancelTimer', (reason = 'custom', customText = 'Test cancellation') => {
+  cy.get('[data-cy="global-cancel-dropdown"], select[onchange*="handleGlobalTimerCancellation"]')
+    .select(reason, { force: true });
+  
+  if (reason === 'custom') {
+    cy.window().then((win) => {
+      cy.stub(win, 'prompt').returns(customText);
     });
+  }
+});
+
+Cypress.Commands.add('verifyLogContains', (text) => {
+  cy.get('[data-cy="protocol-log-container"], #protocolLog')
+    .should('contain.text', text);
+});
+
+Cypress.Commands.add('addNote', (noteText) => {
+  cy.get('[data-cy="manual-notes"], #manual-notes')
+    .clear().type(noteText, { delay: 0 });
+  cy.get('[data-cy="post-note-btn"], button[onclick="addManualNote()"]')
+    .click({ force: true });
+});
+
+Cypress.Commands.add('resolveWithReason', (reason) => {
+  cy.get('[data-cy="resolution-reason"], #resolution-reason')
+    .select(reason, { force: true });
+  cy.get('[data-cy="resolve-alert-btn"], button[onclick="resolveAlert()"]')
+    .click({ force: true });
+});
+
+Cypress.Commands.add('handleOverrideModal', (overrideReason) => {
+  cy.get('[data-cy="override-modal"], #overrideModal')
+    .should('be.visible');
+  cy.get('[data-cy="override-reason"], #override-reason')
+    .select(overrideReason, { force: true });
+  cy.get('[data-cy="confirm-override-btn"], #confirmOverrideBtn')
+    .should('not.be.disabled')
+    .click({ force: true });
+});
+
+Cypress.Commands.add('setDeviceOffline', (reason = 'battery') => {
+  cy.window().then((win) => {
+    if (typeof win.setDeviceOffline === 'function') {
+      win.setDeviceOffline(reason);
+    }
   });
 });
 
-Cypress.Commands.add('completeProtocolStep', (stepNumber) => {
-  cy.get(`[data-cy="protocol-step-${stepNumber}"]`).within(() => {
-    cy.get('[data-cy="step-checkbox"]').check();
-    cy.get('[data-cy="step-timestamp"]').should('be.visible');
+Cypress.Commands.add('setDeviceOnline', () => {
+  cy.window().then((win) => {
+    if (typeof win.setDeviceOnline === 'function') {
+      win.setDeviceOnline();
+    }
   });
-});
-
-Cypress.Commands.add('addProtocolComment', (stepNumber, comment) => {
-  cy.get(`[data-cy="protocol-step-${stepNumber}"]`).within(() => {
-    cy.get('[data-cy="add-comment"]').click();
-    cy.get('[data-cy="comment-input"]').type(comment);
-    cy.get('[data-cy="save-comment"]').click();
-  });
-});
-
-Cypress.Commands.add('verifyProtocolCompletion', () => {
-  cy.get('[data-cy="protocol-completion-status"]').should('contain', 'Complete');
-  cy.get('[data-cy="protocol-completion-time"]').should('be.visible');
-  cy.get('[data-cy="protocol-summary"]').should('be.visible');
-});
-
-// ========================================
-// EMPLOYEE MANAGEMENT COMMANDS
-// ========================================
-
-Cypress.Commands.add('searchEmployee', (employeeName) => {
-  cy.get('[data-cy="employee-search"]').type(employeeName);
-  cy.get('[data-cy="search-button"]').click();
-  cy.get('[data-cy="employee-results"]').should('be.visible');
-});
-
-Cypress.Commands.add('selectEmployee', (employeeId) => {
-  cy.get(`[data-cy="employee-${employeeId}"]`).click();
-  cy.get('[data-cy="employee-details"]').should('be.visible');
-});
-
-Cypress.Commands.add('verifyEmployeeStatus', (employeeId, expectedStatus) => {
-  cy.get(`[data-cy="employee-${employeeId}"]`).within(() => {
-    cy.get('[data-cy="employee-status"]').should('contain', expectedStatus);
-  });
-});
-
-// ========================================
-// DEVICE MANAGEMENT COMMANDS
-// ========================================
-
-Cypress.Commands.add('verifyDeviceStatus', (deviceId, expectedStatus) => {
-  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
-    cy.get('[data-cy="device-status"]').should('contain', expectedStatus);
-  });
-});
-
-Cypress.Commands.add('calibrateDevice', (deviceId) => {
-  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
-    cy.get('[data-cy="calibrate-button"]').click();
-  });
-  cy.get('[data-cy="calibration-modal"]').should('be.visible');
-  cy.get('[data-cy="start-calibration"]').click();
-  cy.get('[data-cy="calibration-progress"]').should('be.visible');
-});
-
-Cypress.Commands.add('verifyDeviceCalibration', (deviceId, expectedDate) => {
-  cy.get(`[data-cy="device-${deviceId}"]`).within(() => {
-    cy.get('[data-cy="last-calibration"]').should('contain', expectedDate);
-  });
-});
-
-// ========================================
-// REPORTING COMMANDS
-// ========================================
-
-Cypress.Commands.add('generateGasReport', (reportType, dateRange) => {
-  cy.get('[data-cy="generate-report"]').click();
-  cy.get('[data-cy="report-type"]').select(reportType);
-  cy.get('[data-cy="date-from"]').type(dateRange.from);
-  cy.get('[data-cy="date-to"]').type(dateRange.to);
-  cy.get('[data-cy="generate-report-button"]').click();
-  cy.get('[data-cy="report-generation-progress"]').should('be.visible');
-});
-
-Cypress.Commands.add('verifyReportContent', (expectedContent) => {
-  cy.get('[data-cy="report-content"]').should('be.visible');
-  expectedContent.forEach((content) => {
-    cy.get('[data-cy="report-content"]').should('contain', content);
-  });
-});
-
-Cypress.Commands.add('downloadReport', (format = 'pdf') => {
-  cy.get(`[data-cy="download-${format}"]`).click();
-  cy.readFile(`cypress/downloads/gas-report.${format}`).should('exist');
 });
 
 // ========================================
@@ -196,78 +178,10 @@ Cypress.Commands.add('waitForPageLoad', (timeout = 10000) => {
   cy.get('[data-cy="page-content"]').should('be.visible');
 });
 
-Cypress.Commands.add('verifyNotification', (message, type = 'success') => {
-  cy.get(`[data-cy="notification-${type}"]`).should('be.visible');
-  cy.get(`[data-cy="notification-${type}"]`).should('contain', message);
-});
-
-Cypress.Commands.add('dismissNotification', () => {
-  cy.get('[data-cy="notification-dismiss"]').click();
-  cy.get('[data-cy="notification"]').should('not.exist');
-});
-
 Cypress.Commands.add('verifyTimestamp', (selector, expectedFormat = 'MM/DD/YYYY HH:mm:ss') => {
-  cy.get(selector).should('be.visible').then(($element) => {
-    const timestamp = $element.text();
-    expect(timestamp).to.match(/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}/);
-  });
-});
-
-// ========================================
-// API VERIFICATION COMMANDS
-// ========================================
-
-Cypress.Commands.add('verifyApiResponse', (endpoint, expectedStatus = 200) => {
-  cy.request({
-    method: 'GET',
-    url: `${Cypress.env('API_BASE_URL')}${endpoint}`,
-    headers: {
-      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
-    }
-  }).then((response) => {
-    expect(response.status).to.eq(expectedStatus);
-  });
-});
-
-Cypress.Commands.add('verifyGasLevels', (deviceId, expectedLevels) => {
-  cy.request({
-    method: 'GET',
-    url: `${Cypress.env('API_BASE_URL')}/devices/${deviceId}/gas-levels`,
-    headers: {
-      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
-    }
-  }).then((response) => {
-    expect(response.status).to.eq(200);
-    expect(response.body).to.have.property('gasLevels');
-    expectedLevels.forEach((level) => {
-      expect(response.body.gasLevels).to.include(level);
-    });
-  });
-});
-
-// ========================================
-// CLEANUP COMMANDS
-// ========================================
-
-Cypress.Commands.add('cleanupTestData', () => {
-  // Clean up any test alerts
-  cy.request({
-    method: 'DELETE',
-    url: `${Cypress.env('API_BASE_URL')}/test-data/alerts`,
-    headers: {
-      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
-    },
-    failOnStatusCode: false
-  });
-  
-  // Clean up test protocols
-  cy.request({
-    method: 'DELETE',
-    url: `${Cypress.env('API_BASE_URL')}/test-data/protocols`,
-    headers: {
-      'Authorization': `Bearer ${window.localStorage.getItem('authToken')}`
-    },
-    failOnStatusCode: false
+  cy.get(selector).should('be.visible').then(($el) => {
+    const ts = $el.text();
+    expect(ts).to.match(/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}/);
   });
 });
 

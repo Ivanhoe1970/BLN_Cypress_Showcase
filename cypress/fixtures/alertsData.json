@@ -1,0 +1,338 @@
+{
+    "usersData": {
+      "zach-sowell": {
+        "id": "373595",
+        "name": "Zach Sowell",
+        "device": "G7x-3571031421",
+        "mobile": "+1 470-505-6195",
+        "company": "WM - Corporate",
+        "work": "+1 470-505-6195",
+        "home": "+1 208-995-4975",
+        "emergencyContacts": [
+          {
+            "name": "Daniel Reyes",
+            "phone": "+1-587-333-9271",
+            "role": "Site Supervisor"
+          },
+          {
+            "name": "Vanessa Liu",
+            "phone": "+1-780-452-1189",
+            "role": "Control Room Operator"
+          }
+        ]
+      },
+      "marcus-rodriguez": {
+        "id": "428756",
+        "name": "Marcus Rodriguez",
+        "device": "G7x-2947182653",
+        "mobile": "+1 403-555-0167",
+        "company": "Enbridge Pipelines",
+        "work": "+1 403-555-0167",
+        "home": "+1 403-555-0168",
+        "emergencyContacts": [
+          {
+            "name": "Mike Chen",
+            "phone": "+1-403-555-0123",
+            "role": "Site Supervisor"
+          },
+          {
+            "name": "Sarah Kim",
+            "phone": "+1-403-555-0124",
+            "role": "Safety Coordinator"
+          }
+        ]
+      },
+      "test-user": {
+        "id": "TEST001",
+        "name": "Test User",
+        "device": "G7x-12345",
+        "mobile": "+1-555-0123",
+        "company": "Demo Company",
+        "work": "+1-555-0124",
+        "home": "+1-555-0125",
+        "emergencyContacts": [
+          {
+            "name": "Emergency Contact",
+            "phone": "+1-555-0456",
+            "role": "Primary Contact"
+          }
+        ]
+      }
+    },
+    "alertTypesData": {
+      "h2s-spontaneous": {
+        "id": "h2s-spontaneous",
+        "displayName": "High threshold detected (H₂S) - Spontaneous - No Dispatch",
+        "user": "zach-sowell",
+        "deviceType": "G7c",
+        "protocolFile": "gas-emergency-protocol",
+        "gasType": "h2s-high",
+        "testType": "spontaneous",
+        "gasNormalization": { "enabled": false },
+        "deviceConditions": {
+          "lastComm": 5,
+          "battery": 85,
+          "signal": 70,
+          "locationAge": 4320,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        }
+      },
+      "h2s-response": {
+        "id": "h2s-response",
+        "displayName": "High threshold detected (H₂S) - Response - No Dispatch",
+        "user": "zach-sowell",
+        "deviceType": "G7c",
+        "protocolFile": "gas-emergency-protocol",
+        "gasType": "h2s-high",
+        "testType": "response",
+        "gasNormalization": { "enabled": false },
+        "deviceConditions": {
+          "lastComm": 5,
+          "battery": 85,
+          "signal": 70,
+          "locationAge": 2,
+          "deviceSpeed": 95,
+          "deviceStatus": "Online"
+        }
+      },
+      "co-spontaneous": {
+        "id": "co-spontaneous",
+        "displayName": "High threshold detected (CO) - Dispatch",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7x",
+        "protocolFile": "gas-emergency-protocol",
+        "gasType": "co-high",
+        "testType": "spontaneous",
+        "deviceConditions": {
+          "lastComm": 3,
+          "battery": 78,
+          "signal": 85,
+          "locationAge": 1,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        },
+        "gasNormalization": {
+          "enabled": true,
+          "triggerAfterStep": "step-1",
+          "targetLevels": {
+            "co": { "value": 0.5, "status": "NORMAL" }
+          }
+        }
+      },
+      "o2-depletion-resolves": {
+        "id": "o2-depletion-resolves",
+        "displayName": "O₂ Depletion - Auto-Resolution Demo",
+        "user": "zach-sowell",
+        "deviceType": "G7x",
+        "protocolFile": "gas-monitoring-protocol",
+        "gasType": "o2-low",
+        "testType": "monitoring",
+        "requiresMonitoring": true,
+        "monitoringDuration": 120,
+        "deviceConditions": {
+          "lastComm": 2,
+          "battery": 90,
+          "signal": 85,
+          "locationAge": 1,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        },
+        "gasNormalization": {
+          "enabled": true,
+          "triggerAfterStep": "monitoring-start",
+          "delay": 60000,
+          "targetLevels": {
+            "o2": { "value": 20.9, "status": "NORMAL" }
+          }
+        }
+      },
+      "o2-enrichment-escalates": {
+        "id": "o2-enrichment-escalates",
+        "displayName": "O₂ Enrichment - Escalation Demo",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7c",
+        "protocolFile": "gas-monitoring-protocol",
+        "gasType": "o2-high",
+        "testType": "monitoring",
+        "requiresMonitoring": true,
+        "monitoringDuration": 120,
+        "deviceConditions": {
+          "lastComm": 3,
+          "battery": 85,
+          "signal": 75,
+          "locationAge": 2,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        },
+        "gasNormalization": { "enabled": false }
+      },
+      "fall-spontaneous": {
+        "id": "fall-spontaneous",
+        "displayName": "Fall detection - Spontaneous - No Dispatch",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7x",
+        "protocolFile": "fall-detection-protocol",
+        "gasType": "default",
+        "testType": "spontaneous",
+        "deviceConditions": {
+          "lastComm": 1,
+          "battery": 85,
+          "signal": 70,
+          "locationAge": 2880,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        }
+      },
+      "fall-detection": {
+        "id": "fall-detection",
+        "displayName": "Fall detection detected - Dispatch",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7c",
+        "protocolFile": "fall-detection-protocol",
+        "gasType": "default",
+        "testType": "legacy",
+        "deviceConditions": {
+          "lastComm": 1,
+          "battery": 92,
+          "signal": 95,
+          "locationAge": 0.5,
+          "deviceSpeed": 2.1,
+          "deviceStatus": "Online"
+        }
+      },
+      "sos-immediate": {
+        "id": "sos-immediate",
+        "displayName": "SOS alert - Immediate Help - Dispatch",
+        "user": "zach-sowell",
+        "deviceType": "G7x",
+        "protocolFile": "sos-protocol",
+        "gasType": "default",
+        "testType": "immediate-help",
+        "deviceConditions": {
+          "lastComm": 2,
+          "battery": 95,
+          "signal": 98,
+          "locationAge": 1,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        }
+      },
+      "no-motion": {
+        "id": "no-motion",
+        "displayName": "No motion detected - No Dispatch",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7c",
+        "protocolFile": "no-motion-protocol",
+        "gasType": "default",
+        "testType": "legacy",
+        "deviceConditions": {
+          "lastComm": 8,
+          "battery": 25,
+          "signal": 45,
+          "locationAge": 180,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Online"
+        }
+      },
+      "gas-high-threshold": {
+        "id": "gas-high-threshold",
+        "displayName": "High threshold detected (H₂S) - Dispatch",
+        "user": "zach-sowell",
+        "deviceType": "G7c",
+        "protocolFile": "gas-emergency-protocol",
+        "gasType": "h2s-high",
+        "testType": "legacy",
+        "deviceConditions": {
+          "lastComm": 4,
+          "battery": 88,
+          "signal": 82,
+          "locationAge": 2,
+          "deviceSpeed": 1.2,
+          "deviceStatus": "Online"
+        }
+      },
+      "message-test": {
+        "id": "message-test",
+        "displayName": "Device Message Test - Dispatch",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7x",
+        "protocolFile": "no-motion-protocol",
+        "gasType": "default",
+        "testType": "response",
+        "deviceConditions": {
+          "lastComm": 1,
+          "battery": 75,
+          "signal": 88,
+          "locationAge": 3,
+          "deviceSpeed": 0.5,
+          "deviceStatus": "Online"
+        }
+      },
+      "missed-check-in": {
+        "id": "missed-check-in",
+        "displayName": "Missed check-in - Device Online",
+        "user": "zach-sowell",
+        "deviceType": "G7x",
+        "protocolFile": "missed-check-in-protocol",
+        "gasType": "default",
+        "testType": "response",
+        "deviceConditions": {
+          "lastComm": 12,
+          "battery": 35,
+          "signal": 22,
+          "locationAge": 3,
+          "deviceSpeed": 95.7,
+          "deviceStatus": "Online",
+          "lastCheckInTime": "2025-08-25T23:00:00.000Z",
+          "checkInReminderTime": "2025-08-26T01:00:00.000Z",
+          "alertTriggeredTime": "2025-08-26T02:00:00.000Z",
+          "checkInInterval": 120,
+          "pendingInterval": 15
+        }
+      },
+      "missed-check-in-offline": {
+        "id": "missed-check-in-offline",
+        "displayName": "Missed check-in - Device Offline",
+        "user": "marcus-rodriguez",
+        "deviceType": "G7x",
+        "protocolFile": "missed-check-in-protocol",
+        "gasType": "default",
+        "testType": "response",
+        "deviceConditions": {
+          "lastComm": 47,
+          "battery": 8,
+          "signal": 3,
+          "locationAge": 52,
+          "deviceSpeed": 0,
+          "deviceStatus": "Offline",
+          "lastCheckInTime": "2025-08-25T23:00:00.000Z",
+          "checkInReminderTime": "2025-08-26T01:00:00.000Z",
+          "alertTriggeredTime": "2025-08-26T02:00:00.000Z",
+          "checkInInterval": 120,
+          "pendingInterval": 15
+        }
+      },
+      "pre-alert-test": {
+        "id": "pre-alert-test",
+        "displayName": "PRE-ALERT: Fall Detection - 25 Hours Old",
+        "user": "test-user",
+        "deviceType": "G7x",
+        "protocolFile": "pre-alert-protocol",
+        "gasType": "default",
+        "testType": "pre-alert",
+        "alert_date": "2025-08-25T02:00:00.000Z",
+        "alertDate": "2025-08-25T02:00:00.000Z",
+        "deviceConditions": {
+          "lastComm": 1500,
+          "battery": 15,
+          "signal": 8,
+          "locationAge": 1500,
+          "deviceSpeed": 0.0,
+          "deviceStatus": "Offline"
+        },
+        "isPreAlert": true
+      }
+    }
+  }
+  

@@ -1129,135 +1129,208 @@
         border: 2px solid #dc3545 !important;
         background-color: #fff5f5 !important;
       }
+
+      /* ═══════════════════════════════════════════════════════════════════════════════
+   PRE-ALERT STYLING
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+      /* Disabled button styling for pre-alert condition */
+      .disabled-pre-alert {
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+      }
+
+      /* Disabled step container styling */
+      .step-disabled-pre-alert {
+        opacity: 0.6 !important;
+        position: relative;
+      }
+
+      /* Pre-alert resolution section highlighting */
+      [data-cy="resolution-section-pre-alert"] {
+        border: 2px solid #ffc107 !important;
+        background: rgba(255, 193, 7, 0.05) !important;
+      }
+
+      /* Animation for pre-alert resolution attention */
+      @keyframes preAlertPulse {
+        0%,
+        100% {
+          border-color: #ffc107;
+          box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        }
+        50% {
+          border-color: #ff9800;
+          box-shadow: 0 4px 16px rgba(255, 152, 0, 0.5);
+        }
+      }
+
+      /* System log entries for pre-alert */
+      .log-entry.system {
+        border-left-color: #6c757d;
+      }
+
+      /* Ensure resolution controls remain functional in pre-alert mode */
+      .resolution-section .btn-danger:not(.disabled-pre-alert),
+      .resolution-section select:not(.disabled-pre-alert) {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
     </style>
   </head>
   <body>
     <!-- Demo Controls -->
-    <div class="demo-gear" id="demo-gear" onclick="toggleDemoPanel()"></div>
-    <div class="demo-panel" id="demo-panel">
-      <div class="demo-section" id="gas-section">
-        <h4
-          class="demo-section-header"
-          onclick="toggleDemoSection('gas-section')"
+<div class="demo-gear" id="demo-gear" data-cy="demo-gear" onclick="toggleDemoPanel()"></div>
+<div class="demo-panel" id="demo-panel" data-cy="demo-panel">
+  <div class="demo-section" id="gas-section">
+    <h4
+      class="demo-section-header"
+      onclick="toggleDemoSection('gas-section')"
+    >
+      Gas Alert Tests
+    </h4>
+    <div class="demo-section-content">
+      <div class="demo-button-grid">
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('h2s-response')"
+          data-cy="h2s-override-test-btn"
+          title="H₂S High - User confirms OK despite gas"
         >
-          Gas Alert Tests
-        </h4>
-        <div class="demo-section-content">
-          <div class="demo-button-grid">
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('h2s-response')"
-              title="H₂S High - User confirms OK despite gas"
-            >
-              H₂S Override Test
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('co-spontaneous')"
-              title="CO High - Gas normalizes after message"
-            >
-              CO Gas Normalization
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('gas-high-threshold')"
-              title="H₂S High - Standard flow"
-            >
-              H₂S Standard Flow
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('o2-depletion-resolves')"
-              title="O₂ Depletion - Gas normalizes at 1min, auto-resolves after 2min"
-            >
-              O₂ Depletion Test
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('o2-enrichment-escalates')"
-              title="O₂ Enrichment - Escalates to protocol steps after 2min"
-            >
-              O₂ Enrichment Test
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="demo-section" id="nongas-section">
-        <h4
-          class="demo-section-header"
-          onclick="toggleDemoSection('nongas-section')"
+          H₂S Override Test
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('co-spontaneous')"
+          data-cy="co-normalization-test-btn"
+          title="CO High - Gas normalizes after message"
         >
-          Non-Gas Tests
-        </h4>
-        <div class="demo-section-content">
-          <div class="demo-button-grid">
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('sos-immediate')"
-              title="SOS Alert"
-            >
-              SOS - Dispatch YES
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('fall-detection')"
-              title="Fall Detection Protocol"
-            >
-              Fall - Protocol Cycle
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('no-motion')"
-              title="No Motion Standard"
-            >
-              No Motion - Standard
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('missed-check-in')"
-              title="Missed Check-In - Device Online"
-            >
-              Missed Check-In (Online)
-            </button>
-            <button
-              class="btn btn-primary"
-              onclick="loadAlert('missed-check-in-offline')"
-              title="Missed Check-In - Device Offline"
-            >
-              Missed Check-In (Offline)
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="demo-button-single">
-        <button class="btn btn-secondary" onclick="clearAlert()">
-          Clear Alert
+          CO Gas Normalization
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('gas-high-threshold')"
+          data-cy="h2s-standard-flow-btn"
+          title="H₂S High - Standard flow"
+        >
+          H₂S Standard Flow
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('o2-depletion-resolves')"
+          data-cy="o2-depletion-test-btn"
+          title="O₂ Depletion - Gas normalizes at 1min, auto-resolves after 2min"
+        >
+          O₂ Depletion Test
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('o2-enrichment-escalates')"
+          data-cy="o2-enrichment-test-btn"
+          title="O₂ Enrichment - Escalates to protocol steps after 2min"
+        >
+          O₂ Enrichment Test
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="demo-section" id="nongas-section">
+    <h4
+      class="demo-section-header"
+      onclick="toggleDemoSection('nongas-section')"
+    >
+      Non-Gas Tests
+    </h4>
+    <div class="demo-section-content">
+      <div class="demo-button-grid">
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('sos-immediate')"
+          data-cy="sos-test-btn"
+          title="SOS Alert"
+        >
+          SOS - Dispatch YES
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('fall-detection')"
+          data-cy="fall-detection-test-btn"
+          title="Fall Detection Protocol"
+        >
+          Fall - Protocol Cycle
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('no-motion')"
+          data-cy="no-motion-test-btn"
+          title="No Motion Standard"
+        >
+          No Motion - Standard
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('missed-check-in')"
+          data-cy="missed-check-in-online-btn"
+          title="Missed Check-In - Device Online"
+        >
+          Missed Check-In (Online)
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('missed-check-in-offline')"
+          data-cy="missed-check-in-offline-btn"
+          title="Missed Check-In - Device Offline"
+        >
+          Missed Check-In (Offline)
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="loadAlert('pre-alert-test')"
+          data-cy="pre-alert-test-btn"
+          title="Pre-Alert Test - Alert >24 hours old"
+        >
+          Pre-Alert (25h old)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-button-single">
+    <button class="btn btn-secondary" onclick="clearAlert()" data-cy="clear-alert-btn">
+      Clear Alert
+    </button>
+  </div>
+</div>
 
     <!-- Alert Information Header -->
-    <div class="header" id="alert-header">
-      <h1 class="alert-title" id="alert-title">🚨 Alert Management</h1>
+    <div class="header" id="alert-header" data-cy="alert-header">
+      <h1 class="alert-title" id="alert-title" data-cy="alert-title">
+        🚨 Alert Management
+      </h1>
 
       <div class="alert-details">
         <div class="alert-info">
           <div class="info-item">
-            <strong>Alert ID:</strong> <span id="alert-id">--</span>
+            <strong>Alert ID:</strong>
+            <span id="alert-id" data-cy="alert-id">--</span>
           </div>
           <div class="info-item">
-            <strong>Employee:</strong> <span id="employee-details">--</span>
+            <strong>Employee:</strong>
+            <span id="employee-details" data-cy="employee-details">--</span>
           </div>
           <div class="info-item">
-            <strong>Device:</strong> <span id="device-details">--</span>
+            <strong>Device:</strong>
+            <span id="device-details" data-cy="device-details">--</span>
           </div>
           <div class="info-item">
-            <strong>Mobile:</strong> <span id="mobile-number">--</span>
+            <strong>Mobile:</strong>
+            <span id="mobile-number" data-cy="mobile-number">--</span>
           </div>
           <div class="info-item">
-            <strong>Alert Time:</strong> <span id="alert-time">--</span>
+            <strong>Alert Time:</strong>
+            <span id="alert-time" data-cy="alert-time">--</span>
           </div>
         </div>
       </div>
@@ -1272,7 +1345,11 @@
         <!-- Protocol Log -->
         <div class="protocol-log panel-box">
           <h3>📋 Protocol Log</h3>
-          <div class="log-container" id="protocolLog">
+          <div
+            class="log-container"
+            id="protocolLog"
+            data-cy="protocol-log-container"
+          >
             <div class="log-placeholder">
               No alert loaded. Use demo controls to load an alert type and begin
               protocol.
@@ -1285,6 +1362,7 @@
           <h3>📝 Add Note</h3>
           <textarea
             id="manual-notes"
+            data-cy="manual-notes"
             class="manual-notes"
             placeholder="Add notes here..."
           ></textarea>
@@ -1292,6 +1370,7 @@
             class="btn btn-success"
             style="margin-top: 10px"
             onclick="addManualNote()"
+            data-cy="post-note-btn"
           >
             Post Note
           </button>
@@ -1301,16 +1380,23 @@
       <!-- Column 2: Global Timer + Messaging -->
       <div class="middle-column-container" style="grid-column: 2">
         <!-- Global Timer -->
-        <div class="global-timer timer-inactive panel-box" id="globalTimer">
+        <div
+          class="global-timer timer-inactive panel-box"
+          id="globalTimer"
+          data-cy="global-timer"
+        >
           <h3>⏰ Timer</h3>
-          <div class="timer-display" id="timerDisplay">--:--</div>
-          <div class="timer-info" id="timerInfo">
+          <div class="timer-display" id="timerDisplay" data-cy="timer-display">
+            --:--
+          </div>
+          <div class="timer-info" id="timerInfo" data-cy="timer-info">
             <strong>No active timer</strong>
           </div>
           <div class="timer-controls">
             <button
               class="cancel-btn"
               id="cancelTimerBtn"
+              data-cy="cancel-timer-btn"
               disabled
               onclick="cancelGlobalTimer()"
             >
@@ -1324,16 +1410,18 @@
           <h3>📨 This device supports messaging</h3>
           <textarea
             id="manual-message-input"
+            data-cy="message-input"
             class="message-input"
             rows="2"
             placeholder="Enter message (2 lines, 16 chars each)"
           ></textarea>
-          <div class="char-counter" id="charCounter">
+          <div class="char-counter" id="charCounter" data-cy="char-counter">
             16/16 characters remaining
           </div>
           <button
             class="btn btn-primary"
             id="sendMessageBtn"
+            data-cy="send-message-btn"
             onclick="sendManualMessage()"
             disabled
           >
@@ -1341,171 +1429,171 @@
           </button>
           <div class="message-history" id="messageHistory">
             <h4>📬 Messages from Device</h4>
-            <ul class="message-list" id="receivedMessages"></ul>
+            <ul
+              class="message-list"
+              id="receivedMessages"
+              data-cy="received-messages"
+            ></ul>
           </div>
         </div>
       </div>
 
       <!-- Column 3: Emergency Steps -->
-      <div class="steps-section panel-box" style="grid-column: 3">
-        <h3>🚨 Emergency Response Protocol</h3>
-        <div id="protocol-content">
-          <div class="protocol-placeholder">
-            <div class="protocol-frame">
-              <div class="placeholder-text">No protocol loaded</div>
-              <div class="placeholder-subtitle">
-                Alert type will load the relevant emergency response protocol
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Column 4: Gas Readings -->
-      <div
-        class="right-column"
-        style="grid-column: 4; display: flex; flex-direction: column; gap: 15px"
-      >
-        <!-- Gas Readings -->
-        <div class="panel-box" id="gasReadingsCard">
-          <h3>🔎 Gas Readings (Live)</h3>
-          <div class="triggered-by" id="triggeredBy" style="display: none">
-            Alert Type: <span id="alert-trigger">--</span>
-          </div>
-          <div class="gas-reading" id="h2s-reading">
-            <span
-              >🟢 H₂S:
-              <span class="gas-value" id="h2s-value">1.20 ppm</span></span
-            >
-            <span class="gas-status normal" id="h2s-status">NORMAL</span>
-          </div>
-          <div class="gas-reading" id="co-reading">
-            <span
-              >🟢 CO:
-              <span class="gas-value" id="co-value">2.50 ppm</span></span
-            >
-            <span class="gas-status normal" id="co-status">NORMAL</span>
-          </div>
-          <div class="gas-reading" id="o2-reading">
-            <span
-              >🟢 O₂:
-              <span class="gas-value" id="o2-value">20.90 %vol</span></span
-            >
-            <span class="gas-status normal" id="o2-status">NORMAL</span>
-          </div>
-          <div class="gas-reading" id="lel-reading">
-            <span
-              >🟢 LEL:
-              <span class="gas-value" id="lel-value">0.50 %LEL</span></span
-            >
-            <span class="gas-status normal" id="lel-status">NORMAL</span>
-          </div>
-          <div class="last-updated" id="lastUpdated" style="display: none">
-            Last updated: <span id="gas-timestamp">--</span>
-          </div>
-        </div>
-
-        <!-- Device Connectivity Panel -->
-        <div class="connectivity-panel" id="connectivityPanel">
-          <h3>📡 Device Connectivity</h3>
-
-          <div class="connectivity-item">
-            <span>Status:</span>
-            <span class="status-pill online" id="device-online-status"
-              >🟢 Online</span
-            >
-          </div>
-
-          <div class="connectivity-item">
-            <span>Last Communication:</span>
-            <span class="connectivity-value" id="last-comm-time"
-              >Aug 02, 2025 at 17:11 MDT</span
-            >
-          </div>
-
-          <div class="connectivity-item">
-            <span>Battery Level:</span>
-            <span class="connectivity-value" id="battery-level">85%</span>
-          </div>
-
-          <div class="connectivity-item">
-            <span>Signal Strength:</span>
-            <span class="connectivity-value" id="signal-strength">70%</span>
-          </div>
-
-          <div class="location-section">
-            <h4>📍 Last Known Location</h4>
-
-            <div class="connectivity-item">
-              <span>Address:</span>
-              <span class="connectivity-value" id="device-location"
-                >144252 434 Ave E, Aldersyde, AB</span
-              >
-            </div>
-
-            <div class="connectivity-item">
-              <span>Coordinates:</span>
-              <span class="connectivity-value" id="device-coordinates"
-                >50.66004, -113.7685769</span
-              >
-            </div>
-
-            <div class="connectivity-item">
-              <span>Speed:</span>
-              <span class="connectivity-value" id="device-speed">0.0 km/h</span>
-            </div>
-
-            <div class="connectivity-item">
-              <span>Location Updated:</span>
-              <span class="connectivity-value" id="location-timestamp"
-                >Aug 02, 2025 at 15:28 MDT</span
-              >
-            </div>
-          </div>
+<div class="steps-section panel-box" style="grid-column: 3">
+  <h3>🚨 Emergency Response Protocol</h3>
+  <div id="protocol-content" data-cy="protocol-content">
+    <div class="protocol-placeholder">
+      <div class="protocol-frame">
+        <div class="placeholder-text">No protocol loaded</div>
+        <div class="placeholder-subtitle">
+          Alert type will load the relevant emergency response protocol
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Column 4: Gas Readings -->
+<div
+  class="right-column"
+  style="grid-column: 4; display: flex; flex-direction: column; gap: 15px"
+>
+  <!-- Gas Readings -->
+  <div class="panel-box" id="gasReadingsCard" data-cy="gas-readings-card">
+    <h3>🔎 Gas Readings (Live)</h3>
+    <div class="triggered-by" id="triggeredBy" style="display: none">
+      Alert Type: <span id="alert-trigger" data-cy="alert-trigger">--</span>
+    </div>
+    <div class="gas-reading" id="h2s-reading" data-cy="h2s-reading">
+      <span
+        >🟢 H₂S:
+        <span class="gas-value" id="h2s-value" data-cy="h2s-value">1.20 ppm</span></span
+      >
+      <span class="gas-status normal" id="h2s-status" data-cy="h2s-status">NORMAL</span>
+    </div>
+    <div class="gas-reading" id="co-reading" data-cy="co-reading">
+      <span
+        >🟢 CO:
+        <span class="gas-value" id="co-value" data-cy="co-value">2.50 ppm</span></span
+      >
+      <span class="gas-status normal" id="co-status" data-cy="co-status">NORMAL</span>
+    </div>
+    <div class="gas-reading" id="o2-reading" data-cy="o2-reading">
+      <span
+        >🟢 O₂:
+        <span class="gas-value" id="o2-value" data-cy="o2-value">20.90 %vol</span></span
+      >
+      <span class="gas-status normal" id="o2-status" data-cy="o2-status">NORMAL</span>
+    </div>
+    <div class="gas-reading" id="lel-reading" data-cy="lel-reading">
+      <span
+        >🟢 LEL:
+        <span class="gas-value" id="lel-value" data-cy="lel-value">0.50 %LEL</span></span
+      >
+      <span class="gas-status normal" id="lel-status" data-cy="lel-status">NORMAL</span>
+    </div>
+    <div class="last-updated" id="lastUpdated" style="display: none">
+      Last updated: <span id="gas-timestamp" data-cy="gas-timestamp">--</span>
+    </div>
+  </div>
+
+  <!-- Device Connectivity Panel -->
+  <div class="connectivity-panel" id="connectivityPanel" data-cy="connectivity-panel">
+    <h3>📡 Device Connectivity</h3>
+
+    <div class="connectivity-item">
+      <span>Status:</span>
+      <span class="status-pill online" id="device-online-status" data-cy="device-status">🟢 Online</span>
+        
+    </div>
+
+    <div class="connectivity-item">
+      <span>Last Communication:</span>
+      <span class="connectivity-value" id="last-comm-time" data-cy="last-comm-time"
+        >Aug 02, 2025 at 17:11 MDT</span
+      >
+    </div>
+
+    <div class="connectivity-item">
+      <span>Battery Level:</span>
+      <span class="connectivity-value" id="battery-level" data-cy="battery-level">85%</span>
+    </div>
+
+    <div class="connectivity-item">
+      <span>Signal Strength:</span>
+      <span class="connectivity-value" id="signal-strength" data-cy="signal-strength">70%</span>
+    </div>
+
+    <div class="location-section">
+      <h4>📍 Last Known Location</h4>
+
+      <div class="connectivity-item">
+        <span>Address:</span>
+        <span class="connectivity-value" id="device-location" data-cy="device-location"
+          >144252 434 Ave E, Aldersyde, AB</span
+        >
+      </div>
+
+      <div class="connectivity-item">
+        <span>Coordinates:</span>
+        <span class="connectivity-value" id="device-coordinates" data-cy="device-coordinates"
+          >50.66004, -113.7685769</span
+        >
+      </div>
+
+      <div class="connectivity-item">
+        <span>Speed:</span>
+        <span class="connectivity-value" id="device-speed" data-cy="device-speed">0.0 km/h</span>
+      </div>
+
+      <div class="connectivity-item">
+        <span>Location Updated:</span>
+        <span class="connectivity-value" id="location-timestamp" data-cy="location-timestamp"
+          >Aug 02, 2025 at 15:28 MDT</span
+        >
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Gas Override Modal -->
-    <div class="modal-overlay" id="modalOverlay"></div>
-    <div class="override-modal" id="overrideModal">
-      <h3>⚠️ Gas levels are still elevated</h3>
-      <p>Are you sure you want to resolve this alert?</p>
-
-      <div class="gas-reading-display" id="overrideGasReading">
-        Current Gas Reading: H₂S: 17.90 ppm (HIGH)
-      </div>
-
-      <label for="override-reason"
-        ><strong>Please confirm the reason for override:</strong></label
-      >
-      <select id="override-reason">
-        <option value="">-- Select override reason --</option>
-        <option value="sensor-error">Sensor error</option>
-        <option value="user-confirmed-safety">
-          User confirmed they are okay
-        </option>
-        <option value="ec-confirmed-safety">
-          Emergency contact confirmed user is okay
-        </option>
-        <option value="bump-test">Bump Test/Calibration in progress</option>
-        <option value="other">Other</option>
-      </select>
-
-      <div class="modal-buttons">
-        <button
-          class="btn btn-danger"
-          id="confirmOverrideBtn"
-          disabled
-          onclick="confirmOverride()"
-        >
-          Resolve Alert
-        </button>
-        <button class="btn btn-secondary" onclick="cancelOverride()">
-          Cancel
-        </button>
-      </div>
-    </div>
+<div class="modal-overlay" id="modalOverlay" data-cy="override-modal-overlay"></div>
+<div class="override-modal" id="overrideModal" data-cy="override-modal">
+  <h3>Gas levels are still elevated</h3>
+  <p>Are you sure you want to resolve this alert?</p>
+  <div class="gas-reading-display" id="overrideGasReading" data-cy="override-gas-reading">
+    Current Gas Reading: H₂S: 17.90 ppm (HIGH)
+  </div>
+  <label for="override-reason">
+    <strong>Please confirm the reason for override:</strong>
+  </label>
+  <select id="override-reason" data-cy="override-reason">
+    <option value="">-- Select override reason --</option>
+    <option value="sensor-error">Sensor error</option>
+    <option value="user-confirmed-safety">User confirmed they are okay</option>
+    <option value="ec-confirmed-safety">Emergency contact confirmed user is okay</option>
+    <option value="bump-test">Bump Test/Calibration in progress</option>
+    <option value="other">Other</option>
+  </select>
+  <div class="modal-buttons">
+    <button
+      class="btn btn-danger"
+      id="confirmOverrideBtn"
+      data-cy="confirm-override"
+      disabled
+      onclick="confirmOverride()"
+    >
+      Resolve Alert
+    </button>
+    <button 
+      class="btn btn-secondary" 
+      data-cy="cancel-override"
+      onclick="cancelOverride()"
+    >
+      Cancel
+    </button>
+  </div>
+</div>
     <script>
       // ═══════════════════════════════════════════════════════════════
       // 📊 GLOBAL STATE & DATA
@@ -1549,362 +1637,93 @@
         },
       };
 
-      // Global state variables
-      let currentAlert = null;
-      let currentUser = null;
-      let gasUpdateInterval = null;
-      let dispatchMade = false;
-      let globalTimerInterval = null;
-      let activeTimerData = null;
-      let globalTimerEndTime = null;
-      let tabFlashInterval = null;
-      let localTimerInterval = null;
-      let beepTimeouts = [];
-      let originalTitle = "Enhanced Blackline Live - Alert Management";
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // PRE-ALERT DETECTION SYSTEM
+      // ═══════════════════════════════════════════════════════════════════════════════
 
-      // Context tracking variables
-      let lastPromptSent = null;
-      let promptTimestamp = null;
-      let messageTimer = null;
-      let awaitingResponse = false;
+      const PRE_ALERT_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-      // SOS Protocol definitions
-      const SOS_PROTOCOL_STEPS = {
-        1: "Message device",
-        2: "Call user",
-        3: "Dispatch",
-        4: "Call emergency contacts",
-      };
+      /**
+       * Comprehensive pre-alert detection with data integrity validation
+       * Only runs at alert initialization - not during runtime
+       */
+       function isPreAlert(alertData) {
+    try {
+        if (!alertData) {
+            return false;
+        }
 
-      // Protocol state management
-      let protocolState = {
-        completedSteps: [],
-        currentStep: 1,
-        dispatchMade: false,
-        alertResolved: false,
-        deviceMessageReceived: false,
-        currentProtocol: null,
-        currentSOSStep: 1,
-      };
+        // Method 1: Check for explicit alertAge field (for test scenarios)
+        if (alertData.alertAge && typeof alertData.alertAge === 'number') {
+            const ageHours = alertData.alertAge;
+            const isOld = ageHours > 24;
+            
+            addLogEntry(
+                `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
+                "system"
+            );
+            return isOld;
+        }
 
-      // ==================================================================================
-      // ENHANCED ADD NOTE SYSTEM - PHASE 1: PATTERN DETECTION
-      // ==================================================================================
+        // Method 2: Check deviceConditions for alertTriggeredTime
+        if (alertData.deviceConditions?.alertTriggeredTime) {
+            const alertDate = new Date(alertData.deviceConditions.alertTriggeredTime);
+            if (!isNaN(alertDate.getTime())) {
+                const now = new Date();
+                const ageMs = now.getTime() - alertDate.getTime();
+                const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+                const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-      // Note type detection patterns
-      const NOTE_PATTERNS = {
-        resolution: {
-          patterns: [
-            /confirmed.*(?:they are|user is|he is|she is).*(?:ok|okay|safe|fine)/i,
-            /alert.*(?:can be|should be).*resolved/i,
-            /user.*(?:is safe|is ok|is okay|is fine)/i,
-            /false.*alert/i,
-            /no.*(?:emergency|incident)/i,
-            /everything.*(?:is fine|is ok|is okay)/i,
-            /issue.*resolved/i,
-            /all.*clear/i,
-            /equipment.*malfunction/i,
-            /device.*error/i,
-          ],
-          action: "resolution",
-          priority: "high",
-        },
-
-        callback: {
-          patterns: [
-            /(?:will|going to).*(?:call back|check.*back|get back)/i,
-            /(?:calling|checking).*(?:back|in).*(\d+).*(?:min|minute)/i,
-            /will.*(?:check on|contact).*(?:user|them)/i,
-            /(?:call back|check back).*(?:in|within).*(\d+)/i,
-          ],
-          action: "timer",
-          priority: "medium",
-        },
-
-        dispatch: {
-          patterns: [
-            /(?:request|need|send).*dispatch/i,
-            /(?:emergency|ambulance|fire|police).*(?:needed|required)/i,
-            /(?:send|need).*(?:help|assistance).*(?:immediately|urgent)/i,
-            /cannot.*(?:reach|contact).*user/i,
-          ],
-          action: "dispatch",
-          priority: "urgent",
-        },
-
-        sos: {
-          patterns: [
-            /(?:user said|user confirmed).*(?:help|emergency)/i,
-            /(?:real|actual).*(?:emergency|incident)/i,
-            /user.*(?:needs|requesting).*help/i,
-          ],
-          action: "sos",
-          priority: "urgent",
-        },
-      };
-
-      // Time extraction patterns
-      const TIME_PATTERNS = {
-        minutes: /(\d+).*(?:min|minute)/i,
-        hours: /(\d+).*(?:hour|hr)/i,
-        specific: /(?:in|within).*(\d+).*(?:min|hour)/i,
-      };
-
-      // ==================================================================================
-      // ENHANCED ADD NOTE SYSTEM - PHASE 2: ANALYSIS FUNCTIONS
-      // ==================================================================================
-
-      // Analyze note content for patterns and intent
-      function analyzeNote(noteText) {
-        const analysis = {
-          type: "general",
-          actions: [],
-          priority: "normal",
-          timeframe: null,
-          confidence: 0,
-        };
-
-        // Check each pattern category
-        for (const [category, config] of Object.entries(NOTE_PATTERNS)) {
-          for (const pattern of config.patterns) {
-            if (pattern.test(noteText)) {
-              analysis.type = category;
-              analysis.actions.push(config.action);
-              analysis.priority = config.priority;
-              analysis.confidence = calculateConfidence(noteText, pattern);
-              break;
+                addLogEntry(
+                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
+                    "system"
+                );
+                return isOld;
             }
-          }
-          if (analysis.type !== "general") break;
         }
 
-        // Extract timeframe if this is a callback note
-        if (analysis.type === "callback") {
-          analysis.timeframe = extractTimeframe(noteText);
-        }
+        // Method 3: Try standard date fields (fallback for other alert formats)
+        const dateField =
+            alertData.alert_date ||
+            alertData.alertDate ||
+            alertData.date ||
+            alertData.timestamp ||
+            alertData.createdAt;
+            
+        if (dateField) {
+            const alertDate = new Date(dateField);
+            if (!isNaN(alertDate.getTime())) {
+                const now = new Date();
+                
+                // Data integrity check - reject future dates
+                if (alertDate > now) {
+                    addLogEntry(
+                        `[PreAlert] Data integrity error - alert date is in the future: ${alertDate.toISOString()}`,
+                        "system"
+                    );
+                    return false;
+                }
 
-        return analysis;
-      }
+                const ageMs = now.getTime() - alertDate.getTime();
+                const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+                const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-      // Extract timeframe from callback notes
-      function extractTimeframe(noteText) {
-        let minutes = 30; // default
-
-        const minuteMatch = TIME_PATTERNS.minutes.exec(noteText);
-        const hourMatch = TIME_PATTERNS.hours.exec(noteText);
-
-        if (minuteMatch) {
-          minutes = parseInt(minuteMatch[1]);
-          // Enforce limits: 5 min minimum, 30 min maximum
-          minutes = Math.max(5, Math.min(30, minutes));
-        } else if (hourMatch) {
-          minutes = parseInt(hourMatch[1]) * 60;
-          // Convert hours but still enforce 30 min max
-          minutes = Math.min(30, minutes);
-        }
-
-        return minutes;
-      }
-
-      // Extract contact name from note text
-      function extractContactName(noteText) {
-        // Look for common patterns: "EC John", "Sarah called", "Mike will check"
-        const patterns = [
-          /EC\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
-          /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:called|will|is)/i,
-          /(?:called|contacted)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
-        ];
-
-        for (const pattern of patterns) {
-          const match = pattern.exec(noteText);
-          if (match) {
-            return match[1].trim();
-          }
-        }
-
-        return null;
-      }
-
-      // Calculate confidence score for pattern matching
-      function calculateConfidence(noteText, pattern) {
-        const match = pattern.exec(noteText);
-        if (!match) return 0;
-
-        // Base confidence on match length and specific keywords
-        let confidence = 0.6;
-
-        // Higher confidence for specific keywords
-        const highConfidenceWords = [
-          "confirmed",
-          "safe",
-          "okay",
-          "resolved",
-          "false alert",
-        ];
-        const mediumConfidenceWords = ["fine", "ok", "good", "no emergency"];
-
-        for (const word of highConfidenceWords) {
-          if (noteText.toLowerCase().includes(word)) {
-            confidence += 0.2;
-            break;
-          }
-        }
-
-        for (const word of mediumConfidenceWords) {
-          if (noteText.toLowerCase().includes(word)) {
-            confidence += 0.1;
-            break;
-          }
-        }
-
-        return Math.min(confidence, 1.0);
-      }
-
-      const gasReadingsData = {
-        "h2s-high": {
-          h2s: { value: 17.9, status: "HIGH" },
-          co: { value: 2.5, status: "NORMAL" },
-          o2: { value: 20.9, status: "NORMAL" },
-          lel: { value: 4.0, status: "NORMAL" },
-        },
-        "co-high": {
-          h2s: { value: 1.2, status: "NORMAL" },
-          co: { value: 250.0, status: "HIGH" },
-          o2: { value: 20.9, status: "NORMAL" },
-          lel: { value: 0.5, status: "NORMAL" },
-        },
-        // ADD THESE THREE NEW ENTRIES:
-        "o2-low": {
-          h2s: { value: 1.2, status: "NORMAL" },
-          co: { value: 2.5, status: "NORMAL" },
-          o2: { value: 16.5, status: "O₂ Depletion" }, // Dangerous depletion
-          lel: { value: 0.5, status: "NORMAL" },
-        },
-        "o2-high": {
-          h2s: { value: 1.2, status: "NORMAL" },
-          co: { value: 2.5, status: "NORMAL" },
-          o2: { value: 25.2, status: "O₂ Enrichment" }, // Dangerous enrichment
-          lel: { value: 0.5, status: "NORMAL" },
-        },
-        "gas-high-threshold": {
-          h2s: { value: 17.9, status: "HIGH" },
-          co: { value: 2.5, status: "NORMAL" },
-          o2: { value: 20.9, status: "NORMAL" },
-          lel: { value: 4.0, status: "NORMAL" },
-        },
-        default: {
-          h2s: { value: 1.2, status: "NORMAL" },
-          co: { value: 2.5, status: "NORMAL" },
-          o2: { value: 20.9, status: "NORMAL" },
-          lel: { value: 0.5, status: "NORMAL" },
-        },
-      };
-
-      let alertsFromJSON = null;
-
-      function isAnyGasDangerousNow() {
-        const pills = document.querySelectorAll("[id$='-status']");
-        for (const el of pills) {
-          const id = (el.id || "").toLowerCase(); // e.g., 'h2s-status'
-          const txt = (el.textContent || "").trim().toUpperCase(); // e.g., 'HIGH'
-          if (id.startsWith("o2-")) {
-            if (/ENRICHMENT|DEPLETION/.test(txt)) return true;
-          } else if (/HIGH/.test(txt)) {
-            return true; // h2s / co / lel / any future gas with HIGH
-          }
-        }
-        return false; // all normal
-      }
-
-      // Load JSON data when page loads
-      document.addEventListener("DOMContentLoaded", function () {
-        // Load JSON alerts
-        fetch("../cypress/fixtures/gas_alerts.json")
-          .then((response) => response.json())
-          .then((data) => {
-            alertsFromJSON = data;
-            console.log("Loaded alerts from JSON:", data.length, "alerts");
-          })
-          .catch((error) => {
-            console.error("Failed to load JSON alerts:", error);
-          });
-
-        // Your existing initialization
-        updateGasReadings("default");
-        startGasMonitoring();
-
-        // ==================================================================================
-        // ENHANCED MANUAL NOTES VALIDATION WITH PREVIEW:
-        // ==================================================================================
-        const manualNotesTextarea = document.getElementById("manual-notes");
-        const manualNotesButton = document.querySelector(
-          'button[onclick="addManualNote()"]'
-        );
-
-        if (manualNotesTextarea && manualNotesButton) {
-          // Initially disable button
-          manualNotesButton.disabled = true;
-          manualNotesButton.classList.add("btn-secondary");
-          manualNotesButton.classList.remove("btn-success");
-          manualNotesButton.textContent = "Post Note";
-
-          // Enhanced input validation with note type preview
-          manualNotesTextarea.addEventListener("input", function () {
-            const noteText = this.value.trim();
-
-            if (noteText.length > 0) {
-              // Enable button
-              manualNotesButton.disabled = false;
-              manualNotesButton.classList.remove("btn-secondary");
-              manualNotesButton.classList.add("btn-success");
-
-              // Analyze note for preview
-              const analysis = analyzeNote(noteText);
-
-              // Update button text and color based on note type
-              let buttonText = "Post Note";
-              manualNotesButton.classList.remove(
-                "btn-success",
-                "btn-warning",
-                "btn-danger"
-              );
-
-              switch (analysis.type) {
-                case "resolution":
-                  buttonText = "✅ Post Resolution Note";
-                  manualNotesButton.classList.add("btn-warning");
-                  break;
-                case "callback":
-                  buttonText = `⏰ Post Note (${analysis.timeframe}min timer)`;
-                  manualNotesButton.classList.add("btn-success");
-                  break;
-                case "dispatch":
-                  buttonText = "🚨 Post Dispatch Note";
-                  manualNotesButton.classList.add("btn-danger");
-                  break;
-                case "sos":
-                  buttonText = "🆘 Post SOS Note";
-                  manualNotesButton.classList.add("btn-danger");
-                  break;
-                default:
-                  buttonText = "Post Note";
-                  manualNotesButton.classList.add("btn-success");
-              }
-              manualNotesButton.textContent = buttonText;
-            } else {
-              // Disable button and reset text
-              manualNotesButton.disabled = true;
-              manualNotesButton.classList.add("btn-secondary");
-              manualNotesButton.classList.remove(
-                "btn-success",
-                "btn-warning",
-                "btn-danger"
-              );
-              manualNotesButton.textContent = "Post Note";
+                addLogEntry(
+                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
+                    "system"
+                );
+                return isOld;
             }
-          });
         }
-      });
+
+        // No date information found - silently assume current alert
+        return false;
+
+    } catch (error) {
+        addLogEntry(`[PreAlert] Detection error: ${error.message}`, "system");
+        return false;
+    }
+}
 
       // Data Management System
       class AlertDataManager {
@@ -1948,6 +1767,22 @@
                 name: "Sarah Kim",
                 phone: "+1-403-555-0124",
                 role: "Safety Coordinator",
+              },
+            ],
+          },
+          "test-user": {
+            id: "TEST001",
+            name: "Test User",
+            device: "G7x-12345",
+            mobile: "+1-555-0123",
+            company: "Demo Company",
+            work: "+1-555-0124",
+            home: "+1-555-0125",
+            emergencyContacts: [
+              {
+                name: "Emergency Contact",
+                phone: "+1-555-0456",
+                role: "Primary Contact",
               },
             ],
           },
@@ -2216,8 +2051,703 @@
               pendingInterval: 15,
             },
           },
+          "pre-alert-test": {
+            id: "pre-alert-test",
+            displayName: "PRE-ALERT: Fall Detection - 25 Hours Old",
+            user: "test-user",
+            deviceType: "G7x",
+            protocolFile: "pre-alert-protocol",
+            gasType: "default",
+            testType: "pre-alert",
+            alert_date: new Date(
+              Date.now() - 25 * 60 * 60 * 1000
+            ).toISOString(), // 25 hours ago
+            alertDate: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // fallback field
+            deviceConditions: {
+              lastComm: 25 * 60, // 25 hours ago in minutes (OFFLINE)
+              battery: 15, // Low battery
+              signal: 8, // Poor signal
+              locationAge: 25 * 60, // 25 hours old location (STALE)
+              deviceSpeed: 0.0,
+              deviceStatus: "Offline",
+            },
+            isPreAlert: true, // Explicit flag for testing
+          },
         };
       }
+
+      /**
+       * Generate standardized pre-alert log message using existing formatters
+       */
+      function createPreAlertLogMessage(alertData) {
+        const alertDate = new Date(
+          alertData.alert_date || alertData.alertDate || alertData.date
+        );
+        const hoursAgo = Math.floor(
+          (Date.now() - alertDate.getTime()) / (1000 * 60 * 60)
+        );
+
+        // Use existing FORMATTERS for consistency with rest of system
+        const formattedDate =
+          typeof FORMATTERS?.timestampMST === "function"
+            ? FORMATTERS.timestampMST(alertDate)
+            : alertDate.toLocaleString("en-US", {
+                timeZone: "America/Denver",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }) + " MDT";
+
+        return `Pre-alert - alert triggered ${hoursAgo} hours ago. Resolving as per Blackline Safety policy.`;
+      }
+
+      // Add pre-alert log entry using the existing logging system
+      function addPreAlertLogEntry(alertData) {
+        const logMessage = createPreAlertLogMessage(alertData);
+        addLogEntry(logMessage, "system");
+      }
+
+      // Setup pre-alert resolution (auto-select and highlight)
+      function setupPreAlertResolution() {
+        console.log("[PreAlert] Setting up resolution for pre-alert");
+
+        const resolutionSelect = document.getElementById("resolution-reason");
+        if (resolutionSelect) {
+          // Auto-select pre-alert resolution type
+          resolutionSelect.value = "pre-alert";
+
+          // Mark current alert as pre-alert
+          if (window.currentAlert) {
+            window.currentAlert.isPreAlert = true;
+          }
+          if (typeof currentAlert !== "undefined" && currentAlert) {
+            currentAlert.isPreAlert = true;
+          }
+
+          console.log('[PreAlert] Auto-selected "pre-alert" resolution reason');
+        }
+
+        // Use existing lockUIForResolution function if available
+        if (typeof lockUIForResolution === "function") {
+          lockUIForResolution();
+          console.log("[PreAlert] Used existing lockUIForResolution function");
+        }
+
+        // Mark all steps as completed
+        const allSteps = document.querySelectorAll('[id^="step-"]');
+        allSteps.forEach((step) => {
+          const statusBadge = step.querySelector(".status-badge");
+          if (statusBadge) {
+            statusBadge.textContent = "Completed";
+            statusBadge.className = "status-badge completed";
+            statusBadge.style.background = "#28a745";
+            statusBadge.style.color = "white";
+          }
+
+          step.classList.add("completed");
+          step.classList.remove("active");
+        });
+
+        // Subtle highlight for resolution section
+        const resolutionSection =
+          document.querySelector(".resolution-section") ||
+          document.getElementById("resolution-section");
+        if (resolutionSection) {
+          resolutionSection.style.border = "2px solid #ffc107";
+          resolutionSection.setAttribute(
+            "data-cy",
+            "resolution-section-pre-alert"
+          );
+
+          // Re-enable resolution controls after locking
+          const resolveButton = resolutionSection.querySelector(".btn-danger");
+          const resolutionDropdown = resolutionSection.querySelector("select");
+
+          if (resolveButton) {
+            resolveButton.disabled = false;
+            resolveButton.style.opacity = "1";
+          }
+          if (resolutionDropdown) {
+            resolutionDropdown.disabled = false;
+            resolutionDropdown.style.opacity = "1";
+          }
+
+          console.log(
+            "[PreAlert] Highlighted resolution section and enabled controls"
+          );
+        }
+      }
+
+      // Global state variables
+      let currentAlert = null;
+      let currentUser = null;
+      let gasUpdateInterval = null;
+      let dispatchMade = false;
+      window.setDispatchMade = function() {
+  dispatchMade = true;
+  console.log("dispatchMade set to:", dispatchMade);
+};
+      let globalTimerInterval = null;
+      let activeTimerData = null;
+      let globalTimerEndTime = null;
+      let tabFlashInterval = null;
+      let localTimerInterval = null;
+      let beepTimeouts = [];
+      let originalTitle = "Enhanced Blackline Live - Alert Management";
+
+      // Context tracking variables
+      let lastPromptSent = null;
+      let promptTimestamp = null;
+      let messageTimer = null;
+      let awaitingResponse = false;
+
+      // SOS Protocol definitions
+      const SOS_PROTOCOL_STEPS = {
+        1: "Message device",
+        2: "Call user",
+        3: "Dispatch",
+        4: "Call emergency contacts",
+      };
+
+      // Protocol state management
+      let protocolState = {
+        completedSteps: [],
+        currentStep: 1,
+        dispatchMade: false,
+        alertResolved: false,
+        deviceMessageReceived: false,
+        currentProtocol: null,
+        currentSOSStep: 1,
+      };
+
+      //
+// ═══════════════════════════════════════════════════════════════════════════════
+// GARBLED MESSAGE DETECTION SYSTEM - INTEGRATED VERSION
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+
+// Move constants to global scope for access by classification functions
+const GARBLE_DETECT = {
+  NON_ASCII: /[^\x20-\x7E]/,        // outside printable ASCII
+  REPLACEMENT: /\uFFFD/,            // replacement glyph
+  DISALLOWED_ASCII: /[^A-Za-z0-9\s.,!?'"-]/ // only allow letters, digits, space, . , ! ? ' " -
+};
+
+// Conservative token allow-list for device messages
+const SAFE_TOKENS = new Set([
+  // confirmations
+  'ok','okay','fine','safe','confirm','confirmed','confirming',
+  'yes','no','im','i','am','i\'m','im','imokay','imok',
+  
+  // help/sos  
+  'help','send','need','emergency','sos','urgent','assist','assistance',
+  
+  // status/condition words
+  'hurt','injured','stuck','trapped','lost','fallen','down','bleeding',
+  'unconscious','breathing','awake','responsive',
+  
+  // protocol words / instructions
+  'leave','area','understood','message','call','back','will','minutes','minute',
+  'check','callback','ec','contact','phone','device','radio',
+  
+  // location/movement
+  'here','there','location','moving','stopped','stationary','vehicle','equipment',
+  'building','outside','inside','room','office','site','field',
+  
+  // gas/hazard specific
+  'gas','leak','spill','smoke','fire','explosion','chemical','toxic','smell',
+  'evacuate','evacuated','clear','cleared','detector','alarm','warning',
+  
+  // time references
+  'now','soon','minutes','hours','later','done','finished','complete','over',
+  
+  // issues/problems
+  'issue','problem','resolved','fixed','false','alarm','malfunction','error',
+  'working','broken','dead','low','battery','signal',
+  
+  // common misspellings and abbreviations
+  'halp','hlep','cant','wont','dont','isnt','wasnt','ur','u','r','thx','ty',
+  
+  // politeness/communication
+  'thanks','thank','you','received','got','heard','copy','roger','10-4',
+  
+  // basic grammar words
+  'the','to','on','and','in','of','for','with','at','but','or','not','all',
+  'my','me','we','us','our','this','that','these','those','here','there'
+]);
+
+// Normalize token (lowercase; strip simple punctuation at ends)
+const normalizeToken = (s) => (s || '').toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
+
+// Extract word-like tokens (letters/digits); ignore empty bits  
+const tokenizeMessage = (text) => (String(text).match(/[A-Za-z0-9']+/g) || [])
+  .map(normalizeToken)
+  .filter(Boolean);
+
+/**
+ * Check if message contains unknown/suspicious words indicating garbling
+ */
+function hasUnknownWord(text) {
+  const tokens = tokenizeMessage(text);
+  
+  for (const token of tokens) {
+    // Skip very short tokens and pure numbers
+    if (token.length <= 2 || /^\d+$/.test(token)) continue;
+    
+    // Check against safe token list
+    if (!SAFE_TOKENS.has(token)) {
+      // Additional validation for common English patterns
+      if (isLikelyValidWord(token)) continue;
+      
+      console.log(`🚨 Unknown/suspicious word detected: "${token}" in message: "${text}"`);
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Validate words that might be legitimate but not in SAFE_TOKENS
+ */
+function isLikelyValidWord(word) {
+  // Common English word patterns likely to be valid
+  const validPatterns = [
+    /^[a-z]+ing$/,    // -ing words (running, walking, checking)
+    /^[a-z]+ed$/,     // -ed words (stopped, started, finished) 
+    /^[a-z]+er$/,     // -er words (helper, worker, operator)
+    /^[a-z]+ly$/,     // -ly words (quickly, safely, properly)
+    /^un[a-z]+$/,     // un- prefix (unable, unsafe, unconscious)
+    /^re[a-z]+$/,     // re- prefix (return, respond, repeat)
+    /^[a-z]+s$/,      // plurals (calls, messages, contacts)
+  ];
+  
+  return validPatterns.some(pattern => pattern.test(word));
+}
+
+/**
+ * Main garbled message detection with enhanced safety checks
+ */
+function isGarbledMessage(text) {
+  if (text == null) return false;
+  const t = String(text).trim();
+  if (!t) return false;
+  
+  // Quick validation for very short messages
+  if (t.length <= 3) return false;
+  
+  // Check for character-level corruption
+  if (GARBLE_DETECT.NON_ASCII.test(t)) {
+    console.log(`Non-ASCII characters detected in: "${t}"`);
+    return true;
+  }
+  
+  if (GARBLE_DETECT.REPLACEMENT.test(t)) {
+    console.log(`Replacement characters detected in: "${t}"`);
+    return true;
+  }
+  
+  if (GARBLE_DETECT.DISALLOWED_ASCII.test(t)) {
+    console.log(`Disallowed ASCII characters detected in: "${t}"`);
+    return true;
+  }
+  
+  // Check for word-level issues
+  if (hasUnknownWord(t)) {
+    return true; // hasUnknownWord already logs details
+  }
+  
+  return false;
+}
+
+// Enhanced classification with proper garbled detection integration
+function classifyIncomingMessage(responseText, isResponse, promptContext) {
+  // Handle explicit emergency requests first
+  const emergencyMessages = ["Send help", "I am stranded", "Hazard in area"];
+  if (emergencyMessages.includes(responseText)) {
+    return { action: "SOS", reason: "Emergency request" };
+  }
+
+  // Garbled message detection for responses only (safety measure)
+  if (isResponse && isGarbledMessage(responseText)) {
+    // Add system log for audit trail
+    addLogEntry(
+      `⚠️ Garbled message received from device: "${responseText}". Treating as potential distress signal.`,
+      "system"
+    );
+    return { 
+      action: "SOS", 
+      reason: "Garbled/invalid message - potential equipment malfunction or distress" 
+    };
+  }
+
+  // Context-aware responses for prompted replies
+  if (isResponse && promptContext) {
+    const normalizedPrompt = promptContext.toLowerCase().trim();
+    
+    if (normalizedPrompt === "do you need help?") {
+      if (responseText === "Yes") 
+        return { action: "SOS", reason: "Confirmed help needed" };
+      if (responseText === "No") 
+        return { action: "RESOLUTION", reason: "No help needed" };
+    } 
+    else if (normalizedPrompt === "are you ok?" || normalizedPrompt === "are you okay?") {
+      if (responseText === "Yes") 
+        return { action: "RESOLUTION", reason: "Confirmed okay" };
+      if (responseText === "No") 
+        return { action: "SOS", reason: "Not okay" };
+    } 
+    else if (normalizedPrompt === "leave the area, understood?") {
+      if (responseText === "Yes" || responseText === "Understood") {
+        return { action: "CONTINUE", reason: "Acknowledged evacuation instruction" };
+      }
+      if (responseText === "No") 
+        return { action: "SOS", reason: "Refused evacuation in dangerous environment" };
+    }
+  }
+
+  // Spontaneous resolution messages (align with test scenarios)
+  const resolutionMessages = ["Issue resolved", "False alarm", "I'm OK"];
+  if (resolutionMessages.includes(responseText)) {
+    return { action: "RESOLUTION", reason: "Status indicates resolution" };
+  }
+
+  I
+
+  // Default: continue protocol
+  return { action: "CONTINUE", reason: "Standard message" };
+}
+
+// Make functions globally available
+window.isGarbledMessage = isGarbledMessage;
+window.hasUnknownWord = hasUnknownWord;
+window.classifyIncomingMessage = classifyIncomingMessage;
+
+
+// ==================================================================================
+// ENHANCED ADD NOTE SYSTEM - PHASE 1: PATTERN DETECTION
+// ==================================================================================
+
+      // Note type detection patterns
+      const NOTE_PATTERNS = {
+        resolution: {
+          patterns: [
+            /confirmed.*(?:they are|user is|he is|she is).*(?:ok|okay|safe|fine)/i,
+            /alert.*(?:can be|should be).*resolved/i,
+            /user.*(?:is safe|is ok|is okay|is fine)/i,
+            /false.*alert/i,
+            /no.*(?:emergency|incident)/i,
+            /everything.*(?:is fine|is ok|is okay)/i,
+            /issue.*resolved/i,
+            /all.*clear/i,
+            /equipment.*malfunction/i,
+            /device.*error/i,
+          ],
+          action: "resolution",
+          priority: "high",
+        },
+
+        callback: {
+          patterns: [
+            /(?:will|going to).*(?:call back|check.*back|get back)/i,
+            /(?:calling|checking).*(?:back|in).*(\d+).*(?:min|minute)/i,
+            /will.*(?:check on|contact).*(?:user|them)/i,
+            /(?:call back|check back).*(?:in|within).*(\d+)/i,
+          ],
+          action: "timer",
+          priority: "medium",
+        },
+
+        dispatch: {
+          patterns: [
+            /(?:request|need|send).*dispatch/i,
+            /(?:emergency|ambulance|fire|police).*(?:needed|required)/i,
+            /(?:send|need).*(?:help|assistance).*(?:immediately|urgent)/i,
+            /cannot.*(?:reach|contact).*user/i,
+          ],
+          action: "dispatch",
+          priority: "urgent",
+        },
+
+        sos: {
+          patterns: [
+            /(?:user said|user confirmed).*(?:help|emergency)/i,
+            /(?:real|actual).*(?:emergency|incident)/i,
+            /user.*(?:needs|requesting).*help/i,
+          ],
+          action: "sos",
+          priority: "urgent",
+        },
+      };
+
+      // Time extraction patterns
+      const TIME_PATTERNS = {
+        minutes: /(\d+).*(?:min|minute)/i,
+        hours: /(\d+).*(?:hour|hr)/i,
+        specific: /(?:in|within).*(\d+).*(?:min|hour)/i,
+      };
+
+      // ==================================================================================
+      // ENHANCED ADD NOTE SYSTEM - PHASE 2: ANALYSIS FUNCTIONS
+      // ==================================================================================
+
+      // Analyze note content for patterns and intent
+      function analyzeNote(noteText) {
+        const analysis = {
+          type: "general",
+          actions: [],
+          priority: "normal",
+          timeframe: null,
+          confidence: 0,
+        };
+
+        // Check each pattern category
+        for (const [category, config] of Object.entries(NOTE_PATTERNS)) {
+          for (const pattern of config.patterns) {
+            if (pattern.test(noteText)) {
+              analysis.type = category;
+              analysis.actions.push(config.action);
+              analysis.priority = config.priority;
+              analysis.confidence = calculateConfidence(noteText, pattern);
+              break;
+            }
+          }
+          if (analysis.type !== "general") break;
+        }
+
+        // Extract timeframe if this is a callback note
+        if (analysis.type === "callback") {
+          analysis.timeframe = extractTimeframe(noteText);
+        }
+
+        return analysis;
+      }
+
+      // Extract timeframe from callback notes
+      function extractTimeframe(noteText) {
+        let minutes = 30; // default
+
+        const minuteMatch = TIME_PATTERNS.minutes.exec(noteText);
+        const hourMatch = TIME_PATTERNS.hours.exec(noteText);
+
+        if (minuteMatch) {
+          minutes = parseInt(minuteMatch[1]);
+          // Enforce limits: 5 min minimum, 30 min maximum
+          minutes = Math.max(5, Math.min(30, minutes));
+        } else if (hourMatch) {
+          minutes = parseInt(hourMatch[1]) * 60;
+          // Convert hours but still enforce 30 min max
+          minutes = Math.min(30, minutes);
+        }
+
+        return minutes;
+      }
+
+      // Extract contact name from note text
+      function extractContactName(noteText) {
+        // Look for common patterns: "EC John", "Sarah called", "Mike will check"
+        const patterns = [
+          /EC\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+          /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:called|will|is)/i,
+          /(?:called|contacted)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
+        ];
+
+        for (const pattern of patterns) {
+          const match = pattern.exec(noteText);
+          if (match) {
+            return match[1].trim();
+          }
+        }
+
+        return null;
+      }
+
+      // Calculate confidence score for pattern matching
+      function calculateConfidence(noteText, pattern) {
+        const match = pattern.exec(noteText);
+        if (!match) return 0;
+
+        // Base confidence on match length and specific keywords
+        let confidence = 0.6;
+
+        // Higher confidence for specific keywords
+        const highConfidenceWords = [
+          "confirmed",
+          "safe",
+          "okay",
+          "resolved",
+          "false alert",
+        ];
+        const mediumConfidenceWords = ["fine", "ok", "good", "no emergency"];
+
+        for (const word of highConfidenceWords) {
+          if (noteText.toLowerCase().includes(word)) {
+            confidence += 0.2;
+            break;
+          }
+        }
+
+        for (const word of mediumConfidenceWords) {
+          if (noteText.toLowerCase().includes(word)) {
+            confidence += 0.1;
+            break;
+          }
+        }
+
+        return Math.min(confidence, 1.0);
+      }
+
+      const gasReadingsData = {
+        "h2s-high": {
+          h2s: { value: 17.9, status: "HIGH" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 4.0, status: "NORMAL" },
+        },
+        "co-high": {
+          h2s: { value: 1.2, status: "NORMAL" },
+          co: { value: 250.0, status: "HIGH" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 0.5, status: "NORMAL" },
+        },
+        // ADD THESE THREE NEW ENTRIES:
+        "o2-low": {
+          h2s: { value: 1.2, status: "NORMAL" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 16.5, status: "O₂ Depletion" }, // Dangerous depletion
+          lel: { value: 0.5, status: "NORMAL" },
+        },
+        "o2-high": {
+          h2s: { value: 1.2, status: "NORMAL" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 25.2, status: "O₂ Enrichment" }, // Dangerous enrichment
+          lel: { value: 0.5, status: "NORMAL" },
+        },
+        "gas-high-threshold": {
+          h2s: { value: 17.9, status: "HIGH" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 4.0, status: "NORMAL" },
+        },
+        default: {
+          h2s: { value: 1.2, status: "NORMAL" },
+          co: { value: 2.5, status: "NORMAL" },
+          o2: { value: 20.9, status: "NORMAL" },
+          lel: { value: 0.5, status: "NORMAL" },
+        },
+      };
+
+      let alertsFromJSON = null;
+
+      function isAnyGasDangerousNow() {
+        const pills = document.querySelectorAll("[id$='-status']");
+        for (const el of pills) {
+          const id = (el.id || "").toLowerCase(); // e.g., 'h2s-status'
+          const txt = (el.textContent || "").trim().toUpperCase(); // e.g., 'HIGH'
+          if (id.startsWith("o2-")) {
+            if (/ENRICHMENT|DEPLETION/.test(txt)) return true;
+          } else if (/HIGH/.test(txt)) {
+            return true; // h2s / co / lel / any future gas with HIGH
+          }
+        }
+        return false; // all normal
+      }
+
+      // Load JSON data when page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load JSON alerts
+        fetch("../cypress/fixtures/alertsData.json")
+          .then((response) => response.json())
+          .then((data) => {
+            alertsFromJSON = data;
+            console.log("Loaded alerts from JSON:", data.length, "alerts");
+          })
+          .catch((error) => {
+            console.error("Failed to load JSON alerts:", error);
+          });
+
+        // Your existing initialization
+        updateGasReadings("default");
+        startGasMonitoring();
+
+        
+
+        // ==================================================================================
+        // ENHANCED MANUAL NOTES VALIDATION WITH PREVIEW:
+        // ==================================================================================
+        const manualNotesTextarea = document.getElementById("manual-notes");
+        const manualNotesButton = document.querySelector(
+          'button[onclick="addManualNote()"]'
+        );
+
+        if (manualNotesTextarea && manualNotesButton) {
+          // Initially disable button
+          manualNotesButton.disabled = true;
+          manualNotesButton.classList.add("btn-secondary");
+          manualNotesButton.classList.remove("btn-success");
+          manualNotesButton.textContent = "Post Note";
+
+          // Enhanced input validation with note type preview
+          manualNotesTextarea.addEventListener("input", function () {
+            const noteText = this.value.trim();
+
+            if (noteText.length > 0) {
+              // Enable button
+              manualNotesButton.disabled = false;
+              manualNotesButton.classList.remove("btn-secondary");
+              manualNotesButton.classList.add("btn-success");
+
+              // Analyze note for preview
+              const analysis = analyzeNote(noteText);
+
+              // Update button text and color based on note type
+              let buttonText = "Post Note";
+              manualNotesButton.classList.remove(
+                "btn-success",
+                "btn-warning",
+                "btn-danger"
+              );
+
+              switch (analysis.type) {
+                case "resolution":
+                  buttonText = "✅ Post Resolution Note";
+                  manualNotesButton.classList.add("btn-warning");
+                  break;
+                case "callback":
+                  buttonText = `⏰ Post Note (${analysis.timeframe}min timer)`;
+                  manualNotesButton.classList.add("btn-success");
+                  break;
+                case "dispatch":
+                  buttonText = "🚨 Post Dispatch Note";
+                  manualNotesButton.classList.add("btn-danger");
+                  break;
+                case "sos":
+                  buttonText = "🆘 Post SOS Note";
+                  manualNotesButton.classList.add("btn-danger");
+                  break;
+                default:
+                  buttonText = "Post Note";
+                  manualNotesButton.classList.add("btn-success");
+              }
+              manualNotesButton.textContent = buttonText;
+            } else {
+              // Disable button and reset text
+              manualNotesButton.disabled = true;
+              manualNotesButton.classList.add("btn-secondary");
+              manualNotesButton.classList.remove(
+                "btn-success",
+                "btn-warning",
+                "btn-danger"
+              );
+              manualNotesButton.textContent = "Post Note";
+            }
+          });
+        }
+      });
 
       // Single source of truth for test alerts
       function resolveAlertById(id) {
@@ -2393,6 +2923,41 @@
                 id: "step-4",
                 title:
                   "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, & 3 until contact made.",
+                action: "dispatch",
+              },
+            ],
+          },
+          "pre-alert-protocol": {
+            name: "Pre-Alert Protocol",
+            steps: [
+              {
+                id: "step-1",
+                title: "Call Device and Validate Need for Assistance",
+                action: "call-device",
+              },
+              {
+                id: "step-2",
+                title:
+                  "Send message 'Do you need help?' to device and wait 2 minutes",
+                action: "message-device",
+                timer: 120,
+              },
+              {
+                id: "step-3",
+                title:
+                  "Call the phone number assigned to the user and validate need for assistance",
+                action: "call-user",
+              },
+              {
+                id: "step-4",
+                title:
+                  "Contact emergency contacts in order of priority. Provide alert information and wait 30 minutes for follow-up.",
+                action: "call-emergency-contacts",
+              },
+              {
+                id: "step-5",
+                title:
+                  "Dispatch emergency services if valid location available, otherwise repeat steps 1, 2, 3 & 4 until contact made.",
                 action: "dispatch",
               },
             ],
@@ -2793,6 +3358,8 @@
    <option value="">Cancel Timer</option>
    <option value="user-callback">User called in and confirmed they are okay</option>
    <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+   <option value="dispatch-no-emergency">Dispatch called back, no emergency found at location</option>
+   <option value="dispatch-user-okay">Dispatch called back, user confirmed okay on scene</option>
    ${ecCallback30Option}
    <option value="custom">Type reason</option>
 </select>
@@ -3059,59 +3626,107 @@
             console.error("NO STEP ID - Resolution flow failed!");
           }
         } else if (reason === "ec-callback") {
-          // Save current resolution before triggering flow
-          const resolutionSelect = document.getElementById("resolution-reason");
-          const currentResolution = resolutionSelect
-            ? resolutionSelect.value
-            : "";
+         // Save current resolution before triggering flow
+         const resolutionSelect = document.getElementById("resolution-reason");
+         const currentResolution = resolutionSelect
+           ? resolutionSelect.value
+           : "";
 
-          let logMessage =
-            "Emergency contact called in and confirmed user is okay. Resolving alert.";
+         let logMessage =
+           "Emergency contact called in and confirmed user is okay. Resolving alert.";
 
-          // Add gas info for gas alerts
-          if (currentAlert && isGasAlert(currentAlert)) {
-            const gasData = getGasSnapshotFromPanel();
-            if (gasData && gasData.trim()) {
-              logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
-            }
-          }
+         // Add gas info for gas alerts
+         if (currentAlert && isGasAlert(currentAlert)) {
+           const gasData = getGasSnapshotFromPanel();
+           if (gasData && gasData.trim()) {
+             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+           }
+         }
 
-          addLogEntry(logMessage, "step");
+         addLogEntry(logMessage, "step");
 
-          // Use unified resolution flow
-          console.log(
-            "Calling triggerResolutionFlow with stepId:",
-            currentStepId
-          );
-          if (currentStepId) {
-            triggerResolutionFlow(currentStepId, "EC confirmed user okay");
-          } else {
-            console.error("NO STEP ID - Resolution flow failed!");
-          }
+         // Use unified resolution flow
+         console.log(
+           "Calling triggerResolutionFlow with stepId:",
+           currentStepId
+         );
+         if (currentStepId) {
+           triggerResolutionFlow(currentStepId, "EC confirmed user okay");
+         } else {
+           console.error("NO STEP ID - Resolution flow failed!");
+         }
 
-          // Restore resolution if it was already set correctly
-          if (
-            currentResolution &&
-            currentResolution.includes("with-dispatch") &&
-            dispatchMade
-          ) {
-            setTimeout(() => {
-              if (resolutionSelect) {
-                resolutionSelect.value = currentResolution;
-              }
-            }, 100);
-          }
-        } else if (reason === "ec-callback-30min") {
-          console.log("DEBUG: dispatchMade =", dispatchMade);
-          console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
-          console.log(
-            "DEBUG: condition result =",
-            !dispatchMade && !globalTimerInterval
-          );
-          addLogEntry(
-            "Emergency contact called in, will check on user and call back within 30 minutes.",
-            "step"
-          );
+         // Restore resolution if it was already set correctly
+         if (
+           currentResolution &&
+           currentResolution.includes("with-dispatch") &&
+           dispatchMade
+         ) {
+           setTimeout(() => {
+             if (resolutionSelect) {
+               resolutionSelect.value = currentResolution;
+             }
+           }, 100);
+         }
+       } else if (reason === "dispatch-no-emergency") {
+         let logMessage =
+           "Dispatch called back, no emergency found at location. Resolving alert.";
+
+         // Add gas info for gas alerts
+         if (currentAlert && isGasAlert(currentAlert)) {
+           const gasData = getGasSnapshotFromPanel();
+           if (gasData && gasData.trim()) {
+             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+           }
+         }
+
+         addLogEntry(logMessage, "step");
+
+         // Use unified resolution flow
+         console.log(
+           "Calling triggerResolutionFlow with stepId:",
+           currentStepId
+         );
+         if (currentStepId) {
+           triggerResolutionFlow(currentStepId, "Dispatch confirmed no emergency");
+         } else {
+           console.error("NO STEP ID - Resolution flow failed!");
+         }
+       } else if (reason === "dispatch-user-okay") {
+         let logMessage =
+           "Dispatch called back, user confirmed okay on scene. Resolving alert.";
+
+         // Add gas info for gas alerts
+         if (currentAlert && isGasAlert(currentAlert)) {
+           const gasData = getGasSnapshotFromPanel();
+           if (gasData && gasData.trim()) {
+             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+           }
+         }
+
+         addLogEntry(logMessage, "step");
+
+         // Use unified resolution flow
+         console.log(
+           "Calling triggerResolutionFlow with stepId:",
+           currentStepId
+         );
+         if (currentStepId) {
+           triggerResolutionFlow(currentStepId, "Dispatch confirmed user okay");
+         } else {
+           console.error("NO STEP ID - Resolution flow failed!");
+         }
+       } else if (reason === "ec-callback-30min") {
+         console.log("DEBUG: dispatchMade =", dispatchMade);
+         console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
+         console.log(
+           "DEBUG: condition result =",
+           !dispatchMade && !globalTimerInterval
+         );
+         addLogEntry(
+           "Emergency contact called in, will check on user and call back within 30 minutes.",
+           "step"
+         );
 
           // Only start new timer if no dispatch is active
           if (!dispatchMade && !globalTimerInterval) {
@@ -3251,6 +3866,16 @@
       // ═══════════════════════════════════════════════════════════════
 
       function initializeAlert(alertConfig, userConfig) {
+        // NEW: Check for pre-alert condition FIRST (for direct calls)
+        if (alertConfig && isPreAlert(alertConfig)) {
+          addPreAlertLogEntry(alertConfig);
+          setupPreAlertResolution();
+          console.log(
+            "[PreAlert] Alert is >24h old, skipping protocol state setup"
+          );
+          return; // Skip protocol setup
+        }
+
         protocolState = {
           completedSteps: [],
           currentStep: 1,
@@ -3979,19 +4604,19 @@
       }
 
       window.isGasAlert =
-        window.isGasAlert ||
-        function (alert) {
-          if (!alert) return false;
-          const id = String(alert.id || "");
-          const type = String(alert.gasType || "");
-          const GAS_KEYS = /(h2s|h₂s|co|o2|o₂|lel)\b/i;
-
-          return (
-            /(^gas-|(^|[^a-z])gas([^a-z]|$))/i.test(id) || // ids starting with/containing "gas"
-            GAS_KEYS.test(id) ||
-            GAS_KEYS.test(type)
-          );
-        };
+  window.isGasAlert ||
+  function (alert) {
+    if (!alert) return false;
+    const id = String(alert.id || "");
+    const type = String(alert.gasType || "");
+    const GAS_KEYS = /(h2s|h₂s|co|o2|o₂|lel)\b/i;
+    return (
+      /(^gas-|(^|[^a-z])gas([^a-z]|$))/i.test(id) || // ids starting with/containing "gas"
+      GAS_KEYS.test(id) || // Check for gas chemicals in ID
+      GAS_KEYS.test(type) || // Check for gas chemicals in gasType
+      /^(h2s|co|o2|lel)-/.test(id) // ← This line was missing! Catches "h2s-response", "co-spontaneous", etc.
+    );
+  };
 
       // Keep this as-is unless you introduce a distinct sink or styling for gas logs
       window.addGasLogEntry =
@@ -4057,6 +4682,7 @@
         if (!Array.isArray(protocolState.completedSteps))
           protocolState.completedSteps = [];
 
+          
         // Element resolution helpers
         const resolveIO = (id) => {
           const tryBases = [id];
@@ -4164,18 +4790,21 @@
 
         // Unified logger (gas data already appended by autoPopulateFromDropdown)
         const logStep = (text) => {
-          if (
-            isGas &&
-            typeof addGasLogEntry === "function" &&
-            !/Gas Type:|Gas Reading:|⚠️ Gas levels still HIGH/i.test(text)
-          ) {
-            console.log("Gas logging from: postNote -> addGasLogEntry");
-            addGasLogEntry(text, stepId);
-            return; // Exit here - don't call anything else
-          }
-          console.log("Gas logging from: postNote -> addLogEntry");
-          addLogEntry(text, "step");
-        };
+  // Check if CURRENT alert is actually a gas alert
+  const isCurrentlyGasAlert = window.isGasAlert?.(currentAlert) || false;
+  
+  if (
+    isCurrentlyGasAlert &&  // ← Add this check
+    typeof addGasLogEntry === "function" &&
+    !/Gas Type:|Gas Reading:| Gas levels still HIGH/i.test(text)
+  ) {
+    console.log("Gas logging from: postNote -> addGasLogEntry");
+    addGasLogEntry(text, stepId);
+    return; // Exit here - don't call anything else
+  }
+  console.log("Gas logging from: postNote -> addLogEntry");
+  addLogEntry(text, "step");
+};
 
         const CYCLE_TEXT =
           typeof CYCLE_LINE === "string"
@@ -4366,11 +4995,12 @@
 
             ${CYCLE_TEXT}`;
 
-            if (isGas && typeof addGasLogEntry === "function") {
-              addGasLogEntry(msg, stepId);
-            } else {
-              addLogEntry(msg, "step");
-            }
+            const isCurrentlyGasAlert = window.isGasAlert?.(currentAlert) || false;
+if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
+  addGasLogEntry(msg, stepId);
+} else {
+  addLogEntry(msg, "step");
+}
 
             markStepCompleted(); // Uses closure - no parameter
             resetFormInputs();
@@ -4386,6 +5016,8 @@
 
           // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
           if (dispatchDecision === "yes") {
+            console.log("DEBUG: Setting dispatchMade = true");
+            dispatchMade = true;
             const serviceDropdown = document.getElementById("service-type");
             const serviceName = serviceDropdown
               ? serviceDropdown.options[serviceDropdown.selectedIndex]?.text ||
@@ -5778,6 +6410,28 @@
         confirmBtn.disabled = !overrideReason;
       }
 
+      function cancelOverride() {
+  // Hide the modal overlay and modal
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("overrideModal").style.display = "none";
+  
+  // Reset the override reason dropdown to empty
+  const overrideReasonSelect = document.getElementById("override-reason");
+  if (overrideReasonSelect) {
+    overrideReasonSelect.value = "";
+  }
+  
+  // Disable the confirm override button
+  const confirmBtn = document.getElementById("confirmOverrideBtn");
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+  }
+  
+  // No logging - cancelled overrides should not create audit trails
+  // The alert remains unresolved and all normal resolution controls stay enabled
+  // Specialist can retry the override or continue with normal protocol
+}
+
       // ═══════════════════════════════════════════════════════════════
       // 🎨 UI RENDERING & UPDATE FUNCTIONS
       // ═══════════════════════════════════════════════════════════════
@@ -5807,7 +6461,6 @@
       function formatAlertTime(alertDate) {
         const now = new Date();
         const diffMinutes = Math.floor((now - alertDate) / 60000);
-
         const timeStr =
           alertDate.toLocaleDateString("en-US", {
             month: "2-digit",
@@ -5822,14 +6475,21 @@
             hour12: false,
           }) +
           " MDT";
-
         let timeAgo = "";
+
         if (diffMinutes === 0) timeAgo = "(just now)";
         else if (diffMinutes === 1) timeAgo = "(-1 minute ago)";
         else if (diffMinutes < 60) timeAgo = `(-${diffMinutes} minutes ago)`;
         else if (diffMinutes < 1440)
           timeAgo = `(-${Math.floor(diffMinutes / 60)} hours ago)`;
         else timeAgo = `(-${Math.floor(diffMinutes / 1440)} days ago)`;
+
+        // NEW: Set pre-alert flag if alert is older than 24 hours (1440 minutes)
+        if (diffMinutes >= 1440) {
+          if (window.currentAlert) {
+            window.currentAlert.isPreAlert = true;
+          }
+        }
 
         return `${timeStr} ${timeAgo}`;
       }
@@ -5873,128 +6533,129 @@
       }
 
       function addLogEntry(message, type, source, customTime) {
-        // 1) Prevent duplicate gas logs within 3s (unchanged)
-        if (message && message.includes("Gas Type:") && type === "step") {
-          const nowMs = Date.now();
-          if (window.lastGasLogTime && nowMs - window.lastGasLogTime < 3000) {
-            console.log("DUPLICATE GAS LOG PREVENTED");
-            return;
-          }
-          window.lastGasLogTime = nowMs;
-        }
+  // 1) Prevent duplicate gas logs within 3s (unchanged)
+  if (message && message.includes("Gas Type:") && type === "step") {
+    const nowMs = Date.now();
+    if (window.lastGasLogTime && nowMs - window.lastGasLogTime < 3000) {
+      console.log("DUPLICATE GAS LOG PREVENTED");
+      return;
+    }
+    window.lastGasLogTime = nowMs;
+  }
 
-        // Auto-append gas snapshot for device resolution if missing (SAFETY-NET)
-        try {
-          if (
-            type === "step" &&
-            /Received '.*' from device, confirming user is okay/i.test(
-              message
-            ) &&
-            !/Gas Type:/i.test(message) &&
-            typeof getCurrentGasReading === "function"
-          ) {
-            const tz =
-              (window.TIMEZONES && (TIMEZONES.MT || TIMEZONES.MOUNTAIN)) ||
-              "America/Edmonton";
-            const tOnly =
-              window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
-                ? FORMATTERS.timeOnly(new Date(), tz)
-                : new Intl.DateTimeFormat("en-CA", {
-                    timeZone: tz,
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  }).format(new Date());
-            const r = getCurrentGasReading(); // { type, status, value, unit }
-            message += `\n\nGas Type: ${r.type}\nGas Level: ${r.status}\nGas Reading: ${r.type}: ${r.value}${r.unit} (${tOnly} MST)`;
-          }
-        } catch (e) {}
+  // Auto-append gas snapshot for device resolution if missing (SAFETY-NET)
+  try {
+    if (
+      type === "step" &&
+      /Received '.*' from device, confirming user is okay/i.test(
+        message
+      ) &&
+      !/Gas Type:/i.test(message) &&
+      typeof getCurrentGasReading === "function" &&
+      window.isGasAlert?.(window.currentAlert || currentAlert) // ← Check both global and local
+    ) {
+      const tz =
+        (window.TIMEZONES && (TIMEZONES.MT || TIMEZONES.MOUNTAIN)) ||
+        "America/Edmonton";
+      const tOnly =
+        window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
+          ? FORMATTERS.timeOnly(new Date(), tz)
+          : new Intl.DateTimeFormat("en-CA", {
+              timeZone: tz,
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }).format(new Date());
+      const r = getCurrentGasReading(); // { type, status, value, unit }
+      message += `\n\nGas Type: ${r.type}\nGas Level: ${r.status}\nGas Reading: ${r.type}: ${r.value}${r.unit} (${tOnly} MST)`;
+    }
+  } catch (e) {}
 
-        // 2) Do not truncate in console; log full length + type
-        const msgStr = String(message || "");
-        console.log(
-          "addLogEntry called (%d chars):",
-          msgStr.length,
-          msgStr,
-          "type:",
-          type
-        );
-        console.trace();
+  // 2) Do not truncate in console; log full length + type
+  const msgStr = String(message || "");
+  console.log(
+    "addLogEntry called (%d chars):",
+    msgStr.length,
+    msgStr,
+    "type:",
+    type
+  );
+  console.trace();
 
-        const logContainer = document.getElementById("protocolLog");
-        const placeholder = logContainer.querySelector(".log-placeholder");
-        if (placeholder) placeholder.remove();
+  const logContainer = document.getElementById("protocolLog");
+  const placeholder = logContainer.querySelector(".log-placeholder");
+  if (placeholder) placeholder.remove();
 
-        const entry = document.createElement("div");
-        entry.className = "log-entry " + (type || "general");
+  const entry = document.createElement("div");
+  entry.className = "log-entry " + (type || "general");
 
-        // 3) Timestamp (prefer shared FORMATTERS/TIMEZONES; fallback to en-CA MT)
-        const now = new Date();
-        const tz = (window.TIMEZONES && TIMEZONES.MT) || "America/Edmonton";
-        const timeStr =
-          window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
-            ? `${FORMATTERS.timeOnly(now, tz)} MST`
-            : new Intl.DateTimeFormat("en-CA", {
-                hour12: false,
-                timeZone: tz,
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              }).format(now) + " MST";
+  // 3) Timestamp (prefer shared FORMATTERS/TIMEZONES; fallback to en-CA MT)
+  const now = new Date();
+  const tz = (window.TIMEZONES && TIMEZONES.MT) || "America/Edmonton";
+  const timeStr =
+    window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
+      ? `${FORMATTERS.timeOnly(now, tz)} MST`
+      : new Intl.DateTimeFormat("en-CA", {
+          hour12: false,
+          timeZone: tz,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }).format(now) + " MST";
 
-        let timestamp, operator;
-        if (customTime) {
-          timestamp = customTime;
-          operator = "";
-        } else {
-          timestamp = timeStr;
-          operator = " | Op 417";
-        }
+  let timestamp, operator;
+  if (customTime) {
+    timestamp = customTime;
+    operator = "";
+  } else {
+    timestamp = timeStr;
+    operator = " | Op 417";
+  }
 
-        // Optional: unify "Gas readings back to normal. Resolving alert." spacing like postNote
-        let safeMessage = msgStr;
-        if (typeof _squashResolveLine === "function") {
-          safeMessage = _squashResolveLine(safeMessage);
-        }
+  // Optional: unify "Gas readings back to normal. Resolving alert." spacing like postNote
+  let safeMessage = msgStr;
+  if (typeof _squashResolveLine === "function") {
+    safeMessage = _squashResolveLine(safeMessage);
+  }
 
-        // 4) Render (formatLogMessage already handles dispatch blocks; pre-line shows newlines)
-        if (source) {
-          const ymd = new Intl.DateTimeFormat("en-CA", {
-            timeZone: tz,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          }).format(now); // e.g., 2025-08-25
-          entry.innerHTML =
-            "<div>" +
-            '<div class="log-source"><strong>' +
-            source +
-            "</strong></div>" +
-            '<div class="log-timestamp" style="font-weight: bold; color: #333; margin-bottom: 5px;">' +
-            ymd +
-            " " +
-            timestamp +
-            "</div>" +
-            '<div class="log-content">' +
-            formatLogMessage(safeMessage, type) +
-            "</div>" +
-            "</div>";
-        } else {
-          entry.innerHTML =
-            '<div class="log-header">' +
-            '<span class="log-timestamp">[' +
-            timestamp +
-            "]</span>" +
-            '<div class="log-operator" style="font-size: 0.9em;">Op 417</div>' +
-            "</div>" +
-            '<div class="log-content">' +
-            formatLogMessage(safeMessage, type) +
-            "</div>";
-        }
+  // 4) Render (formatLogMessage already handles dispatch blocks; pre-line shows newlines)
+  if (source) {
+    const ymd = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now); // e.g., 2025-08-25
+    entry.innerHTML =
+      "<div>" +
+      '<div class="log-source"><strong>' +
+      source +
+      "</strong></div>" +
+      '<div class="log-timestamp" style="font-weight: bold; color: #333; margin-bottom: 5px;">' +
+      ymd +
+      " " +
+      timestamp +
+      "</div>" +
+      '<div class="log-content">' +
+      formatLogMessage(safeMessage, type) +
+      "</div>" +
+      "</div>";
+  } else {
+    entry.innerHTML =
+      '<div class="log-header">' +
+      '<span class="log-timestamp">[' +
+      timestamp +
+      "]</span>" +
+      '<div class="log-operator" style="font-size: 0.9em;">Op 417</div>' +
+      "</div>" +
+      '<div class="log-content">' +
+      formatLogMessage(safeMessage, type) +
+      "</div>";
+  }
 
-        logContainer.insertBefore(entry, logContainer.firstChild);
-      }
+  logContainer.insertBefore(entry, logContainer.firstChild);
+}
 
       function formatLogMessage(message, type) {
         const hasYesDispatchHeader =
@@ -6310,432 +6971,498 @@
       }
 
       function loadProtocolSteps(protocolConfig, userConfig) {
-        let protocolHTML =
-          '<div style="margin-bottom: 20px;"><h4 style="color: #1565c0; margin: 0 0 10px 0;">📋 ' +
-          protocolConfig.name +
-          '</h4><p style="color: #666; font-size: 0.9em; margin: 0;">Showing only relevant steps for this alert type</p></div>';
+  let protocolHTML =
+    '<div style="margin-bottom: 20px;" data-cy="protocol-header"><h4 style="color: #1565c0; margin: 0 0 10px 0;" data-cy="protocol-name">📋 ' +
+    protocolConfig.name +
+    '</h4><p style="color: #666; font-size: 0.9em; margin: 0;" data-cy="protocol-description">Showing only relevant steps for this alert type</p></div>';
 
-        // Add monitoring phase description if enabled
-        if (
-          protocolConfig.monitoringPhase &&
-          protocolConfig.monitoringPhase.enabled
-        ) {
-          protocolHTML +=
-            '<div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; border-left: 4px solid #ffc107;">' +
-            '<h5 style="color: #856404; margin: 0 0 10px 0; font-weight: bold;">⏱️ 2-Minute Monitoring Phase</h5>' +
-            '<p style="color: #856404; margin: 0; font-weight: 500; line-height: 1.4;">' +
-            protocolConfig.monitoringPhase.description +
-            "</p>" +
-            "</div>";
-        }
+  // Add monitoring phase description if enabled
+  if (
+    protocolConfig.monitoringPhase &&
+    protocolConfig.monitoringPhase.enabled
+  ) {
+    protocolHTML +=
+      '<div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; border-left: 4px solid #ffc107;" data-cy="monitoring-phase">' +
+      '<h5 style="color: #856404; margin: 0 0 10px 0; font-weight: bold;" data-cy="monitoring-phase-title">⏱️ 2-Minute Monitoring Phase</h5>' +
+      '<p style="color: #856404; margin: 0; font-weight: 500; line-height: 1.4;" data-cy="monitoring-phase-description">' +
+      protocolConfig.monitoringPhase.description +
+      "</p>" +
+      "</div>";
+  }
 
-        protocolConfig.steps.forEach(function (step, index) {
-          const isFirst = index === 0;
-          const isDispatchStep = step.action === "dispatch";
+  protocolConfig.steps.forEach(function (step, index) {
+    const isFirst = index === 0;
+    const isDispatchStep = step.action === "dispatch";
 
-          // Check if this is a monitoring protocol
-          const isMonitoringProtocol =
-            protocolConfig.monitoringPhase &&
-            protocolConfig.monitoringPhase.enabled;
+    // Check if this is a monitoring protocol
+    const isMonitoringProtocol =
+      protocolConfig.monitoringPhase &&
+      protocolConfig.monitoringPhase.enabled;
 
-          // For monitoring protocols, Step 1 should start as Pending during monitoring phase
-          const shouldBeActive = isMonitoringProtocol
-            ? isDispatchStep // Only dispatch step active for monitoring protocols
-            : isFirst || isDispatchStep; // Normal logic for non-monitoring protocols
+    // For monitoring protocols, Step 1 should start as Pending during monitoring phase
+    const shouldBeActive = isMonitoringProtocol
+      ? isDispatchStep // Only dispatch step active for monitoring protocols
+      : isFirst || isDispatchStep; // Normal logic for non-monitoring protocols
 
-          // Build step classes - add dispatch-step class for dispatch steps
-          let stepClasses = "step";
-          if (shouldBeActive) stepClasses += " active";
-          if (isDispatchStep) stepClasses += " dispatch-step";
+    // Build step classes - add dispatch-step class for dispatch steps
+    let stepClasses = "step";
+    if (shouldBeActive) stepClasses += " active";
+    if (isDispatchStep) stepClasses += " dispatch-step";
 
-          // Open main step div
-          protocolHTML +=
-            '<div class="' +
-            stepClasses +
-            '" id="' +
-            step.id +
-            '">' +
-            '<div class="step-header">' +
-            '<h4 class="step-title">✅ STEP ' +
-            (index + 1) +
-            ": " +
-            step.title +
-            "</h4>" +
-            '<span class="status-badge ' +
-            (shouldBeActive ? "active" : "") +
-            '" id="' +
-            step.id +
-            '-status">' +
-            (shouldBeActive ? "Active" : "Pending") +
-            "</span>" +
-            "</div>";
+    // Open main step div
+    protocolHTML +=
+      '<div class="' +
+      stepClasses +
+      '" id="' +
+      step.id +
+      '" data-cy="' +
+      step.id +
+      '">' +
+      '<div class="step-header">' +
+      '<h4 class="step-title" data-cy="' +
+      step.id +
+      '-title">✅ STEP ' +
+      (index + 1) +
+      ": " +
+      step.title +
+      "</h4>" +
+      '<span class="status-badge ' +
+      (shouldBeActive ? "active" : "") +
+      '" id="' +
+      step.id +
+      '-status" data-cy="' +
+      step.id +
+      '-status">' +
+      (shouldBeActive ? "Active" : "Pending") +
+      "</span>" +
+      "</div>";
 
-          // Add contact info for relevant steps
-          if (step.id === "step-3" || step.id === "step-2") {
-            // Only show user contact for "Call User" actions
-            if (step.action === "call-user") {
-              protocolHTML +=
-                '<div class="contact-info">' +
-                "<strong>👤 " +
-                userConfig.name +
-                "</strong> 📞 " +
-                userConfig.mobile +
-                "</div>";
-            }
-          }
-
-          // Handle Emergency Contacts
-          if (step.action === "call-emergency-contacts") {
-            const userKey = currentAlert.user;
-            const emergencyContacts = AlertDataManager.usersData[userKey]
-              ? AlertDataManager.usersData[userKey].emergencyContacts
-              : [];
-
-            // Add individual EC sections as sub-steps
-            emergencyContacts.forEach(function (contact, index) {
-              const contactStepId = step.id + "-" + (index + 1);
-
-              protocolHTML +=
-                '<div class="sub-step" id="' +
-                contactStepId +
-                '">' +
-                '<div class="step-header">' +
-                '<h5 class="step-title">📞 Call ' +
-                contact.name +
-                " at " +
-                contact.phone +
-                "</h5>" +
-                '<span class="status-badge" id="' +
-                contactStepId +
-                '-status">Pending</span>' +
-                "</div>" +
-                '<div class="contact-info">' +
-                "<strong>👤 " +
-                contact.name +
-                "</strong> 📞 " +
-                contact.phone +
-                " 🏷️ " +
-                contact.role +
-                "</div>" +
-                '<button class="btn btn-primary" onclick="startStep(\'' +
-                contactStepId +
-                "')\" disabled>" +
-                "📞 Call Emergency Contact" +
-                "</button>" +
-                '<div class="step-outcome" id="' +
-                contactStepId +
-                '-outcome" style="display: none; margin-top: 15px;">' +
-                '<select id="' +
-                contactStepId +
-                '-select" onchange="autoPopulateNote(\'' +
-                contactStepId +
-                '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-                '<option value="">Select outcome</option>' +
-                '<option value="confirmed-ok">Confirmed user is okay</option>' +
-                '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-                '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-                '<option value="ec-callback-30min-outbound">EC will check on user and call back within 30 minutes</option>' +
-                '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
-                '<option value="no-answer-voicemail">No answer, left voicemail</option>' +
-                '<option value="no-answer-unable">No answer, unable to leave voicemail</option>' +
-                '<option value="wrong-number">Wrong number</option>' +
-                '<option value="unable-to-connect">Unable to connect</option>' +
-                "</select>" +
-                '<textarea id="' +
-                contactStepId +
-                '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
-                contactStepId +
-                "')\"></textarea>" +
-                '<button class="btn btn-secondary" onclick="postNote(\'' +
-                contactStepId +
-                '\')" style="margin-top: 8px;" disabled id="' +
-                contactStepId +
-                '-post-btn">✅ Post Note</button>' +
-                "</div>" +
-                "</div>";
-            });
-
-            protocolHTML +=
-              '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;">' +
-              "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
-              "</div>";
-
-            // Close main step div
-            protocolHTML += "</div>";
-            return;
-          }
-
-          // Handle Combined Device/User Call
-          if (step.action === "combined-device-user-call") {
-            // Add individual call sub-steps
-            step.subSteps.forEach(function (subStep, index) {
-              const subStepId = step.id + "-" + (index + 1);
-
-              protocolHTML +=
-                '<div class="sub-step" id="' +
-                subStepId +
-                '">' +
-                '<div class="step-header">' +
-                '<h5 class="step-title">📞 ' +
-                subStep.title +
-                "</h5>" +
-                '<span class="status-badge" id="' +
-                subStepId +
-                '-status">Pending</span>' +
-                "</div>" +
-                '<button class="btn btn-primary" onclick="startStep(\'' +
-                subStepId +
-                "')\" " +
-                (index === 0 ? "" : "disabled") +
-                ">" +
-                getActionIcon(subStep.action) +
-                " " +
-                subStep.action +
-                "</button>" +
-                '<div class="step-outcome" id="' +
-                subStepId +
-                '-outcome" style="display: none; margin-top: 15px;">';
-
-              // Add appropriate dropdown based on sub-step action
-              if (subStep.action === "call-device") {
-                protocolHTML +=
-                  '<select id="' +
-                  subStepId +
-                  '-select" onchange="autoPopulateFromDropdown(\'' +
-                  subStepId +
-                  '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-                  '<option value="">Select outcome</option>' +
-                  '<option value="confirmed-ok">Spoke with ' +
-                  userConfig.name +
-                  ". Confirmed they are okay. Resolving alert.</option>" +
-                  '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-                  '<option value="no-answer">No answer.</option>' +
-                  '<option value="unable-to-call">Unable to call, device offline.</option>' +
-                  "</select>";
-              } else if (subStep.action === "call-user") {
-                protocolHTML +=
-                  '<select id="' +
-                  subStepId +
-                  '-select" onchange="autoPopulateFromDropdown(\'' +
-                  subStepId +
-                  '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-                  '<option value="">Select outcome</option>' +
-                  '<option value="confirmed-ok">Spoke with ' +
-                  userConfig.name +
-                  ", confirmed they are okay</option>" +
-                  '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-                  '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-                  '<option value="unable-to-connect">Unable to connect</option>' +
-                  "</select>";
-              }
-
-              protocolHTML +=
-                '<textarea id="' +
-                subStepId +
-                '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
-                subStepId +
-                "')\"></textarea>" +
-                '<button class="btn btn-secondary" onclick="postNote(\'' +
-                subStepId +
-                '\')" style="margin-top: 8px;" disabled id="' +
-                subStepId +
-                '-post-btn">✅ Post Note</button>' +
-                "</div>" +
-                "</div>";
-            });
-
-            // Close main step div
-            protocolHTML += "</div>";
-            return;
-          }
-
-          // Handle Dispatch Steps
-          if (step.action === "dispatch") {
-            protocolHTML +=
-              '<div class="step-outcome" id="' +
-              step.id +
-              '-outcome" style="display: block; margin-top: 15px;">' +
-              '<label for="dispatch-decision" style="display: block; margin-bottom: 8px; font-weight: bold;">Dispatch conditions met?</label>' +
-              '<select id="dispatch-decision" onchange="handleDispatchDecision(\'' +
-              step.id +
-              '\')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;">' +
-              '<option value="">-- System will evaluate --</option>' +
-              '<option value="yes">Yes</option>' +
-              '<option value="no">No</option>' +
-              "</select>" +
-              '<div id="service-type-container" style="display: none; margin-bottom: 15px;">' +
-              '<label for="dispatch" style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Dispatch Service Type:</label>' +
-              '<select id="dispatch" onchange="autoPopulateDispatchNote(\'' +
-              step.id +
-              '\')" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 12px; font-size: 0.9em;">' +
-              '<option value="">-- Select Service --</option>' +
-              '<option value="Emergency Medical Services (EMS)">Emergency Medical Services (EMS)</option>' +
-              '<option value="Police">Police</option>' +
-              '<option value="Fire Department">Fire Department</option>' +
-              '<option value="EMS and Police">EMS and Police</option>' +
-              '<option value="EMS and Fire">EMS and Fire</option>' +
-              '<option value="Police and Fire">Police and Fire</option>' +
-              '<option value="EMS, Police and Fire">EMS, Police and Fire</option>' +
-              "</select>" +
-              "</div>" +
-              '<div id="skip-reason-container" style="display: none; margin-bottom: 15px;">' +
-              '<label for="skip-reason" style="display: block; font-weight: bold; margin-bottom: 8px; color: #856404;">Unmet Dispatch Condition:</label>' +
-              '<select id="skip-reason" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">' +
-              '<option value="">-- System will determine --</option>' +
-              '<option value="gas-normalized">Gas levels back to normal</option>' +
-              '<option value="device-offline">Device offline (last comm > 30 min, battery ≤ 10%, or signal ≤ 10%)</option>' +
-              '<option value="location-stale">Location not valid or current</option>' +
-              '<option value="device-moving">Device not stationary (≥ 5 km/h)</option>' +
-              "</select>" +
-              "</div>" +
-              '<textarea id="' +
-              step.id +
-              '-note" placeholder="Document the dispatch decision..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
-              step.id +
-              "')\"></textarea>" +
-              '<button class="btn btn-secondary" onclick="postNote(\'' +
-              step.id +
-              '\')" style="margin-top: 8px;" disabled id="' +
-              step.id +
-              '-post-btn">✅ Post Note</button>' +
-              "</div>" +
-              '<label for="' +
-              '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;">' +
-              "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
-              "</div>";
-
-            // Close main step div
-            protocolHTML += "</div>";
-            return;
-          }
-
-          // Standard processing for other steps
-          protocolHTML +=
-            '<button class="btn btn-primary" onclick="startStep(\'' +
-            step.id +
-            "')\" " +
-            (!isFirst ? "disabled" : "") +
-            ">" +
-            getActionIcon(step.action) +
-            " " +
-            step.action +
-            "</button>";
-
-          // Step outcome section
-          protocolHTML +=
-            '<div class="step-outcome" id="' +
-            step.id +
-            '-outcome" style="display: none; margin-top: 15px;">';
-
-          // Timer info
-          if (step.timer) {
-            protocolHTML +=
-              '<div style="background: #fff3cd; padding: 8px; border-radius: 4px; margin: 10px 0; font-size: 0.85em;">' +
-              "⏱️ Timer: " +
-              Math.floor(step.timer / 60) +
-              " minutes" +
-              "</div>";
-          }
-
-          // Outcome dropdown
-          protocolHTML +=
-            '<select id="' +
-            step.id +
-            '-select" onchange="autoPopulateFromDropdown(\'' +
-            step.id +
-            "'); validatePostButton('" +
-            step.id +
-            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-            '<option value="">Select outcome</option>';
-
-          // Action-based dropdown options
-          if (step.action === "call-device") {
-            protocolHTML +=
-              '<option value="confirmed-ok">Spoke with ' +
-              userConfig.name +
-              ". Confirmed they are okay. Resolving alert.</option>" +
-              '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-              '<option value="no-answer">No answer.</option>' +
-              '<option value="unable-to-call">Unable to call, device offline.</option>';
-          } else if (step.action === "message-device") {
-            protocolHTML +=
-              '<option value="no-response">No response</option>' +
-              '<option value="unable-to-send">Unable to send text message, device offline</option>' +
-              '<option value="device-no">Received "No" - User confirmed okay</option>' +
-              '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
-              '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
-              '<option value="understood">Received "Understood" - User confirmed okay</option>' +
-              '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
-              '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
-          } else if (step.action === "call-user") {
-            protocolHTML +=
-              '<option value="confirmed-ok">Spoke with ' +
-              userConfig.name +
-              ", confirmed they are okay</option>" +
-              '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-              '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-              '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
-              '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-              '<option value="no-answer-already-left">No answer. Voicemail had already been left</option>' +
-              '<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>' +
-              '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-              '<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>' +
-              '<option value="no-phone-number">Unable to call, user has no phone number assigned</option>' +
-              '<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>' +
-              '<option value="unable-to-connect">Unable to connect</option>';
-          } else {
-            protocolHTML +=
-              '<option value="completed">Action completed</option>' +
-              '<option value="no-answer">No answer</option>';
-          }
-
-          protocolHTML += "</select>";
-
-          // Note textarea
-          protocolHTML +=
-            '<textarea id="' +
-            step.id +
-            '-note" placeholder="Document the result..." ' +
-            'style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" ' +
-            "oninput=\"validatePostButton('" +
-            step.id +
-            "')\"></textarea>";
-
-          // Post Note button
-          protocolHTML +=
-            '<button class="btn btn-secondary" onclick="postNote(\'' +
-            step.id +
-            '\')" style="margin-top: 8px;" disabled id="' +
-            step.id +
-            '-post-btn">✅ Post Note</button>' +
-            "</div>";
-
-          // Close main step div
-          protocolHTML += "</div>";
-        });
-
-        // Resolution Section
+    // Add contact info for relevant steps
+    if (step.id === "step-3" || step.id === "step-2") {
+      // Only show user contact for "Call User" actions
+      if (step.action === "call-user") {
         protocolHTML +=
-          '<div class="resolution-section">' +
+          '<div class="contact-info" data-cy="' +
+          step.id +
+          '-contact-info">' +
+          "<strong>👤 " +
+          userConfig.name +
+          "</strong> 📞 " +
+          userConfig.mobile +
+          "</div>";
+      }
+    }
+
+    // Handle Emergency Contacts
+    if (step.action === "call-emergency-contacts") {
+      const userKey = currentAlert.user;
+      const emergencyContacts = AlertDataManager.usersData[userKey]
+        ? AlertDataManager.usersData[userKey].emergencyContacts
+        : [];
+
+      // Add individual EC sections as sub-steps
+      emergencyContacts.forEach(function (contact, index) {
+        const contactStepId = step.id + "-" + (index + 1);
+
+        protocolHTML +=
+          '<div class="sub-step" id="' +
+          contactStepId +
+          '" data-cy="' +
+          contactStepId +
+          '">' +
           '<div class="step-header">' +
-          "<h3>✅ RESOLUTION</h3>" +
-          '<span class="status-badge" id="resolution-status">Pending</span>' +
+          '<h5 class="step-title" data-cy="' +
+          contactStepId +
+          '-title">📞 Call ' +
+          contact.name +
+          " at " +
+          contact.phone +
+          "</h5>" +
+          '<span class="status-badge" id="' +
+          contactStepId +
+          '-status" data-cy="' +
+          contactStepId +
+          '-status">Pending</span>' +
           "</div>" +
-          '<select id="resolution-reason" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-          '<option value="">-- Select reason --</option>' +
-          '<option value="false-alert-without-dispatch">False alert without dispatch</option>' +
-          '<option value="false-alert-with-dispatch">False alert with dispatch</option>' +
-          '<option value="incident-without-dispatch">Incident without dispatch</option>' +
-          '<option value="incident-with-dispatch">Incident with dispatch</option>' +
+          '<div class="contact-info" data-cy="' +
+          contactStepId +
+          '-contact-info">' +
+          "<strong>👤 " +
+          contact.name +
+          "</strong> 📞 " +
+          contact.phone +
+          " 🏷️ " +
+          contact.role +
+          "</div>" +
+          '<button class="btn btn-primary" data-cy="' +
+          contactStepId +
+          '-button" onclick="startStep(\'' +
+          contactStepId +
+          "')\" disabled>" +
+          "📞 Call Emergency Contact" +
+          "</button>" +
+          '<div class="step-outcome" id="' +
+          contactStepId +
+          '-outcome" data-cy="' +
+          contactStepId +
+          '-outcome" style="display: none; margin-top: 15px;">' +
+          '<select id="' +
+          contactStepId +
+          '-select" data-cy="' +
+          contactStepId +
+          '-select" onchange="autoPopulateNote(\'' +
+          contactStepId +
+          '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+          '<option value="">Select outcome</option>' +
+          '<option value="confirmed-ok">Confirmed user is okay</option>' +
+          '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
+          '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+          '<option value="ec-callback-30min-outbound">EC will check on user and call back within 30 minutes</option>' +
+          '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
+          '<option value="no-answer-voicemail">No answer, left voicemail</option>' +
+          '<option value="no-answer-unable">No answer, unable to leave voicemail</option>' +
+          '<option value="wrong-number">Wrong number</option>' +
+          '<option value="unable-to-connect">Unable to connect</option>' +
           "</select>" +
-          '<div class="resolution-buttons">' +
-          '<button class="btn btn-danger" onclick="resolveAlert()">✅ Resolve Alert</button>' +
-          '<button class="btn btn-secondary" onclick="cancelResolution()">❌ Cancel Resolution</button>' +
+          '<textarea id="' +
+          contactStepId +
+          '-note" data-cy="' +
+          contactStepId +
+          '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
+          contactStepId +
+          "')\"></textarea>" +
+          '<button class="btn btn-secondary" data-cy="' +
+          contactStepId +
+          '-post-btn" onclick="postNote(\'' +
+          contactStepId +
+          '\')" style="margin-top: 8px;" disabled id="' +
+          contactStepId +
+          '-post-btn">✅ Post Note</button>' +
           "</div>" +
           "</div>";
+      });
 
-        document.getElementById("protocol-content").innerHTML = protocolHTML;
-      }
+      protocolHTML +=
+        '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;" data-cy="' +
+        step.id +
+        '-instruction">' +
+        "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
+        "</div>";
+
+      // Close main step div
+      protocolHTML += "</div>";
+      return;
+    }
+
+    // Handle Combined Device/User Call
+    if (step.action === "combined-device-user-call") {
+      // Add individual call sub-steps
+      step.subSteps.forEach(function (subStep, index) {
+        const subStepId = step.id + "-" + (index + 1);
+
+        protocolHTML +=
+          '<div class="sub-step" id="' +
+          subStepId +
+          '" data-cy="' +
+          subStepId +
+          '">' +
+          '<div class="step-header">' +
+          '<h5 class="step-title" data-cy="' +
+          subStepId +
+          '-title">📞 ' +
+          subStep.title +
+          "</h5>" +
+          '<span class="status-badge" id="' +
+          subStepId +
+          '-status" data-cy="' +
+          subStepId +
+          '-status">Pending</span>' +
+          "</div>" +
+          '<button class="btn btn-primary" data-cy="' +
+          subStepId +
+          '-button" onclick="startStep(\'' +
+          subStepId +
+          "')\" " +
+          (index === 0 ? "" : "disabled") +
+          ">" +
+          getActionIcon(subStep.action) +
+          " " +
+          subStep.action +
+          "</button>" +
+          '<div class="step-outcome" id="' +
+          subStepId +
+          '-outcome" data-cy="' +
+          subStepId +
+          '-outcome" style="display: none; margin-top: 15px;">';
+
+        // Add appropriate dropdown based on sub-step action
+        if (subStep.action === "call-device") {
+          protocolHTML +=
+            '<select id="' +
+            subStepId +
+            '-select" data-cy="' +
+            subStepId +
+            '-select" onchange="autoPopulateFromDropdown(\'' +
+            subStepId +
+            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+            '<option value="">Select outcome</option>' +
+            '<option value="confirmed-ok">Spoke with ' +
+            userConfig.name +
+            ". Confirmed they are okay. Resolving alert.</option>" +
+            '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+            '<option value="no-answer">No answer.</option>' +
+            '<option value="unable-to-call">Unable to call, device offline.</option>' +
+            "</select>";
+        } else if (subStep.action === "call-user") {
+          protocolHTML +=
+            '<select id="' +
+            subStepId +
+            '-select" data-cy="' +
+            subStepId +
+            '-select" onchange="autoPopulateFromDropdown(\'' +
+            subStepId +
+            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+            '<option value="">Select outcome</option>' +
+            '<option value="confirmed-ok">Spoke with ' +
+            userConfig.name +
+            ", confirmed they are okay</option>" +
+            '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
+            '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
+            '<option value="unable-to-connect">Unable to connect</option>' +
+            "</select>";
+        }
+
+        protocolHTML +=
+          '<textarea id="' +
+          subStepId +
+          '-note" data-cy="' +
+          subStepId +
+          '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
+          subStepId +
+          "')\"></textarea>" +
+          '<button class="btn btn-secondary" data-cy="' +
+          subStepId +
+          '-post-btn" onclick="postNote(\'' +
+          subStepId +
+          '\')" style="margin-top: 8px;" disabled id="' +
+          subStepId +
+          '-post-btn">✅ Post Note</button>' +
+          "</div>" +
+          "</div>";
+      });
+
+      // Close main step div
+      protocolHTML += "</div>";
+      return;
+    }
+
+    // Handle Dispatch Steps
+    if (step.action === "dispatch") {
+      protocolHTML +=
+        '<div class="step-outcome" id="' +
+        step.id +
+        '-outcome" data-cy="' +
+        step.id +
+        '-outcome" style="display: block; margin-top: 15px;">' +
+        '<label for="dispatch-decision" style="display: block; margin-bottom: 8px; font-weight: bold;">Dispatch conditions met?</label>' +
+        '<select id="dispatch-decision" data-cy="dispatch-decision" onchange="handleDispatchDecision(\'' +
+        step.id +
+        '\')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;">' +
+        '<option value="">-- System will evaluate --</option>' +
+        '<option value="yes">Yes</option>' +
+        '<option value="no">No</option>' +
+        "</select>" +
+        '<div id="service-type-container" data-cy="service-type-container" style="display: none; margin-bottom: 15px;">' +
+        '<label for="dispatch" style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Dispatch Service Type:</label>' +
+        '<select id="dispatch" data-cy="dispatch-service-select" onchange="autoPopulateDispatchNote(\'' +
+        step.id +
+        '\')" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 12px; font-size: 0.9em;">' +
+        '<option value="">-- Select Service --</option>' +
+        '<option value="Emergency Medical Services (EMS)">Emergency Medical Services (EMS)</option>' +
+        '<option value="Police">Police</option>' +
+        '<option value="Fire Department">Fire Department</option>' +
+        '<option value="EMS and Police">EMS and Police</option>' +
+        '<option value="EMS and Fire">EMS and Fire</option>' +
+        '<option value="Police and Fire">Police and Fire</option>' +
+        '<option value="EMS, Police and Fire">EMS, Police and Fire</option>' +
+        "</select>" +
+        "</div>" +
+        '<div id="skip-reason-container" data-cy="skip-reason-container" style="display: none; margin-bottom: 15px;">' +
+        '<label for="skip-reason" style="display: block; font-weight: bold; margin-bottom: 8px; color: #856404;">Unmet Dispatch Condition:</label>' +
+        '<select id="skip-reason" data-cy="skip-reason" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">' +
+        '<option value="">-- System will determine --</option>' +
+        '<option value="gas-normalized">Gas levels back to normal</option>' +
+        '<option value="device-offline">Device offline (last comm > 30 min, battery ≤ 10%, or signal ≤ 10%)</option>' +
+        '<option value="location-stale">Location not valid or current</option>' +
+        '<option value="device-moving">Device not stationary (≥ 5 km/h)</option>' +
+        "</select>" +
+        "</div>" +
+        '<textarea id="' +
+        step.id +
+        '-note" data-cy="' +
+        step.id +
+        '-note" placeholder="Document the dispatch decision..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
+        step.id +
+        "')\"></textarea>" +
+        '<button class="btn btn-secondary" data-cy="' +
+        step.id +
+        '-post-btn" onclick="postNote(\'' +
+        step.id +
+        '\')" style="margin-top: 8px;" disabled id="' +
+        step.id +
+        '-post-btn">✅ Post Note</button>' +
+        "</div>" +
+        '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;" data-cy="' +
+        step.id +
+        '-instruction">' +
+        "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
+        "</div>";
+
+      // Close main step div
+      protocolHTML += "</div>";
+      return;
+    }
+
+    // Standard processing for other steps
+    protocolHTML +=
+      '<button class="btn btn-primary" data-cy="' +
+      step.id +
+      '-button" onclick="startStep(\'' +
+      step.id +
+      "')\" " +
+      (!isFirst ? "disabled" : "") +
+      ">" +
+      getActionIcon(step.action) +
+      " " +
+      step.action +
+      "</button>";
+
+    // Step outcome section
+    protocolHTML +=
+      '<div class="step-outcome" id="' +
+      step.id +
+      '-outcome" data-cy="' +
+      step.id +
+      '-outcome" style="display: none; margin-top: 15px;">';
+
+    // Timer info
+    if (step.timer) {
+      protocolHTML +=
+        '<div style="background: #fff3cd; padding: 8px; border-radius: 4px; margin: 10px 0; font-size: 0.85em;" data-cy="' +
+        step.id +
+        '-timer-info">' +
+        "⏱️ Timer: " +
+        Math.floor(step.timer / 60) +
+        " minutes" +
+        "</div>";
+    }
+
+    // Outcome dropdown
+    protocolHTML +=
+      '<select id="' +
+      step.id +
+      '-select" data-cy="' +
+      step.id +
+      '-select" onchange="autoPopulateFromDropdown(\'' +
+      step.id +
+      "'); validatePostButton('" +
+      step.id +
+      '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+      '<option value="">Select outcome</option>';
+
+    // Action-based dropdown options
+    if (step.action === "call-device") {
+      protocolHTML +=
+        '<option value="confirmed-ok">Spoke with ' +
+        userConfig.name +
+        ". Confirmed they are okay. Resolving alert.</option>" +
+        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+        '<option value="no-answer">No answer.</option>' +
+        '<option value="unable-to-call">Unable to call, device offline.</option>';
+    } else if (step.action === "message-device") {
+      protocolHTML +=
+        '<option value="no-response">No response</option>' +
+        '<option value="unable-to-send">Unable to send text message, device offline</option>' +
+        '<option value="device-no">Received "No" - User confirmed okay</option>' +
+        '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
+        '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
+        '<option value="understood">Received "Understood" - User confirmed okay</option>' +
+        '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
+        '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
+    } else if (step.action === "call-user") {
+      protocolHTML +=
+        '<option value="confirmed-ok">Spoke with ' +
+        userConfig.name +
+        ", confirmed they are okay</option>" +
+        '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
+        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+        '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
+        '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
+        '<option value="no-answer-already-left">No answer. Voicemail had already been left</option>' +
+        '<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>' +
+        '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
+        '<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>' +
+        '<option value="no-phone-number">Unable to call, user has no phone number assigned</option>' +
+        '<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>' +
+        '<option value="unable-to-connect">Unable to connect</option>';
+    } else {
+      protocolHTML +=
+        '<option value="completed">Action completed</option>' +
+        '<option value="no-answer">No answer</option>';
+    }
+
+    protocolHTML += "</select>";
+
+    // Note textarea
+    protocolHTML +=
+      '<textarea id="' +
+      step.id +
+      '-note" data-cy="' +
+      step.id +
+      '-note" placeholder="Document the result..." ' +
+      'style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" ' +
+      "oninput=\"validatePostButton('" +
+      step.id +
+      "')\"></textarea>";
+
+    // Post Note button
+    protocolHTML +=
+      '<button class="btn btn-secondary" data-cy="' +
+      step.id +
+      '-post-btn" onclick="postNote(\'' +
+      step.id +
+      '\')" style="margin-top: 8px;" disabled id="' +
+      step.id +
+      '-post-btn">✅ Post Note</button>' +
+      "</div>";
+
+    // Close main step div
+    protocolHTML += "</div>";
+  });
+
+  // Resolution Section
+  protocolHTML +=
+    '<div class="resolution-section" data-cy="resolution-section">' +
+    '<div class="step-header">' +
+    '<h3 data-cy="resolution-title"> RESOLUTION</h3>' +
+    '<span class="status-badge" id="resolution-status" data-cy="resolution-status">Pending</span>' +
+    "</div>" +
+    '<select id="resolution-reason" data-cy="resolution-reason" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+    '<option value="">-- Select reason --</option>' +
+    '<option value="false-alert-without-dispatch">False alert without dispatch</option>' +
+    '<option value="false-alert-with-dispatch">False alert with dispatch</option>' +
+    '<option value="incident-without-dispatch">Incident without dispatch</option>' +
+    '<option value="incident-with-dispatch">Incident with dispatch</option>' +
+    '<option value="pre-alert">Pre-alert</option>' +
+    "</select>" +
+    '<div class="resolution-buttons" data-cy="resolution-buttons">' +
+    '<button class="btn btn-danger" data-cy="resolve-alert-btn" onclick="resolveAlert()">✅ Resolve Alert</button>' +
+    '<button class="btn btn-secondary" data-cy="cancel-resolution-btn" onclick="cancelResolution()">❌ Cancel Resolution</button>' +
+    "</div>" +
+    "</div>";
+
+  document.getElementById("protocol-content").innerHTML = protocolHTML;
+}
 
       function autoPopulateNote(contactStepId) {
         const select = document.getElementById(contactStepId + "-select");
@@ -7042,6 +7769,41 @@
           return;
         }
 
+        // NEW: Check for pre-alert condition FIRST
+        if (isPreAlert(alertConfig)) {
+          const userConfig = AlertDataManager.usersData[alertConfig.user];
+
+          // Set global state
+          currentAlert = alertConfig;
+          currentUser = userConfig;
+
+          // Clear existing logs
+          const logContainer = document.getElementById("protocolLog");
+          if (logContainer) logContainer.innerHTML = "";
+
+          // Handle pre-alert: log, disable steps, setup resolution
+          addPreAlertLogEntry(alertConfig);
+
+          // Basic UI setup
+          updateAlertHeader(alertConfig, userConfig);
+          updateGasReadings(alertConfig.gasType || alertType);
+
+          // Load protocol steps (they'll be marked completed by setupPreAlertResolution)
+          const protocolConfig = ProtocolFactory.getProtocolConfig(alertType);
+          loadProtocolSteps(protocolConfig, userConfig);
+
+          // Setup pre-alert resolution
+          setupPreAlertResolution();
+
+          document.getElementById("alert-header")?.classList.add("active");
+          document.getElementById("demo-panel")?.classList.remove("show");
+
+          console.log(
+            "[PreAlert] Alert is >24h old, completed pre-alert setup"
+          );
+          return; // Skip normal protocol loading
+        }
+
         const userConfig = AlertDataManager.usersData[alertConfig.user];
         const protocolConfig = ProtocolFactory.getProtocolConfig(alertType);
 
@@ -7233,11 +7995,38 @@
         const logContainer = document.getElementById("protocolLog");
         logContainer.innerHTML = "";
 
-        // Initialize UI
+        // NEW: Check for pre-alert condition FIRST
+        if (isPreAlert(alertData)) {
+          // Handle pre-alert: log, disable steps, setup resolution
+          addPreAlertLogEntry(alertData);
+          setupPreAlertResolution();
+
+          // Basic UI setup only (no protocol loading)
+          updateAlertHeader(currentAlert, currentUser);
+          document.getElementById("alert-header").classList.add("active");
+          document.getElementById("demo-panel").classList.remove("show");
+
+          console.log(
+            "[PreAlert] Alert is >24h old, skipping normal protocol loading"
+          );
+          return; // Skip normal protocol loading
+        }
+
+        // Continue with normal initialization for recent alerts
         addAlertSequenceLogs(currentUser);
         updateAlertHeader(currentAlert, currentUser);
         updateGasReadings(currentAlert.gasType || "default");
         const protocolConfig = protocolsData[currentAlert.protocolFile];
+        loadProtocolSteps(protocolConfig, currentUser);
+        initializeAlert(currentAlert, currentUser);
+        document.getElementById("alert-header").classList.add("active");
+        document.getElementById("demo-panel").classList.remove("show");
+
+        // Handle test scenarios
+        handleTestScenario(currentAlert);
+        updateAlertHeader(currentAlert, currentUser);
+        updateGasReadings(currentAlert.gasType || "default");
+        protocolConfig = protocolsData[currentAlert.protocolFile];
         loadProtocolSteps(protocolConfig, currentUser);
         initializeAlert(currentAlert, currentUser);
 
@@ -7453,26 +8242,44 @@
         showActionConfirmation(analysis);
       }
 
-      // Handle intelligent actions based on note analysis
-      function handleIntelligentActions(analysis, noteText) {
-        switch (analysis.type) {
-          case "resolution":
-            handleResolutionNote(noteText, analysis.confidence);
-            break;
+      /// Handle intelligent actions based on note analysis
+function handleIntelligentActions(analysis, noteText) {
+  switch (analysis.type) {
+    case "resolution":
+      // existing behavior (prep resolution UI, etc.)
+      handleResolutionNote(noteText, analysis.confidence);
 
-          case "callback":
-            handleCallbackNote(noteText, analysis.timeframe);
-            break;
+      // ── AUTO-ACK: confirm we’re proceeding to resolve (no timer, no prompt context) ──
+      (function sendAutoResolutionAck() {
+        const ack = 'Noted. Resolving alert.';
+        // Log like other outbound messages
+        addLogEntry(`Sent "${ack}" to device.`, "step");
 
-          case "dispatch":
-            handleDispatchNote(noteText);
-            break;
-
-          case "sos":
-            handleSOSNote(noteText);
-            break;
+        // Optional: append to outbound thread or simulate send
+        if (typeof window.appendOutgoingMessage === "function") {
+          try { window.appendOutgoingMessage(ack, { auto: true }); } catch (_) {}
+        } else if (typeof window.sendMessageToDevice === "function") {
+          try { window.sendMessageToDevice(ack, /*auto*/ true); } catch (_) {}
         }
-      }
+        // Do NOT set lastPromptSent or start any timers here
+      })();
+
+      break;
+
+    case "callback":
+      handleCallbackNote(noteText, analysis.timeframe);
+      break;
+
+    case "dispatch":
+      handleDispatchNote(noteText);
+      break;
+
+    case "sos":
+      handleSOSNote(noteText);
+      break;
+  }
+}
+
 
       // Enhanced format timestamp function
       function formatTimestamp() {
@@ -7672,65 +8479,97 @@
       }
 
       function sendManualMessage() {
-        const messageInput = document.getElementById("manual-message-input");
-        const charCounter = document.getElementById("charCounter");
-        const sendBtn = document.getElementById("sendMessageBtn");
-        const msg = messageInput.value.trim();
+  const messageInput = document.getElementById("manual-message-input");
+  const charCounter = document.getElementById("charCounter");
+  const sendBtn = document.getElementById("sendMessageBtn");
+  const msg = messageInput.value.trim();
 
-        // Enhanced validation using our new validation function
-        const validationResult = validateMessage(msg);
-        if (!validationResult.valid) {
-          showMessageError(validationResult.error);
-          return;
-        }
+  // Enhanced validation using our new validation function
+  const validationResult = validateMessage(msg);
+  if (!validationResult.valid) {
+    showMessageError(validationResult.error);
+    return;
+  }
 
-        // Clear any existing errors
-        clearMessageError();
+  // Clear any existing errors
+  clearMessageError();
 
-        // Format message for proper display
-        const formattedMsg = formatMessageForDevice(msg);
+  // Normalize message: remove newlines, extra spaces, and spaces before punctuation
+  const normalizedMsg = msg.trim()
+    .replace(/\s*\n\s*/g, " ")     // Convert newlines to spaces
+    .replace(/\s+/g, " ")          // Normalize multiple spaces
+    .replace(/\s+([?!.,])/g, "$1") // Remove spaces before punctuation
+    .trim();
 
-        // Check if message should trigger timer (questions)
-        const shouldTimer = shouldTriggerTimer(formattedMsg);
+  // DEBUG: Check what's actually being tested
+  console.log("🔍 Original:", JSON.stringify(msg));
+  console.log("🔍 Normalized:", JSON.stringify(normalizedMsg));
 
-        // Format message for log display (proper sentence case)
-        const logMsg = formatMessageForLog(msg);
+  // Determine message type and timer duration using comprehensive detection
+  let messageInfo = { canonical: null, timerDuration: 120, timerMinutes: 2, shouldTimer: false };
+  
+  const helpTest = /^do you need help\??$/i.test(normalizedMsg);
+  const okTest = /^are you ok\??$/i.test(normalizedMsg);
+  const okayTest = /^are you okay\??$/i.test(normalizedMsg);
+  const leaveTest = /^leave the area,? understood\??$/i.test(normalizedMsg);
+  
+  console.log("🔍 Pattern tests:", { helpTest, okTest, okayTest, leaveTest });
+  
+  if (helpTest) {
+    messageInfo = { canonical: "Do you need help?", timerDuration: 120, timerMinutes: 2, shouldTimer: true };
+  } else if (okTest) {
+    messageInfo = { canonical: "Are you OK?", timerDuration: 120, timerMinutes: 2, shouldTimer: true };
+  } else if (okayTest) {
+    messageInfo = { canonical: "Are you okay?", timerDuration: 120, timerMinutes: 2, shouldTimer: true };
+  } else if (leaveTest) {
+    messageInfo = { canonical: "Leave the area, understood?", timerDuration: 300, timerMinutes: 5, shouldTimer: true };
+  }
 
-        // Log the message with proper format and timer info
-        if (shouldTimer) {
-          addLogEntry(
-            `Sent "${logMsg}" to device. Waiting 2 minutes for reply.`,
-            "step"
-          );
-        } else {
-          addLogEntry(`Sent "${logMsg}" to device`, "step");
-        }
+  // Format message for proper display on device
+  const formattedMsg = formatMessageForDevice(msg);
 
-        // Set context for response classification if timer is triggered
-        if (shouldTimer) {
-          lastPromptSent = formattedMsg;
-          protocolState.deviceMessageReceived = false;
-          awaitingResponse = true;
+  // Format message for log display (proper sentence case)
+  const logMsg = formatMessageForLog(msg);
 
-          // Start 2-minute timer for questions
-          startMessageTimer(120);
-        }
+  // Log the message with proper format and timer info
+  if (messageInfo.shouldTimer) {
+    addLogEntry(
+      `Sent "${logMsg}" to device. Waiting ${messageInfo.timerMinutes} minutes for reply.`,
+      "step"
+    );
+  } else {
+    addLogEntry(`Sent "${logMsg}" to device`, "step");
+  }
 
-        console.log("Manual message sent:", formattedMsg);
+  // Set context for response classification if timer is triggered
+  if (messageInfo.shouldTimer) {
+    // Use canonical if available; otherwise fall back to the clean log message
+    lastPromptSent = messageInfo.canonical || logMsg;
+    promptTimestamp = Date.now();
 
-        // Show "Message sent" feedback for 1 second
-        showMessageSentFeedback(formattedMsg);
+    protocolState.deviceMessageReceived = false;
+    awaitingResponse = true;
 
-        // Update textarea with formatted version so user sees the proper format
-        messageInput.value = formattedMsg;
+    // Start timer with correct duration based on message type
+    startMessageTimer(messageInfo.timerDuration);
+  }
 
-        // Clear input and reset UI after feedback
-        setTimeout(() => {
-          messageInput.value = "";
-          updateCharacterCounter();
-          sendBtn.disabled = true;
-        }, 1000);
-      }
+  console.log("Manual message sent:", formattedMsg);
+
+  // Show "Message sent" feedback for 1 second
+  showMessageSentFeedback(formattedMsg);
+
+  // Update textarea with formatted version so user sees the proper format
+  messageInput.value = formattedMsg;
+
+  // Clear input and reset UI after feedback
+  setTimeout(() => {
+    messageInput.value = "";
+    updateCharacterCounter();
+    sendBtn.disabled = true;
+  }, 1000);
+}
+
 
       function shouldTriggerTimer(message) {
         const msg = message.trim().toLowerCase().replace(/\s+/g, " "); // normalize spacing and case
@@ -7985,282 +8824,282 @@
         handleMessageClassification(classification, responseText, isResponse);
       };
 
-      // NEW: Context-aware message classifier
-      function classifyIncomingMessage(
-        responseText,
-        isResponse,
-        promptContext
-      ) {
-        // Handle "Send help" - always SOS regardless of context
-        if (responseText === "Send help") {
-          return { action: "SOS", reason: "Emergency request" };
-        }
+      // Context-aware message classifier
+      function classifyIncomingMessage(responseText, isResponse, promptContext) {
+  // Handle "Send help" - always SOS regardless of context
+  if (responseText === "Send help") {
+    return { action: "SOS", reason: "Emergency request" };
+  }
 
-        if (isResponse && promptContext) {
-          // Contextual responses based on what question was asked
-          if (promptContext === "Do you need help?") {
-            if (responseText === "Yes")
-              return { action: "SOS", reason: "Confirmed help needed" };
-            if (responseText === "No")
-              return { action: "RESOLUTION", reason: "No help needed" };
-          } else if (promptContext === "Are you OK?") {
-            if (responseText === "Yes")
-              return { action: "RESOLUTION", reason: "Confirmed okay" };
-            if (responseText === "No")
-              return { action: "SOS", reason: "Not okay" };
-          } else if (promptContext === "Leave the area, understand?") {
-            if (responseText === "Yes" || responseText === "Understood") {
-              return { action: "CONTINUE", reason: "Acknowledged evacuation" };
-            }
-            if (responseText === "No")
-              return { action: "SOS", reason: "Refused evacuation" };
+  // NEW: Garbled/invalid device replies trigger SOS immediately
+  try {
+    if (
+      isResponse &&
+      typeof window.isGarbledMessage === "function" &&
+      window.isGarbledMessage(responseText)
+    ) {
+      return { action: "SOS", reason: "Garbled/invalid message" };
+    }
+  } catch (_) {
+    // no-op: classification should not break on detector errors
+  }
+
+  if (isResponse && promptContext) {
+    // Contextual responses based on what question was asked
+    if (promptContext === "Do you need help?") {
+      if (responseText === "Yes")
+        return { action: "SOS", reason: "Confirmed help needed" };
+      if (responseText === "No")
+        return { action: "RESOLUTION", reason: "No help needed" };
+    } else if (promptContext === "Are you OK?") {
+      if (responseText === "Yes")
+        return { action: "RESOLUTION", reason: "Confirmed okay" };
+      if (responseText === "No")
+        return { action: "SOS", reason: "Not okay" };
+    } else if (promptContext === "Leave the area, understood?") {
+      if (responseText === "Yes" || responseText === "Understood") {
+        return { action: "CONTINUE", reason: "Acknowledged evacuation" };
+      }
+      if (responseText === "No")
+        return { action: "SOS", reason: "Refused evacuation" };
+    }
+  }
+
+  // Spontaneous messages or fallback classification
+  const clearResolutionMessages = ["Issue resolved", "False alarm", "I'm OK"];
+  if (clearResolutionMessages.includes(responseText)) {
+    return { action: "RESOLUTION", reason: "Status indicates resolution" };
+  }
+
+  // Default: continue protocol
+  return { action: "CONTINUE", reason: "Standard message" };
+}
+
+
+function handleMessageClassification(classification, responseText, isResponse) {
+  console.log("DEBUG: Message classification =", classification);
+  console.log("DEBUG: Action =", classification.action);
+  
+  const { action, reason } = classification;
+  const messageType = isResponse ? "reply message" : "message";
+  
+  // Use established gas alert detection
+  const isGasAlert = window.isGasAlert?.(currentAlert) || false;
+
+  switch (action) {
+    case "SOS":
+      // Cancel message timer using established pattern
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+        messageTimer = null;
+        awaitingResponse = false;
+      }
+      
+      // Cancel global timer to prevent conflicts and beeping
+      if (globalTimerInterval) {
+        cancelGlobalTimer();
+      }
+
+      addLogEntry(
+        `Received '${responseText}' from device. Switching to SOS Protocol.`,
+        "step"
+      );
+      
+      protocolState.currentSOSStep = 1;
+
+      // Set Step 2 status to "Waiting" instead of "Completed"
+      const currentStepElement = document.getElementById("step-2");
+      if (currentStepElement) {
+        const statusBadge = document.getElementById("step-2-status");
+        if (statusBadge) {
+          statusBadge.textContent = "Waiting";
+          statusBadge.classList.remove("completed");
+          statusBadge.classList.add("waiting");
+          statusBadge.style.background = "#ffc107";
+          statusBadge.style.color = "#000";
+          currentStepElement.style.animation = "pulse 2s infinite";
+        }
+      }
+
+      // Auto-send confirmation message
+      addLogEntry(
+        `SOS Protocol - Step ${protocolState.currentSOSStep}: Sent "Do you need help?" to device, waiting 2 minutes for reply.`,
+        "step"
+      );
+
+      // Set context for confirmation response
+      lastPromptSent = "Do you need help?";
+      promptTimestamp = Date.now();
+      protocolState.deviceMessageReceived = false;
+      awaitingResponse = true;
+
+      // Start 2-minute timer for confirmation response
+      messageTimer = setTimeout(() => {
+        if (awaitingResponse) {
+          const nextStep = protocolState.currentSOSStep + 1;
+          addLogEntry(
+            `SOS Protocol - No response received. Proceeding to Step ${nextStep}: ${SOS_PROTOCOL_STEPS[nextStep]}.`,
+            "timer"
+          );
+          protocolState.currentSOSStep = nextStep;
+          awaitingResponse = false;
+          lastPromptSent = null;
+          if (typeof proceedWithSOSProtocol === "function") {
+            proceedWithSOSProtocol();
           }
         }
+      }, 120000);
 
-        // Spontaneous messages or fallback classification
-        const clearResolutionMessages = [
-          "Issue resolved",
-          "False alarm",
-          "I'm OK",
-        ];
-        if (clearResolutionMessages.includes(responseText)) {
-          return {
-            action: "RESOLUTION",
-            reason: "Status indicates resolution",
-          };
-        }
+      // Start the visual countdown timer
+      startGlobalTimer(
+        "sos-confirmation",
+        "SOS Confirmation", 
+        "Emergency confirmation",
+        120
+      );
+      break;
 
-        // Default: continue protocol
-        return { action: "CONTINUE", reason: "Standard message" };
+    case "RESOLUTION":
+      // Cancel message timer using established pattern
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+        messageTimer = null;
+        awaitingResponse = false;
       }
 
-      // NEW: Handle classified messages
-      function handleMessageClassification(
-        classification,
-        responseText,
-        isResponse
-      ) {
-        console.log("DEBUG: Message classification =", classification);
-        console.log("DEBUG: Action =", classification.action);
-
-        const { action, reason } = classification;
-        const messageType = isResponse ? "reply message" : "message";
-        const isGasAlert =
-          currentAlert && currentAlert.id === "gas-high-threshold";
-
-        switch (action) {
-          case "SOS":
-            // Cancel ALL active timers first
-            if (messageTimer) {
-              clearTimeout(messageTimer);
-              messageTimer = null;
-              awaitingResponse = false;
-            }
-
-            // Cancel any existing global timer to prevent conflicts and beeping
-            if (globalTimerInterval) {
-              cancelGlobalTimer();
-            }
-
-            addLogEntry(
-              `Received '${responseText}' from device. Switching to SOS Protocol.`,
-              "step"
-            );
-            protocolState.currentSOSStep = 1;
-
-            // **FIX: Set Step 2 status to "Waiting" instead of "Completed"**
-            const currentStepElement = document.getElementById("step-2");
-            if (currentStepElement) {
-              const statusBadge = document.getElementById("step-2-status");
-              if (statusBadge) {
-                statusBadge.textContent = "Waiting"; // Changed from "Completed"
-                statusBadge.classList.remove("completed");
-                statusBadge.classList.add("waiting");
-                statusBadge.style.background = "#ffc107";
-                statusBadge.style.color = "#000";
-                // Keep pulsing animation for "Waiting" state
-                currentStepElement.style.animation = "pulse 2s infinite";
-              }
-            }
-
-            // Auto-send confirmation message
-            addLogEntry(
-              `SOS Protocol - Step ${protocolState.currentSOSStep}: Sent "Do you need help?" to device, waiting 2 minutes for reply.`,
-              "step"
-            );
-
-            // Set context for confirmation response
-            lastPromptSent = "Do you need help?";
-            promptTimestamp = Date.now();
-            protocolState.deviceMessageReceived = false;
-            awaitingResponse = true;
-
-            // Start 2-minute timer for confirmation response
-            messageTimer = setTimeout(() => {
-              if (awaitingResponse) {
-                const nextStep = protocolState.currentSOSStep + 1;
-                addLogEntry(
-                  `SOS Protocol - No response received. Proceeding to Step ${nextStep}: ${SOS_PROTOCOL_STEPS[nextStep]}.`,
-                  "timer"
-                );
-                protocolState.currentSOSStep = nextStep;
-                awaitingResponse = false;
-                lastPromptSent = null;
-                proceedWithSOSProtocol();
-              }
-            }, 120000);
-
-            // Start the visual countdown timer
-            startGlobalTimer(
-              "sos-confirmation",
-              "SOS Confirmation",
-              "Emergency confirmation",
-              120
-            );
-            break;
-
-          case "RESOLUTION":
-            // Cancel message timer if active
-            if (messageTimer) {
-              clearTimeout(messageTimer);
-              messageTimer = null;
-              awaitingResponse = false;
-            }
-
-            // Cancel global timer to stop visual countdown and prevent beeping
-            if (globalTimerInterval) {
-              cancelGlobalTimer();
-            }
-
-            const tz =
-              (window.TIMEZONES && (TIMEZONES.MT || TIMEZONES.MOUNTAIN)) ||
-              "America/Edmonton";
-            const timestamp =
-              (window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
-                ? FORMATTERS.timeOnly(new Date(), tz)
-                : new Intl.DateTimeFormat("en-CA", {
-                    timeZone: tz,
-                    hour12: false,
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  }).format(new Date())) + " MST";
-
-            console.log("DEBUG: lastPromptSent =", lastPromptSent);
-            console.log("DEBUG: responseText =", responseText);
-            console.log(
-              "DEBUG: isSOSConfirmation =",
-              lastPromptSent === "Do you need help?" && responseText === "No"
-            );
-
-            if (isGasAlert) {
-              const isSOSConfirmation =
-                lastPromptSent === "Do you need help?" && responseText === "No";
-
-              // Helper: current gas snapshot block
-              const reading = getCurrentGasReading(); // { type, status, value, unit }
-              const timeOnly =
-                (window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
-                  ? FORMATTERS.timeOnly(new Date(), tz)
-                  : new Intl.DateTimeFormat("en-CA", {
-                      timeZone: tz,
-                      hour12: false,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    }).format(new Date())) + " MST";
-              const gasBlock =
-                `Gas Type: ${reading.type}\n` +
-                `Gas Level: ${reading.status}\n` +
-                `Gas Reading: ${reading.type}: ${reading.value}${reading.unit} (${timeOnly})`;
-
-              // Block resolution if gas remains HIGH
-              const dangerousNow =
-                typeof isAnyGasDangerousNow === "function"
-                  ? isAnyGasDangerousNow()
-                  : typeof isGasLevelHigh === "function"
-                  ? isGasLevelHigh()
-                  : !isGasCurrentlyNormalized();
-
-              if (isSOSConfirmation) {
-                if (dangerousNow) {
-                  addLogEntry(
-                    `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas levels still HIGH.\n\n${gasBlock}`,
-                    "step"
-                  );
-                  return; // block resolution while HIGH
-                }
-                addLogEntry(
-                  `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
-                  "step"
-                );
-                // continue to existing resolution path below (no return)
-              } else {
-                // Spontaneous resolution messages like "Issue resolved", "False alarm", "I'm OK"
-                if (dangerousNow) return; // ignore spontaneous resolution while HIGH
-                addLogEntry(
-                  `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
-                  "step"
-                );
-                // continue to existing resolution path below (no return)
-              }
-            } else {
-              // Non-gas alert - simple format
-              addLogEntry(
-                `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Resolving alert.`,
-                "step"
-              );
-            }
-
-            // Use existing determineResolutionType function**
-            const resolutionSelect = document.querySelector(
-              ".resolution-section select"
-            );
-            if (resolutionSelect) {
-              const reason = determineResolutionType(currentAlert);
-              resolutionSelect.value = reason;
-            }
-
-            // Visual indication that resolution is ready**
-            const resolutionSection = document.querySelector(
-              ".resolution-section"
-            );
-            if (resolutionSection) {
-              resolutionSection.style.border = "3px solid #28a745";
-              resolutionSection.style.animation = "pulse 2s infinite";
-
-              // Stop animation after 10 seconds
-              setTimeout(() => {
-                if (resolutionSection.style.animation) {
-                  resolutionSection.style.animation = "none";
-                  resolutionSection.style.border = "2px solid #dc3545";
-                }
-              }, 10000);
-            }
-
-            // Auto-scroll to resolution section
-            setTimeout(() => {
-              const resolutionSection = document.querySelector(
-                ".resolution-section"
-              );
-              if (resolutionSection) {
-                resolutionSection.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
-              }
-            }, 500);
-
-            break;
-
-          case "CONTINUE":
-            addLogEntry(
-              `📱 Message logged. Proceeding with protocol escalation.`,
-              "step"
-            );
-            break;
-        }
+      // Cancel global timer to stop visual countdown and prevent beeping
+      if (globalTimerInterval) {
+        cancelGlobalTimer();
       }
+
+      // Use established timestamp formatting
+      const tz = (window.TIMEZONES && (TIMEZONES.MT || TIMEZONES.MOUNTAIN)) || "America/Edmonton";
+      const timestamp = (window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
+        ? FORMATTERS.timeOnly(new Date(), tz)
+        : new Intl.DateTimeFormat("en-CA", {
+            timeZone: tz,
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit", 
+            second: "2-digit",
+          }).format(new Date())) + " MST";
+
+      console.log("DEBUG: lastPromptSent =", lastPromptSent);
+      console.log("DEBUG: responseText =", responseText);
+      console.log("DEBUG: isSOSConfirmation =", lastPromptSent === "Do you need help?" && responseText === "No");
+
+      if (isGasAlert) {
+        const isSOSConfirmation = lastPromptSent === "Do you need help?" && responseText === "No";
+        
+        // Use established gas reading helper
+        const reading = getCurrentGasReading(); // { type, status, value, unit }
+        const timeOnly = (window.FORMATTERS && typeof FORMATTERS.timeOnly === "function"
+          ? FORMATTERS.timeOnly(new Date(), tz)
+          : new Intl.DateTimeFormat("en-CA", {
+              timeZone: tz,
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }).format(new Date())) + " MST";
+            
+        const gasBlock = `Gas Type: ${reading.type}\nGas Level: ${reading.status}\nGas Reading: ${reading.type}: ${reading.value}${reading.unit} (${timeOnly})`;
+
+        // Use established gas danger detection
+        const dangerousNow = typeof isAnyGasDangerousNow === "function"
+          ? isAnyGasDangerousNow()
+          : typeof isGasLevelHigh === "function"
+          ? isGasLevelHigh()
+          : !isGasCurrentlyNormalized();
+
+        if (isSOSConfirmation) {
+          if (dangerousNow) {
+            addLogEntry(
+              `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas levels still HIGH.\n\n${gasBlock}`,
+              "step"
+            );
+            return; // block resolution while HIGH
+          }
+          addLogEntry(
+            `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
+            "step"
+          );
+        } else {
+          // Spontaneous resolution messages like "Issue resolved", "False alarm", "I'm OK"
+          if (dangerousNow) return; // ignore spontaneous resolution while HIGH
+          addLogEntry(
+            `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
+            "step"
+          );
+        }
+      } else {
+        // Non-gas alert - simple format
+        addLogEntry(
+          `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Resolving alert.`,
+          "step"
+        );
+      }
+
+      // AUTO-ACKNOWLEDGMENT: Send "Noted. Resolving alert." back to device
+      addLogEntry('Sent "Noted. Resolving alert." to device.', "step");
+      
+      // Show in message history UI
+      try {
+        document.getElementById("receivedMessages").insertAdjacentHTML('afterbegin', 
+          '<li style="color: #28a745; font-style: italic; font-weight: 500;">↗️ Noted. Resolving alert.</li>'
+        );
+      } catch (_) {}
+
+      // Optional device integration
+      try {
+        if (window.appendOutgoingMessage) window.appendOutgoingMessage('Noted. Resolving alert.', { auto: true });
+      } catch (_) {}
+      try {
+        if (window.sendMessageToDevice) window.sendMessageToDevice('Noted. Resolving alert.', true);
+      } catch (_) {}
+
+      // Use existing determineResolutionType function
+      const resolutionSelect = document.querySelector(".resolution-section select");
+      if (resolutionSelect) {
+        const reason = determineResolutionType(currentAlert);
+        resolutionSelect.value = reason;
+      }
+
+      // Visual indication that resolution is ready
+      const resolutionSection = document.querySelector(".resolution-section");
+      if (resolutionSection) {
+        resolutionSection.style.border = "3px solid #28a745";
+        resolutionSection.style.animation = "pulse 2s infinite";
+        
+        // Stop animation after 10 seconds
+        setTimeout(() => {
+          if (resolutionSection.style.animation) {
+            resolutionSection.style.animation = "none";
+            resolutionSection.style.border = "2px solid #dc3545";
+          }
+        }, 10000);
+      }
+
+      // Auto-scroll to resolution section
+      setTimeout(() => {
+        const resolutionSection = document.querySelector(".resolution-section");
+        if (resolutionSection) {
+          resolutionSection.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 500);
+      break;
+
+    case "CONTINUE":
+      addLogEntry(`📱 Message logged. Proceeding with protocol escalation.`, "step");
+      break;
+  }
+}
+
+// Make it callable from other scripts (and your simulator)
+window.handleMessageClassification = handleMessageClassification;
 
       // Helper functions for testing
       window.testResponse = function (message) {
@@ -8475,65 +9314,41 @@
       }
 
       function callDispatch() {
-        console.log(
-          "DEBUG: callDispatch() called - setting dispatchMade = true"
-        );
-        // This function is called AFTER:
-        // 1. "Call Dispatch" button clicked
-        // 2. System evaluated conditions → "Yes"
-        // 3. User selected services
-        // 4. Now actually calling dispatch
+  console.log("DEBUG: callDispatch() called - setting dispatchMade = true");
 
-        dispatchMade = true;
-        console.log("DEBUG: dispatchMade is now:", dispatchMade);
-        // Get selected service from the correct dropdown ID (keep your current ID)
-        const serviceDropdown = document.getElementById("dispatch");
-        const selectedService = serviceDropdown ? serviceDropdown.value : "";
+  // Set both global and protocolState flags
+  dispatchMade = true;
+  if (window.protocolState) {
+    protocolState.dispatchMade = true;
+  }
 
-        // Remove popup alert - handle validation within UI
-        if (!selectedService) {
-          console.log(
-            "No service selected, but proceeding with default service"
-          );
-          // Could add inline error message here instead of popup
-        }
+  console.log("DEBUG: dispatchMade is now:", dispatchMade);
+  console.log("DEBUG: protocolState.dispatchMade is now:", protocolState.dispatchMade);
 
-        // Use selected service or default to "Emergency Services"
-        const serviceToDispatch = selectedService || "Emergency Services";
+  // Existing SOS dispatch flow...
+  const serviceDropdown = document.getElementById("dispatch");
+  const selectedService = serviceDropdown ? serviceDropdown.value : "";
+  const serviceToDispatch = selectedService || "Emergency Services";
 
-        // Find current dispatch step dynamically (keep your fallback)
-        const currentDispatchStep =
-          document
-            .querySelector('.step.active [onclick*="callDispatch"]')
-            ?.closest(".step")?.id || "step-5";
+  const currentDispatchStep =
+    document
+      .querySelector('.step.active [onclick*="callDispatch"]')
+      ?.closest(".step")?.id || "step-5";
 
-        // ✅ Build the comprehensive YES-dispatch log from the Connectivity Panel
-        const logEntry = generateDispatchProtocolLog(
-          "yes",
-          "", // reason not used for YES
-          serviceToDispatch,
-          currentDispatchStep
-        );
-        addLogEntry(logEntry, "step");
+  const logEntry = generateDispatchProtocolLog("yes", "", serviceToDispatch, currentDispatchStep);
+  addLogEntry(logEntry, "step");
 
-        // Start 30-minute dispatch callback timer (label with chosen service)
-        startGlobalTimer(
-          currentDispatchStep,
-          "Dispatch Callback",
-          serviceToDispatch,
-          1800
-        );
+  startGlobalTimer(currentDispatchStep, "Dispatch Callback", serviceToDispatch, 1800);
 
-        // Update UI to show dispatch completion (keep your call)
-        updateDispatchUI();
+  updateDispatchUI();
 
-        // Auto-update resolution (keep your logic)
-        const resolutionSelect = document.getElementById("resolution-reason");
-        if (resolutionSelect && !resolutionSelect.value) {
-          const resolutionType = determineResolutionType(currentAlert);
-          resolutionSelect.value = resolutionType;
-        }
-      }
+  const resolutionSelect = document.getElementById("resolution-reason");
+  if (resolutionSelect && !resolutionSelect.value) {
+    const resolutionType = determineResolutionType(currentAlert);
+    resolutionSelect.value = resolutionType;
+  }
+}
+
 
       function handleDispatchDecision(stepId) {
         const decisionElement = document.getElementById("dispatch-decision");
@@ -8824,6 +9639,8 @@
           );
 
           if (newValue === "yes") {
+            window.dispatchMade = true;
+if (window.protocolState) window.protocolState.dispatchMade = true;
             if (serviceContainer) serviceContainer.style.display = "block";
             if (skipContainer) skipContainer.style.display = "none";
           } else {
@@ -9954,34 +10771,85 @@
       }
 
       function determineResolutionType(alertData) {
-        // 1) Category: gas alerts are "incident", non-gas are "false-alert"
-        const isGas =
-          (typeof isGasAlert === "function" && isGasAlert(alertData)) ||
-          /(^gas-|h2s|co|o2|lel)/i.test(alertData?.id || "") ||
-          /h2s|co|o2|lel/i.test(alertData?.gasType || "");
+  const alert = alertData || window.currentAlert || {};
 
-        let category = isGas ? "incident" : "false-alert";
+  // Pre-alert always wins
+  if (alert?.isPreAlert === true || window.currentAlert?.isPreAlert === true) {
+    return "pre-alert";
+  }
 
-        // Optional: if your pre-alert banner sets a flag, prefer that category
-        if (
-          alertData?.isPreAlert === true ||
-          window.currentAlert?.isPreAlert === true
-        ) {
-          category = "pre-alert";
-        }
+  // Gas vs non-gas
+  const isGas =
+    (typeof isGasAlert === "function" && isGasAlert(alert)) ||
+    /(^gas-|h2s|co|o2|lel)/i.test(alert?.id || "") ||
+    /h2s|co|o2|lel/i.test(alert?.gasType || "");
+  const category = isGas ? "incident" : "false-alert";
 
-        // 2) Dispatch suffix: only true when actually executed
-        let hasDispatch = false;
-        // Only check dispatchMade if it's explicitly set to true
-        if (window.dispatchMade === true) {
-          hasDispatch = true;
-        }
-        // Don't rely on dropdown value unless dispatchMade is explicitly true
+  // Source of truth: the dispatch decision dropdown
+  const dd = document.querySelector('#dispatch-decision, [data-cy="dispatch-decision"]');
+  const val = (dd?.value || "").toLowerCase();
 
-        const suffix = hasDispatch ? "with-dispatch" : "without-dispatch";
+  // Default is "without-dispatch" unless the UI explicitly says "yes"
+  const suffix = val === "yes" ? "with-dispatch" : "without-dispatch";
+  return `${category}-${suffix}`;
+}
 
-        return `${category}-${suffix}`;
-      }
+
+
+function handleMessageDeviceOutcome(selectedValue, currentUser, currentAlert) {
+  const prompt = (window.lastPromptSent || '').toLowerCase();
+  const isEvacContext = /leave the area/.test(prompt);
+  const isGasAlert = currentAlert && currentAlert.id === 'gas-high-threshold';
+
+  const dangerousNow = !!(isGasAlert && (
+    (typeof isAnyGasDangerousNow === 'function' && isAnyGasDangerousNow()) ||
+    (typeof isGasLevelHigh === 'function' && isGasLevelHigh()) ||
+    (typeof isGasCurrentlyNormalized === 'function' ? !isGasCurrentlyNormalized() : true)
+  ));
+
+  let noteText = '';
+  let shouldScrollToResolution = false;
+
+  // NEW: what should the UI do next?
+  // 'SOS' | 'RESOLUTION' | 'PREPARE' | 'CONTINUE'
+  let action = 'CONTINUE';
+
+  if (selectedValue === 'no-response') {
+    noteText = `Sent message "Do you need help?" to device. No response received`;
+  } else if (selectedValue === 'unable-to-send') {
+    noteText = `Unable to send text message, device offline`;
+  } else if (selectedValue === 'device-no') {
+    noteText = `Received message "No" from device. User confirmed okay`;
+    shouldScrollToResolution = true;
+    action = isEvacContext ? 'SOS' : (dangerousNow ? 'PREPARE' : 'RESOLUTION'); // "No" to "Do you need help?" = OK; to evacuation would be SOS
+  } else if (selectedValue === 'issue-resolved') {
+    noteText = `Received message "Issue resolved" from device. User confirmed okay`;
+    shouldScrollToResolution = true;
+    action = dangerousNow ? 'PREPARE' : 'RESOLUTION';
+  } else if (selectedValue === 'false-alarm') {
+    noteText = `Received message "False alarm" from device. User confirmed okay`;
+    shouldScrollToResolution = true;
+    action = dangerousNow ? 'PREPARE' : 'RESOLUTION';
+  } else if (selectedValue === 'understood') {
+    noteText = `Received message "Understood" from device. User confirmed okay`;
+    shouldScrollToResolution = true;
+    // Evac ack → resolve if NORMAL, gate if HIGH
+    action = dangerousNow ? 'PREPARE' : 'RESOLUTION';
+  } else if (selectedValue === 'device-yes') {
+    noteText = `Received message "Yes" from device. User confirmed okay`;
+    shouldScrollToResolution = true;
+    // "Yes" to "Are you OK?" = resolve; to evacuation = resolve if NORMAL, otherwise prepare
+    action = isEvacContext ? (dangerousNow ? 'PREPARE' : 'RESOLUTION') : (dangerousNow ? 'PREPARE' : 'RESOLUTION');
+  } else if (selectedValue === 'send-help') {
+    noteText = `Received message "Send help" from device. Immediate assistance requested`;
+    // This should trigger SOS, not resolution
+    shouldScrollToResolution = false;
+    action = 'SOS';
+  }
+
+  return { noteText, shouldScrollToResolution, action, dangerousNow };
+}
+
     </script>
   </body>
 </html>
