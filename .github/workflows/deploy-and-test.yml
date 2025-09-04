@@ -1,0 +1,58 @@
+name: Deploy and Test on Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './automated-gas-alert-protocol'
+      
+      - name: Deploy to Pages
+        uses: actions/deploy-pages@v2
+
+  test:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Cypress tests against Pages
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          parallel: true
+        env:
+          CYPRESS_BASE_URL: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
