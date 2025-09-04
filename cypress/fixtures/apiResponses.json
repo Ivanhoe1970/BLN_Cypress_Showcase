@@ -1,0 +1,41 @@
+{
+    "messageSuccess": {
+      "ok": true,
+      "messageId": "msg-123",
+      "timestamp": "2025-09-03T19:30:00.000Z",
+      "status": "delivered"
+    },
+    
+    "dispatchSuccess": {
+      "dispatchId": "d-001",
+      "etaMinutes": 12,
+      "services": ["EMS"],
+      "priority": "high",
+      "timestamp": "2025-09-03T19:30:00.000Z"
+    },
+    
+    "resolutionSuccess": {
+      "ok": true,
+      "alertId": "alert-123",
+      "resolvedAt": "2025-09-03T19:30:00.000Z",
+      "resolvedBy": "Op 417"
+    },
+    
+    "gasSnapshotHigh": {
+      "level": "HIGH",
+      "gasType": "h2s",
+      "value": 25.5,
+      "unit": "ppm",
+      "timestamp": "2025-09-03T19:30:00.000Z",
+      "deviceId": "G7c-12345"
+    },
+    
+    "resolutionBlocked": {
+      "error": "Gas level HIGH. Override required.",
+      "gasLevel": "HIGH",
+      "gasType": "H2S",
+      "value": 25.5,
+      "unit": "ppm",
+      "statusCode": 412
+    }
+  }

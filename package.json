@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "ajv": "^8.17.1",
     "cypress": "^14.0.2",
     "cypress-plugin-steps": "^1.2.0"
   }
