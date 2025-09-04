@@ -1,4 +1,4 @@
-name: Deploy and Test on Pages
+name: CI – Deploy (main) and Test (PRs & main)
 
 on:
   push:
@@ -6,53 +6,86 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      
-      - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: './automated-gas-alert-protocol'
-      
-      - name: Deploy to Pages
-        uses: actions/deploy-pages@v2
-
-  test:
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run Cypress tests against Pages
-        uses: cypress-io/github-action@v6
-        with:
-          browser: chrome
-          parallel: true
-        env:
-          CYPRESS_BASE_URL: 'https://ivanhoe1970.github.io/BLN_Cypress_Showcase'
-
 permissions:
   contents: read
   pages: write
   id-token: write
+
+jobs:
+  # MAIN ONLY – build & publish GitHub Pages
+  deploy_pages:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # If your app needs Node build, add setup-node + npm ci + npm run build here
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      # Deploy the WHOLE site root that tests expect
+      # If your tests visit multiple folders, publish the repo root or a /dist
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'   # publish repo root so all HTML flows exist
+
+      - name: Deploy to Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+    outputs:
+      page_url: ${{ steps.deploy.outputs.page_url }}
+
+  # MAIN ONLY – test against GitHub Pages
+  test_pages:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: deploy_pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run Cypress (against Pages)
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          # IMPORTANT: pass baseUrl via --config; env var alone is ignored for baseUrl
+          config: baseUrl=${{ needs.deploy_pages.outputs.page_url }}
+        env:
+          # add any CYPRESS_ env you use in tests here
+          CI: true
+
+  # PRs – run tests locally against a static server (no Pages)
+  test_local:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      # Serve the repo root (contains your HTML apps) on 5500-like port
+      - name: Start static server and run Cypress
+        run: |
+          npx http-server -p 5500 -c-1 . &  # no cache
+          npx wait-on http://127.0.0.1:5500
+          npx cypress run --browser chrome --config baseUrl=http://127.0.0.1:5500

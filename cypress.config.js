@@ -2,7 +2,7 @@ const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'http://127.0.0.1:5501',           // Live Server root
+    baseUrl: process.env.CYPRESS_BASE_URL || 'http://127.0.0.1:5501',
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     env: {
