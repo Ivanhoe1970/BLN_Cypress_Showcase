@@ -16,7 +16,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    # 🔴 REQUIRED for Pages
+    # REQUIRED for Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -147,7 +147,7 @@
         margin-top: 12px;
         display: flex;
         justify-content: center;
-        padding: 0 10px; /* Breathing room from timer edges */
+        padding: 0 10px; 
       }
 
       .timer-meta {
@@ -322,7 +322,7 @@
 
       .step {
         background: white;
-        border: 2px solid #bbdefb; /* Blue border - lighter than protocol */
+        border: 2px solid #bbdefb; 
         border-radius: 8px;
         padding: 15px;
         margin: 15px 0;
@@ -331,7 +331,7 @@
 
       .sub-step {
         background: #f8f9fa;
-        border: 1px solid #e3f2fd; /* Even lighter blue for sub-steps */
+        border: 1px solid #e3f2fd; 
         border-radius: 6px;
         padding: 12px;
         margin: 10px 0;
@@ -2659,16 +2659,27 @@ window.classifyIncomingMessage = classifyIncomingMessage;
 
       // Load JSON data when page loads
       document.addEventListener("DOMContentLoaded", function () {
-        // Load JSON alerts
-        fetch("../cypress/fixtures/alertsData.json")
-          .then((response) => response.json())
-          .then((data) => {
-            alertsFromJSON = data;
-            console.log("Loaded alerts from JSON:", data.length, "alerts");
-          })
-          .catch((error) => {
-            console.error("Failed to load JSON alerts:", error);
-          });
+  // Load JSON alerts
+  fetch("../cypress/fixtures/alertsData.json")
+    .then((response) => response.json())
+    .then((data) => {
+      alertsFromJSON = data;
+      
+      // Handle the correct structure
+      if (data && data.alertTypesData) {
+        const alertCount = Object.keys(data.alertTypesData).length;
+        console.log("Loaded alerts from JSON:", alertCount, "alerts");
+        console.log("Alert IDs:", Object.keys(data.alertTypesData));
+      }
+      
+      if (data && data.usersData) {
+        const userCount = Object.keys(data.usersData).length;
+        console.log("Loaded users from JSON:", userCount, "users");
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to load JSON alerts:", error);
+    });
 
         // Your existing initialization
         updateGasReadings("default");
@@ -2781,12 +2792,11 @@ window.classifyIncomingMessage = classifyIncomingMessage;
                 action: "call-device", // ← Changed from "Call G7c Device"
               },
               {
-                id: "step-2",
-                title:
-                  "Send message 'Do you need help?' to device and wait 2 minutes",
-                action: "message-device",
-                timer: 120,
-              },
+  id: "step-2",
+  title: "Send message to device based on gas levels: 'Do you need help?' (NORMAL) or 'Leave the area, understood?' (HIGH) and wait 2 minutes",
+  action: "message-device",
+  timer: 120,
+},
               {
                 id: "step-3",
                 title:
@@ -3342,28 +3352,21 @@ window.classifyIncomingMessage = classifyIncomingMessage;
    🔍 Automated gas monitoring in progress
  </div>
 `;
-        } else {
-          // Check if this is a dispatch follow-up timer
-          let ecCallback30Option = "";
-          if (label && label.includes("Dispatch Follow-up")) {
-            ecCallback30Option =
-              '<option value="ec-callback-30min">Emergency contact called in - Will contact user and call back (30 min timer)</option>';
-          }
-
+} else {
+          // FIXED: Get protocol-specific cancel options
+          let cancelOptions = getTimerCancelOptions(stepId, label);
+          
           controls.innerHTML = `
 <select data-cy="global-cancel-dropdown" onchange="handleGlobalTimerCancellation(this.value)"
        class="btn btn-secondary"
        style="padding: 8px 16px; font-size: 0.8em; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; width: 100%;"
        aria-label="Cancel response timer">
    <option value="">Cancel Timer</option>
-   <option value="user-callback">User called in and confirmed they are okay</option>
-   <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
-   <option value="dispatch-no-emergency">Dispatch called back, no emergency found at location</option>
-   <option value="dispatch-user-okay">Dispatch called back, user confirmed okay on scene</option>
-   ${ecCallback30Option}
+   ${cancelOptions}
    <option value="custom">Type reason</option>
 </select>
 `;
+      
         }
 
         // Start visual state
@@ -3552,273 +3555,6 @@ window.classifyIncomingMessage = classifyIncomingMessage;
         globalTimerInterval = setInterval(updateDisplay, 1000); // Start the timer interval
       }
 
-      function handleGlobalTimerCancellation(reason) {
-        if (!reason) return;
-
-        console.log("Timer cancellation selected:", reason);
-
-        // Store timer state BEFORE stopping it
-        const wasTimerActive = !!globalTimerInterval;
-        const wasDispatchTimer =
-          activeTimerData?.label?.includes("Dispatch Follow-up");
-
-        // Stop the timer
-        if (globalTimerInterval) {
-          clearInterval(globalTimerInterval);
-          globalTimerInterval = null;
-          globalTimerEndTime = null;
-        }
-
-        // Get current step info BEFORE clearing activeTimerData
-        let currentStepId = activeTimerData?.stepId;
-        let originalStepId = activeTimerData?.originalStepId;
-
-        // Handle EC callback special case
-        if (currentStepId === "ec-callback") {
-          currentStepId = originalStepId || "message-device";
-          console.log("Adjusted currentStepId for EC callback:", currentStepId);
-        }
-
-        // Handle different cancellation reasons
-        if (reason === "user-callback") {
-          let logMessage =
-            "User called in and confirmed they are okay. Resolving alert.";
-
-          // Add gas info for gas alerts
-          if (currentAlert && isGasAlert(currentAlert)) {
-            const gasData = getGasSnapshotFromPanel();
-            if (gasData && gasData.trim()) {
-              logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
-            }
-          }
-
-          addLogEntry(logMessage, "step");
-
-          // Mark the originating step as completed before triggering resolution
-          if (currentStepId && canStepTriggerResolution(currentStepId)) {
-            console.log("Marking step as completed:", currentStepId);
-            markStepCompleted(currentStepId);
-
-            // Also mark main step as completed if this is a sub-step
-            if (
-              currentStepId.includes("-") &&
-              currentStepId.split("-").length === 3
-            ) {
-              const mainStepId = currentStepId.substring(
-                0,
-                currentStepId.lastIndexOf("-")
-              );
-              console.log(`Also marking main ${mainStepId} as completed`);
-              markStepCompleted(mainStepId);
-            }
-
-            console.log("Step marked as completed, now triggering resolution");
-          }
-
-          // Use unified resolution flow
-          console.log(
-            "Calling triggerResolutionFlow with stepId:",
-            currentStepId
-          );
-          if (currentStepId) {
-            triggerResolutionFlow(currentStepId, "EC confirmed user okay");
-          } else {
-            console.error("NO STEP ID - Resolution flow failed!");
-          }
-        } else if (reason === "ec-callback") {
-         // Save current resolution before triggering flow
-         const resolutionSelect = document.getElementById("resolution-reason");
-         const currentResolution = resolutionSelect
-           ? resolutionSelect.value
-           : "";
-
-         let logMessage =
-           "Emergency contact called in and confirmed user is okay. Resolving alert.";
-
-         // Add gas info for gas alerts
-         if (currentAlert && isGasAlert(currentAlert)) {
-           const gasData = getGasSnapshotFromPanel();
-           if (gasData && gasData.trim()) {
-             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
-           }
-         }
-
-         addLogEntry(logMessage, "step");
-
-         // Use unified resolution flow
-         console.log(
-           "Calling triggerResolutionFlow with stepId:",
-           currentStepId
-         );
-         if (currentStepId) {
-           triggerResolutionFlow(currentStepId, "EC confirmed user okay");
-         } else {
-           console.error("NO STEP ID - Resolution flow failed!");
-         }
-
-         // Restore resolution if it was already set correctly
-         if (
-           currentResolution &&
-           currentResolution.includes("with-dispatch") &&
-           dispatchMade
-         ) {
-           setTimeout(() => {
-             if (resolutionSelect) {
-               resolutionSelect.value = currentResolution;
-             }
-           }, 100);
-         }
-       } else if (reason === "dispatch-no-emergency") {
-         let logMessage =
-           "Dispatch called back, no emergency found at location. Resolving alert.";
-
-         // Add gas info for gas alerts
-         if (currentAlert && isGasAlert(currentAlert)) {
-           const gasData = getGasSnapshotFromPanel();
-           if (gasData && gasData.trim()) {
-             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
-           }
-         }
-
-         addLogEntry(logMessage, "step");
-
-         // Use unified resolution flow
-         console.log(
-           "Calling triggerResolutionFlow with stepId:",
-           currentStepId
-         );
-         if (currentStepId) {
-           triggerResolutionFlow(currentStepId, "Dispatch confirmed no emergency");
-         } else {
-           console.error("NO STEP ID - Resolution flow failed!");
-         }
-       } else if (reason === "dispatch-user-okay") {
-         let logMessage =
-           "Dispatch called back, user confirmed okay on scene. Resolving alert.";
-
-         // Add gas info for gas alerts
-         if (currentAlert && isGasAlert(currentAlert)) {
-           const gasData = getGasSnapshotFromPanel();
-           if (gasData && gasData.trim()) {
-             logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
-           }
-         }
-
-         addLogEntry(logMessage, "step");
-
-         // Use unified resolution flow
-         console.log(
-           "Calling triggerResolutionFlow with stepId:",
-           currentStepId
-         );
-         if (currentStepId) {
-           triggerResolutionFlow(currentStepId, "Dispatch confirmed user okay");
-         } else {
-           console.error("NO STEP ID - Resolution flow failed!");
-         }
-       } else if (reason === "ec-callback-30min") {
-         console.log("DEBUG: dispatchMade =", dispatchMade);
-         console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
-         console.log(
-           "DEBUG: condition result =",
-           !dispatchMade && !globalTimerInterval
-         );
-         addLogEntry(
-           "Emergency contact called in, will check on user and call back within 30 minutes.",
-           "step"
-         );
-
-          // Only start new timer if no dispatch is active
-          if (!dispatchMade && !globalTimerInterval) {
-            console.log("DEBUG: Starting new timer");
-            if (currentStepId) {
-              startGlobalTimer(
-                "ec-callback",
-                "EC Callback",
-                "Emergency Contact",
-                1800
-              );
-            }
-
-            // Update timer info display
-            const info = document.getElementById("timerInfo");
-            if (info) {
-              info.innerHTML = "<strong>Waiting for EC callback</strong>";
-            }
-          } else {
-            console.log(
-              "DEBUG: NOT starting new timer - keeping existing dispatch timer"
-            );
-          }
-
-          // Don't show "Timer cancelled" - return early
-          return;
-        } else if (reason === "device-offline") {
-          console.log("DEBUG: currentStepId =", currentStepId);
-          addLogEntry("Device went offline", "step");
-          if (currentStepId) {
-            markStepCompleted(currentStepId);
-
-            // Get the step's action to determine if it's an emergency contact step
-            const protocolConfig = ProtocolFactory.getProtocolConfig(
-              currentAlert.id
-            );
-            const mainStepId = currentStepId.substring(
-              0,
-              currentStepId.lastIndexOf("-")
-            );
-            const stepConfig = protocolConfig.steps.find(
-              (step) => step.id === mainStepId
-            );
-            const stepAction = stepConfig?.action;
-
-            // Also mark main step as completed if this is a sub-step (but NOT for EC steps)
-            if (
-              currentStepId.includes("-") &&
-              currentStepId.split("-").length === 3 &&
-              stepAction !== "call-emergency-contact" // Check action instead of step number
-            ) {
-              console.log(`Also marking main ${mainStepId} as completed`);
-              markStepCompleted(mainStepId);
-            }
-
-            enableNextStep(currentStepId);
-          }
-        } else if (reason === "custom") {
-          const customReason = prompt("Enter cancellation reason:");
-          if (customReason) {
-            addLogEntry("Timer cancelled: " + customReason, "step");
-            if (currentStepId) {
-              markStepCompleted(currentStepId);
-              enableNextStep(currentStepId);
-            }
-          }
-        }
-
-        // Reset timer display
-        const display = document.getElementById("timerDisplay");
-        const info = document.getElementById("timerInfo");
-        const globalTimer = document.getElementById("globalTimer");
-
-        if (display) display.textContent = "--:--";
-        if (info) info.innerHTML = "<strong>Timer cancelled</strong>";
-        if (globalTimer) {
-          globalTimer.classList.remove("timer-active");
-          globalTimer.classList.add("timer-inactive");
-        }
-
-        // Reset the dropdown
-        const dropdown = document.querySelector(
-          '[data-cy="global-cancel-dropdown"]'
-        );
-        if (dropdown) dropdown.value = "";
-
-        // Clear activeTimerData ONLY if not starting a new timer
-        if (reason !== "ec-callback-30min") {
-          activeTimerData = null;
-        }
-      }
-
       function cancelGlobalTimer() {
         if (!globalTimerInterval) return;
 
@@ -3900,158 +3636,166 @@ window.classifyIncomingMessage = classifyIncomingMessage;
       }
 
       function startStep(stepId) {
-        console.log("startStep called with:", stepId);
+  console.log("startStep called with:", stepId);
 
-        // ── Idempotency guard setup ─────────────────────────────────────────
-        if (!window.protocolState) window.protocolState = {};
-        if (!protocolState.startedSteps) protocolState.startedSteps = new Set();
+  // ── Idempotency guard setup ─────────────────────────────────────────
+  if (!window.protocolState) window.protocolState = {};
+  if (!protocolState.startedSteps) protocolState.startedSteps = new Set();
 
-        // Small helper: (re)enable controls for this step's outcome section
-        function enableOutcomeControls(id) {
-          // dropdown
-          const dropdown = document.getElementById(id + "-select");
-          if (dropdown) {
-            dropdown.disabled = false;
-            dropdown.style.pointerEvents = "auto";
-          }
-          // textarea
-          const note = document.getElementById(id + "-note");
-          if (note) {
-            note.disabled = false;
-            note.style.pointerEvents = "auto";
-          }
-          // Post Note button (keep your legacy inline onclick selector)
-          const postBtn = document.querySelector(
-            `#${id} button[onclick*="postNote"]`
-          );
-          if (postBtn) {
-            postBtn.disabled = false;
-            postBtn.style.pointerEvents = "auto";
-          }
-        }
+  // Small helper: (re)enable controls for this step's outcome section
+  function enableOutcomeControls(id) {
+    // dropdown
+    const dropdown = document.getElementById(id + "-select");
+    if (dropdown) {
+      dropdown.disabled = false;
+      dropdown.style.pointerEvents = "auto";
+    }
+    // textarea
+    const note = document.getElementById(id + "-note");
+    if (note) {
+      note.disabled = false;
+      note.style.pointerEvents = "auto";
+    }
+    // Post Note button (keep your legacy inline onclick selector)
+    const postBtn = document.querySelector(
+      `#${id} button[onclick*="postNote"]`
+    );
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.style.pointerEvents = "auto";
+    }
+  }
 
-        // Always mark the clicked step/sub-step active (helps CSS show outcome)
-        const stepEl = document.getElementById(stepId);
-        if (stepEl && !stepEl.classList.contains("active")) {
-          stepEl.classList.add("active");
-        }
+  // Always mark the clicked step/sub-step active (helps CSS show outcome)
+  const stepEl = document.getElementById(stepId);
+  if (stepEl && !stepEl.classList.contains("active")) {
+    stepEl.classList.add("active");
+  }
 
-        // Resolve action from config
-        const protocolConfig = ProtocolFactory.getProtocolConfig(
-          currentAlert.id
-        );
-        const currentStep = protocolConfig.steps.find((s) => s.id === stepId);
-        const action = currentStep ? currentStep.action : undefined;
-        const isMessageDevice =
-          action === "message-device" || (!action && stepId === "step-2"); // back-compat
+  // Resolve action from config
+  const protocolConfig = ProtocolFactory.getProtocolConfig(
+    currentAlert.id
+  );
+  const currentStep = protocolConfig.steps.find((s) => s.id === stepId);
+  const action = currentStep ? currentStep.action : undefined;
+  const isMessageDevice =
+    action === "message-device" || (!action && stepId === "step-2"); // back-compat
 
-        // If already started, just ensure outcome UI is shown & enabled (for non message-device)
-        if (protocolState.startedSteps.has(stepId)) {
-          if (!isMessageDevice) {
-            const outcomeSection = document.getElementById(stepId + "-outcome");
-            if (outcomeSection && outcomeSection.style.display !== "block") {
-              outcomeSection.style.display = "block";
-            }
-            // 🔧 ensure inputs are usable even on re-entry
-            enableOutcomeControls(stepId);
-          }
-          return;
-        }
-        protocolState.startedSteps.add(stepId);
+  // If already started, just ensure outcome UI is shown & enabled (for non message-device)
+  if (protocolState.startedSteps.has(stepId)) {
+    if (!isMessageDevice) {
+      const outcomeSection = document.getElementById(stepId + "-outcome");
+      if (outcomeSection && outcomeSection.style.display !== "block") {
+        outcomeSection.style.display = "block";
+      }
+      // 🔧 ensure inputs are usable even on re-entry
+      enableOutcomeControls(stepId);
+    }
+    return;
+  }
+  protocolState.startedSteps.add(stepId);
 
-        // ── Show/hide outcome section based on action ───────────────────────
-        const outcomeSection = document.getElementById(stepId + "-outcome");
-        if (isMessageDevice) {
-          if (outcomeSection) outcomeSection.style.display = "none";
-        } else {
-          if (outcomeSection && outcomeSection.style.display !== "block") {
-            outcomeSection.style.display = "block";
-          }
-          // 🔧 first-run: enable controls
-          enableOutcomeControls(stepId);
-        }
+  // ── Show/hide outcome section based on action ───────────────────────
+  const outcomeSection = document.getElementById(stepId + "-outcome");
+  if (isMessageDevice) {
+    if (outcomeSection) outcomeSection.style.display = "none";
+  } else {
+    if (outcomeSection && outcomeSection.style.display !== "block") {
+      outcomeSection.style.display = "block";
+    }
+    // 🔧 first-run: enable controls
+    enableOutcomeControls(stepId);
+  }
 
-        // ── Start timer for message-device steps ────────────────────────────
-        if (isMessageDevice) {
-          const timerDuration =
-            (typeof getStepTimer === "function" && getStepTimer(stepId)) ||
-            (typeof getStepTimer === "function" && getStepTimer("step-2")) ||
-            0;
+  // ── Start timer for message-device steps ────────────────────────────
+  if (isMessageDevice) {
+    const timerDuration =
+      (typeof getStepTimer === "function" && getStepTimer(stepId)) ||
+      (typeof getStepTimer === "function" && getStepTimer("step-2")) ||
+      0;
 
-          const alreadyRunningThisTimer =
-            typeof window.activeTimerData === "object" &&
-            window.activeTimerData &&
-            window.activeTimerData.stepId === stepId &&
-            window.activeTimerData.isRunning;
+    const alreadyRunningThisTimer =
+      typeof window.activeTimerData === "object" &&
+      window.activeTimerData &&
+      window.activeTimerData.stepId === stepId &&
+      window.activeTimerData.isRunning;
 
-          if (timerDuration && !alreadyRunningThisTimer) {
-            console.log("Timer duration found:", timerDuration);
-            console.log("About to call startGlobalTimer");
-            startGlobalTimer(
-              stepId,
-              "Waiting for device reply",
-              "",
-              timerDuration
-            );
-            console.log("startGlobalTimer call completed");
+    if (timerDuration && !alreadyRunningThisTimer) {
+      console.log("Timer duration found:", timerDuration);
+      console.log("About to call startGlobalTimer");
+      startGlobalTimer(
+        stepId,
+        "Waiting for device reply",
+        "",
+        timerDuration
+      );
+      console.log("startGlobalTimer call completed");
 
-            // Add logging for message-device actions
-            const isGasAlert = window.isGasAlert?.(currentAlert) || false;
-            const gasCurrentlyDangerous =
-              isGasAlert && !isGasCurrentlyNormalized();
-            const messageText =
-              action === "message-device" && gasCurrentlyDangerous
-                ? "Leave the area, understood?"
-                : "Do you need help?";
-
-            const stepNum = stepId.replace("step-", "");
-            addLogEntry(
-              `Step ${stepNum}: Sent "${messageText}" to device. Waiting ${Math.floor(
-                timerDuration / 60
-              )} minutes for reply.`,
-              "step"
-            );
-
-            // Set context for message classification system
-            lastPromptSent = messageText;
-            promptTimestamp = Date.now();
-            protocolState.deviceMessageReceived = false;
-            awaitingResponse = true;
-
-            // Start our message timer (separate from global timer)
-            if (messageTimer) {
-              clearTimeout(messageTimer);
-            }
-            messageTimer = setTimeout(() => {
-              if (awaitingResponse) {
-                addLogEntry(
-                  `No response received within ${Math.floor(
-                    timerDuration / 60
-                  )} minutes. Proceeding to next step.`,
-                  "timer"
-                );
-                awaitingResponse = false;
-                lastPromptSent = null;
-              }
-            }, timerDuration * 1000);
-
-            // Add status badge logic
-            const statusBadge = document.getElementById(stepId + "-status");
-            if (statusBadge) {
-              statusBadge.textContent = "Waiting";
-              statusBadge.className = "status-badge waiting";
-              console.log("Step status set to Waiting");
-            }
-          } else {
-            if (!timerDuration)
-              console.log(`No timer duration found for ${stepId}`);
-            if (alreadyRunningThisTimer)
-              console.log(
-                `Global timer for ${stepId} already running; skipping restart.`
-              );
-          }
+      // FIXED: Add logging for message-device actions with protocol-aware messaging
+      const isGasAlert = window.isGasAlert?.(currentAlert) || false;
+      const gasCurrentlyDangerous = isGasAlert && !isGasCurrentlyNormalized();
+      
+      // Dynamic messaging based on protocol and gas levels
+      let messageText = "Do you need help?"; // Default message
+      if (action === "message-device") {
+        const protocolName = protocolConfig?.name || "";
+        
+        // Only apply gas-aware messaging for Gas Emergency protocols
+        if (protocolName.includes("Gas Emergency")) {
+          messageText = gasCurrentlyDangerous 
+            ? "Leave the area, understood?" 
+            : "Do you need help?";
         }
       }
+
+      const stepNum = stepId.replace("step-", "");
+      addLogEntry(
+        `Step ${stepNum}: Sent "${messageText}" to device. Waiting ${Math.floor(
+          timerDuration / 60
+        )} minutes for reply.`,
+        "step"
+      );
+
+      // Set context for message classification system
+      lastPromptSent = messageText;
+      promptTimestamp = Date.now();
+      protocolState.deviceMessageReceived = false;
+      awaitingResponse = true;
+
+      // Start our message timer (separate from global timer)
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+      }
+      messageTimer = setTimeout(() => {
+        if (awaitingResponse) {
+          addLogEntry(
+            `No response received within ${Math.floor(
+              timerDuration / 60
+            )} minutes. Proceeding to next step.`,
+            "timer"
+          );
+          awaitingResponse = false;
+          lastPromptSent = null;
+        }
+      }, timerDuration * 1000);
+
+      // Add status badge logic
+      const statusBadge = document.getElementById(stepId + "-status");
+      if (statusBadge) {
+        statusBadge.textContent = "Waiting";
+        statusBadge.className = "status-badge waiting";
+        console.log("Step status set to Waiting");
+      }
+    } else {
+      if (!timerDuration)
+        console.log(`No timer duration found for ${stepId}`);
+      if (alreadyRunningThisTimer)
+        console.log(
+          `Global timer for ${stepId} already running; skipping restart.`
+        );
+    }
+  }
+}
 
       function validatePostButton(stepId) {
         const stepEl = document.getElementById(stepId);
@@ -4113,32 +3857,32 @@ window.classifyIncomingMessage = classifyIncomingMessage;
       }
 
       // UNIVERSAL HELPER FUNCTIONS (add these at the top of the function)
-      function handleCallDeviceOutcome(
-        selectedValue,
-        currentUser,
-        currentAlert
-      ) {
-        let noteText = "";
-        let shouldScrollToResolution = false;
+function handleCallDeviceOutcome(
+  selectedValue,
+  currentUser,
+  currentAlert
+) {
+  let noteText = "";
+  let shouldScrollToResolution = false;
 
-        if (selectedValue === "confirmed-ok") {
-          noteText = `Spoke with ${
-            currentUser?.name || "user"
-          }. Confirmed they are okay. Resolving alert.`;
-          shouldScrollToResolution = true;
-        } else if (selectedValue === "user-callback") {
-          noteText = `${
-            currentUser?.name || "User"
-          } called in. Confirmed they are okay. Resolving alert.`;
-          shouldScrollToResolution = true;
-        } else if (selectedValue === "no-answer") {
-          noteText = `Called device. No answer`;
-        } else if (selectedValue === "unable-to-call") {
-          noteText = `Unable to call, device offline`;
-        }
+  if (selectedValue === "confirmed-ok") {
+    noteText = `Called device. Spoke with ${
+      currentUser?.name || "user"
+    }. Confirmed they are okay. Resolving alert.`;
+    shouldScrollToResolution = true;
+  } else if (selectedValue === "user-callback") {
+    noteText = `${
+      currentUser?.name || "User"
+    } called in. Confirmed they are okay. Resolving alert.`;
+    shouldScrollToResolution = true;
+  } else if (selectedValue === "no-answer") {
+    noteText = `Called device. No answer`;
+  } else if (selectedValue === "unable-to-call") {
+    noteText = `Unable to call, device offline`;
+  }
 
-        return { noteText, shouldScrollToResolution };
-      }
+  return { noteText, shouldScrollToResolution };
+}
 
       function handleCallUserOutcome(selectedValue, currentUser, currentAlert) {
         let noteText = "";
@@ -7974,16 +7718,16 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
       }
 
       function loadAlertFromJSON(alertId) {
-        if (!alertsFromJSON) {
-          alert("JSON data not loaded yet");
-          return;
-        }
-
-        const alertData = alertsFromJSON.find((alert) => alert.id === alertId);
-        if (!alertData) {
-          console.error(`Alert ID ${alertId} not found in JSON`);
-          return;
-        }
+  if (!alertsFromJSON || !alertsFromJSON.alertTypesData) {
+    alert("JSON data not loaded yet");
+    return;
+  }
+  
+  const alertData = alertsFromJSON.alertTypesData[alertId];  // Access as object property, not array
+  if (!alertData) {
+    console.error(`Alert ID ${alertId} not found in JSON`);
+    return;
+  }
 
         // Convert JSON to expected format and load
         currentAlert = convertJSONToAlertFormat(alertData);
@@ -8126,20 +7870,21 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
       }
 
       function clearAlert() {
-        currentAlert = null;
-        currentUser = null;
-        dispatchMade = false;
+  currentAlert = null;
+  currentUser = null;
+  dispatchMade = false;
 
-        document.getElementById("alert-header").classList.remove("active");
-        updateGasReadings("default");
-        document.getElementById("triggeredBy").style.display = "none";
-        document.getElementById("lastUpdated").style.display = "none";
-        document.getElementById("protocolLog").innerHTML =
-          '<div class="log-placeholder">No alert loaded. Use demo controls to load an alert type and begin protocol.</div>';
-        document.getElementById("protocol-content").innerHTML =
-          '<div class="protocol-placeholder"><div class="protocol-frame"><div class="placeholder-text">No protocol loaded</div><div class="placeholder-subtitle">Alert type will load the relevant emergency response protocol</div></div></div>';
-        document.getElementById("demo-panel").classList.remove("show");
-      }
+  document.getElementById("alert-header").classList.remove("active");
+  updateGasReadings("default");
+  clearDeviceConnectivity(); // ADD THIS LINE
+  document.getElementById("triggeredBy").style.display = "none";
+  document.getElementById("lastUpdated").style.display = "none";
+  document.getElementById("protocolLog").innerHTML =
+    '<div class="log-placeholder">No alert loaded. Use demo controls to load an alert type and begin protocol.</div>';
+  document.getElementById("protocol-content").innerHTML =
+    '<div class="protocol-placeholder"><div class="protocol-frame"><div class="placeholder-text">No protocol loaded</div><div class="placeholder-subtitle">Alert type will load the relevant emergency response protocol</div></div></div>';
+  document.getElementById("demo-panel").classList.remove("show");
+}
 
       // Enhanced addManualNote function with intelligent parsing
       function addManualNote() {
@@ -10850,6 +10595,377 @@ function handleMessageDeviceOutcome(selectedValue, currentUser, currentAlert) {
   return { noteText, shouldScrollToResolution, action, dangerousNow };
 }
 
+// Get appropriate cancel options based on step/protocol
+function getTimerCancelOptions(stepId, label) {
+  // Get current protocol info
+  const protocolConfig = ProtocolFactory.getProtocolConfig(currentAlert?.id);
+  const protocolName = protocolConfig?.name || "";
+  
+  // HOMOGENEOUS: All message-device steps get the same options
+  const isMessageDeviceStep = (
+    (stepId === "step-2" && (protocolName.includes("Fall Detection") || protocolName.includes("Gas Emergency"))) ||
+    (stepId === "step-1" && (protocolName.includes("No Motion") || protocolName.includes("Missed Check")))
+  );
+  
+  if (isMessageDeviceStep) {
+    return `
+      <option value="user-callback">User called in and confirmed they are okay</option>
+      <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+      <option value="ec-callback-30min">EC called in, they will check on user and call back</option>
+      <option value="device-offline">Device went offline</option>
+    `;
+  }
+  
+  // For Emergency Contact steps (Step 3)
+  if (stepId === "step-3" || label.includes("EC Callback")) {
+    return `
+      <option value="user-callback">User called in and confirmed they are okay</option>
+      <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+      <option value="ec-callback-30min">EC called in, will check on user and call back (30 min timer)</option>
+    `;
+  }
+  
+  // For Dispatch Follow-up timers
+  if (label && label.includes("Dispatch Follow-up")) {
+    return `
+      <option value="user-callback">User called in and confirmed they are okay</option>
+      <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+      <option value="dispatch-no-emergency">Dispatch called back, no emergency found at location</option>
+      <option value="dispatch-user-okay">Dispatch called back, user confirmed okay on scene</option>
+      <option value="ec-callback-30min">Emergency contact called in - Will contact user and call back (30 min timer)</option>
+    `;
+  }
+  
+  // Default options for other timers
+  return `
+    <option value="user-callback">User called in and confirmed they are okay</option>
+    <option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+    <option value="dispatch-no-emergency">Dispatch called back, no emergency found at location</option>
+    <option value="dispatch-user-okay">Dispatch called back, user confirmed okay on scene</option>
+  `;
+}
+
+function handleGlobalTimerCancellation(reason) {
+  if (!reason) return;
+
+  console.log("Timer cancellation selected:", reason);
+
+  // Store timer state BEFORE stopping it
+  const wasTimerActive = !!globalTimerInterval;
+  const wasDispatchTimer =
+    activeTimerData?.label?.includes("Dispatch Follow-up");
+
+  // Stop the timer
+  if (globalTimerInterval) {
+    clearInterval(globalTimerInterval);
+    globalTimerInterval = null;
+    globalTimerEndTime = null;
+  }
+
+  // Get current step info BEFORE clearing activeTimerData
+  let currentStepId = activeTimerData?.stepId;
+  let originalStepId = activeTimerData?.originalStepId;
+
+  // Handle EC callback special case
+  if (currentStepId === "ec-callback") {
+    currentStepId = originalStepId || "message-device";
+    console.log("Adjusted currentStepId for EC callback:", currentStepId);
+  }
+
+  // Handle different cancellation reasons
+  if (reason === "user-callback") {
+    // FIXED: Clear message timer too
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+      awaitingResponse = false;
+    }
+
+    let logMessage =
+      "User called in and confirmed they are okay. Resolving alert.";
+
+    // Add gas info for gas alerts
+    if (currentAlert && isGasAlert(currentAlert)) {
+      const gasData = getGasSnapshotFromPanel();
+      if (gasData && gasData.trim()) {
+        logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+      }
+    }
+
+    addLogEntry(logMessage, "step");
+
+    // Mark the originating step as completed before triggering resolution
+    if (currentStepId && canStepTriggerResolution(currentStepId)) {
+      console.log("Marking step as completed:", currentStepId);
+      markStepCompleted(currentStepId);
+
+      // Also mark main step as completed if this is a sub-step
+      if (
+        currentStepId.includes("-") &&
+        currentStepId.split("-").length === 3
+      ) {
+        const mainStepId = currentStepId.substring(
+          0,
+          currentStepId.lastIndexOf("-")
+        );
+        console.log(`Also marking main ${mainStepId} as completed`);
+        markStepCompleted(mainStepId);
+      }
+
+      console.log("Step marked as completed, now triggering resolution");
+    }
+
+    // Use unified resolution flow
+    console.log(
+      "Calling triggerResolutionFlow with stepId:",
+      currentStepId
+    );
+    if (currentStepId) {
+      triggerResolutionFlow(currentStepId, "User confirmed okay");
+    } else {
+      console.error("NO STEP ID - Resolution flow failed!");
+    }
+  } else if (reason === "ec-callback") {
+    // FIXED: Clear message timer too
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+      awaitingResponse = false;
+    }
+
+    // Save current resolution before triggering flow
+    const resolutionSelect = document.getElementById("resolution-reason");
+    const currentResolution = resolutionSelect
+      ? resolutionSelect.value
+      : "";
+
+    let logMessage =
+      "Emergency contact called in and confirmed user is okay. Resolving alert.";
+
+    // Add gas info for gas alerts
+    if (currentAlert && isGasAlert(currentAlert)) {
+      const gasData = getGasSnapshotFromPanel();
+      if (gasData && gasData.trim()) {
+        logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+      }
+    }
+
+    addLogEntry(logMessage, "step");
+
+    // Use unified resolution flow
+    console.log(
+      "Calling triggerResolutionFlow with stepId:",
+      currentStepId
+    );
+    if (currentStepId) {
+      triggerResolutionFlow(currentStepId, "EC confirmed user okay");
+    } else {
+      console.error("NO STEP ID - Resolution flow failed!");
+    }
+
+    // Restore resolution if it was already set correctly
+    if (
+      currentResolution &&
+      currentResolution.includes("with-dispatch") &&
+      dispatchMade
+    ) {
+      setTimeout(() => {
+        if (resolutionSelect) {
+          resolutionSelect.value = currentResolution;
+        }
+      }, 100);
+    }
+  } else if (reason === "dispatch-no-emergency") {
+    // FIXED: Clear message timer too
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+      awaitingResponse = false;
+    }
+
+    let logMessage =
+      "Dispatch called back, no emergency found at location. Resolving alert.";
+
+    // Add gas info for gas alerts
+    if (currentAlert && isGasAlert(currentAlert)) {
+      const gasData = getGasSnapshotFromPanel();
+      if (gasData && gasData.trim()) {
+        logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+      }
+    }
+
+    addLogEntry(logMessage, "step");
+
+    // Use unified resolution flow
+    console.log(
+      "Calling triggerResolutionFlow with stepId:",
+      currentStepId
+    );
+    if (currentStepId) {
+      triggerResolutionFlow(currentStepId, "Dispatch confirmed no emergency");
+    } else {
+      console.error("NO STEP ID - Resolution flow failed!");
+    }
+  } else if (reason === "dispatch-user-okay") {
+    // FIXED: Clear message timer too
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+      awaitingResponse = false;
+    }
+
+    let logMessage =
+      "Dispatch called back, user confirmed okay on scene. Resolving alert.";
+
+    // Add gas info for gas alerts
+    if (currentAlert && isGasAlert(currentAlert)) {
+      const gasData = getGasSnapshotFromPanel();
+      if (gasData && gasData.trim()) {
+        logMessage += `<br><br>${gasData.replace(/\n/g, "<br>")}`;
+      }
+    }
+
+    addLogEntry(logMessage, "step");
+
+    // Use unified resolution flow
+    console.log(
+      "Calling triggerResolutionFlow with stepId:",
+      currentStepId
+    );
+    if (currentStepId) {
+      triggerResolutionFlow(currentStepId, "Dispatch confirmed user okay");
+    } else {
+      console.error("NO STEP ID - Resolution flow failed!");
+    }
+  } else if (reason === "ec-callback-30min") {
+    console.log("DEBUG: dispatchMade =", dispatchMade);
+    console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
+    console.log(
+      "DEBUG: condition result =",
+      !dispatchMade && !globalTimerInterval
+    );
+    addLogEntry(
+      "Emergency contact called in, will check on user and call back within 30 minutes.",
+      "step"
+    );
+
+    // Only start new timer if no dispatch is active
+    if (!dispatchMade && !globalTimerInterval) {
+      console.log("DEBUG: Starting new timer");
+      if (currentStepId) {
+        startGlobalTimer(
+          "ec-callback",
+          "EC Callback",
+          "Emergency Contact",
+          1800
+        );
+      }
+
+      // Update timer info display
+      const info = document.getElementById("timerInfo");
+      if (info) {
+        info.innerHTML = "<strong>Waiting for EC callback</strong>";
+      }
+    } else {
+      console.log(
+        "DEBUG: NOT starting new timer - keeping existing dispatch timer"
+      );
+    }
+
+    // Don't show "Timer cancelled" - return early
+    return;
+  } else if (reason === "device-offline") {
+    // Clear message timer too
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+      awaitingResponse = false;
+    }
+    
+    addLogEntry("Device went offline", "step");
+    if (currentStepId) {
+      markStepCompleted(currentStepId);
+
+      // Get the step's action to determine if it's an emergency contact step
+      const protocolConfig = ProtocolFactory.getProtocolConfig(
+        currentAlert.id
+      );
+      const mainStepId = currentStepId.substring(
+        0,
+        currentStepId.lastIndexOf("-")
+      );
+      const stepConfig = protocolConfig.steps.find(
+        (step) => step.id === mainStepId
+      );
+      const stepAction = stepConfig?.action;
+
+      // Also mark main step as completed if this is a sub-step (but NOT for EC steps)
+      if (
+        currentStepId.includes("-") &&
+        currentStepId.split("-").length === 3 &&
+        stepAction !== "call-emergency-contact" // Check action instead of step number
+      ) {
+        console.log(`Also marking main ${mainStepId} as completed`);
+        markStepCompleted(mainStepId);
+      }
+
+      enableNextStep(currentStepId);
+    }
+  } else if (reason === "custom") {
+    const customReason = prompt("Enter cancellation reason:");
+    if (customReason) {
+      addLogEntry("Timer cancelled: " + customReason, "step");
+      if (currentStepId) {
+        markStepCompleted(currentStepId);
+        enableNextStep(currentStepId);
+      }
+    }
+  }
+
+  // Reset timer display
+  const display = document.getElementById("timerDisplay");
+  const info = document.getElementById("timerInfo");
+  const globalTimer = document.getElementById("globalTimer");
+
+  if (display) display.textContent = "--:--";
+  if (info) info.innerHTML = "<strong>Timer cancelled</strong>";
+  if (globalTimer) {
+    globalTimer.classList.remove("timer-active");
+    globalTimer.classList.add("timer-inactive");
+  }
+
+  // Reset the dropdown
+  const dropdown = document.querySelector(
+    '[data-cy="global-cancel-dropdown"]'
+  );
+  if (dropdown) dropdown.value = "";
+
+  // Clear activeTimerData ONLY if not starting a new timer
+  if (reason !== "ec-callback-30min") {
+    activeTimerData = null;
+  }
+}
+
+function clearDeviceConnectivity() {
+  // Clear device connectivity panel
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  
+  setText("device-online-status", "No device");  // FIXED: was "device-status"
+  setText("last-comm-time", "--");
+  setText("battery-level", "--%");
+  setText("signal-strength", "--%");
+  setText("device-location", "No location data");
+  setText("device-coordinates", "--");           
+  setText("device-speed", "-- km/h");
+  setText("location-timestamp", "--");           
+  
+  // Clear gas timestamp
+  const gasTimestamp = document.getElementById("gas-timestamp");
+  if (gasTimestamp) gasTimestamp.textContent = "-- MDT";
+}
     </script>
   </body>
 </html>
