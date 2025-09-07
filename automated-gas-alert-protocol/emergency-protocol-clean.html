@@ -1657,10 +1657,13 @@
             const ageHours = alertData.alertAge;
             const isOld = ageHours > 24;
             
-            addLogEntry(
-                `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                "system"
-            );
+            // Only log if it's actually a pre-alert
+            if (isOld) {
+                addLogEntry(
+                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                    "system"
+                );
+            }
             return isOld;
         }
 
@@ -1673,10 +1676,13 @@
                 const ageHours = Math.round(ageMs / (1000 * 60 * 60));
                 const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-                addLogEntry(
-                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                    "system"
-                );
+                // Only log if it's actually a pre-alert
+                if (isOld) {
+                    addLogEntry(
+                        `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                        "system"
+                    );
+                }
                 return isOld;
             }
         }
@@ -1707,10 +1713,13 @@
                 const ageHours = Math.round(ageMs / (1000 * 60 * 60));
                 const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-                addLogEntry(
-                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                    "system"
-                );
+                // Only log if it's actually a pre-alert
+                if (isOld) {
+                    addLogEntry(
+                        `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                        "system"
+                    );
+                }
                 return isOld;
             }
         }
@@ -7207,7 +7216,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
   document.getElementById("protocol-content").innerHTML = protocolHTML;
 }
 
-      function autoPopulateNote(contactStepId) {
+function autoPopulateNote(contactStepId) {
         const select = document.getElementById(contactStepId + "-select");
         const note = document.getElementById(contactStepId + "-note");
 
@@ -7226,7 +7235,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
 
         // GROUP 1: RESOLUTION OUTCOMES
         if (selectedValue === "confirmed-ok") {
-          noteText = "Confirmed user is okay and advised to resolve alert";
+          noteText = `Called ${contact.name} at ${contact.phone}. Confirmed user is okay and advised to resolve alert`;
           shouldScrollToResolution = true;
         } else if (selectedValue === "ec-callback") {
           noteText = "Emergency contact called in and confirmed user is okay";
@@ -8703,7 +8712,30 @@ function handleMessageClassification(classification, responseText, isResponse) {
       );
       break;
 
-    case "RESOLUTION":
+      case "RESOLUTION":
+      // CRITICAL: For gas alerts, check gas levels FIRST before canceling any timers
+      const isGasAlert = window.isGasAlert?.(currentAlert) || false;
+      
+      if (isGasAlert) {
+        // Use established gas danger detection
+        const dangerousNow = typeof isAnyGasDangerousNow === "function"
+          ? isAnyGasDangerousNow()
+          : typeof isGasLevelHigh === "function"
+          ? isGasLevelHigh()
+          : !isGasCurrentlyNormalized();
+
+        if (dangerousNow) {
+          addLogEntry(
+            `Received '${responseText}' from device. Gas levels still HIGH - Continue actioning protocol.`,
+            "step"
+          );
+          // DO NOT cancel timers, DO NOT proceed with resolution
+          return; // Exit early - timer keeps running
+        }
+      }
+
+      // Only proceed with timer cancellation and resolution if gas is normal (or not a gas alert)
+      
       // Cancel message timer using established pattern
       if (messageTimer) {
         clearTimeout(messageTimer);
@@ -8733,6 +8765,7 @@ function handleMessageClassification(classification, responseText, isResponse) {
       console.log("DEBUG: isSOSConfirmation =", lastPromptSent === "Do you need help?" && responseText === "No");
 
       if (isGasAlert) {
+        // Continue with existing gas alert logging logic (this will only run if gas is normal)
         const isSOSConfirmation = lastPromptSent === "Do you need help?" && responseText === "No";
         
         // Use established gas reading helper
@@ -8749,28 +8782,12 @@ function handleMessageClassification(classification, responseText, isResponse) {
             
         const gasBlock = `Gas Type: ${reading.type}\nGas Level: ${reading.status}\nGas Reading: ${reading.type}: ${reading.value}${reading.unit} (${timeOnly})`;
 
-        // Use established gas danger detection
-        const dangerousNow = typeof isAnyGasDangerousNow === "function"
-          ? isAnyGasDangerousNow()
-          : typeof isGasLevelHigh === "function"
-          ? isGasLevelHigh()
-          : !isGasCurrentlyNormalized();
-
         if (isSOSConfirmation) {
-          if (dangerousNow) {
-            addLogEntry(
-              `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas levels still HIGH.\n\n${gasBlock}`,
-              "step"
-            );
-            return; // block resolution while HIGH
-          }
           addLogEntry(
             `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
             "step"
           );
         } else {
-          // Spontaneous resolution messages like "Issue resolved", "False alarm", "I'm OK"
-          if (dangerousNow) return; // ignore spontaneous resolution while HIGH
           addLogEntry(
             `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
             "step"
@@ -10649,12 +10666,27 @@ function handleGlobalTimerCancellation(reason) {
 
   console.log("Timer cancellation selected:", reason);
 
+  // Handle ec-callback-30min for dispatch timers FIRST - don't stop the timer!
+  if (reason === "ec-callback-30min") {
+    const isDispatchTimer = activeTimerData?.label?.includes("Dispatch Follow-up");
+    
+    if (isDispatchTimer) {
+      // For dispatch timers: keep running unaffected, just log the entry
+      addLogEntry(
+        "Emergency contact called in, will check on user and call back within 30 minutes.",
+        "step"
+      );
+      console.log("DEBUG: Keeping dispatch timer running - EC will call back");
+      return; // Exit without stopping or affecting the timer
+    }
+  }
+
   // Store timer state BEFORE stopping it
   const wasTimerActive = !!globalTimerInterval;
   const wasDispatchTimer =
     activeTimerData?.label?.includes("Dispatch Follow-up");
 
-  // Stop the timer
+  // Stop the timer (only reached for non-dispatch timers or other reasons)
   if (globalTimerInterval) {
     clearInterval(globalTimerInterval);
     globalTimerInterval = null;
@@ -10837,6 +10869,7 @@ function handleGlobalTimerCancellation(reason) {
       console.error("NO STEP ID - Resolution flow failed!");
     }
   } else if (reason === "ec-callback-30min") {
+    // Handle non-dispatch timers (dispatch timers already handled above)
     console.log("DEBUG: dispatchMade =", dispatchMade);
     console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
     console.log(
@@ -10850,25 +10883,25 @@ function handleGlobalTimerCancellation(reason) {
 
     // Only start new timer if no dispatch is active
     if (!dispatchMade && !globalTimerInterval) {
-      console.log("DEBUG: Starting new timer");
-      if (currentStepId) {
-        startGlobalTimer(
-          "ec-callback",
-          "EC Callback",
-          "Emergency Contact",
-          1800
-        );
-      }
+        console.log("DEBUG: Starting new timer");
+        if (currentStepId) {
+            startGlobalTimer(
+                "ec-callback",
+                "EC Callback",
+                "Emergency Contact",
+                1800
+            );
+        }
 
-      // Update timer info display
-      const info = document.getElementById("timerInfo");
-      if (info) {
-        info.innerHTML = "<strong>Waiting for EC callback</strong>";
-      }
+        // Update timer info display
+        const info = document.getElementById("timerInfo");
+        if (info) {
+            info.innerHTML = "<strong>Waiting for EC callback</strong>";
+        }
     } else {
-      console.log(
-        "DEBUG: NOT starting new timer - keeping existing dispatch timer"
-      );
+        console.log(
+            "DEBUG: NOT starting new timer - keeping existing dispatch timer"
+        );
     }
 
     // Don't show "Timer cancelled" - return early
@@ -10913,13 +10946,20 @@ function handleGlobalTimerCancellation(reason) {
   } else if (reason === "custom") {
     const customReason = prompt("Enter cancellation reason:");
     if (customReason) {
+      // FIXED: Clear message timer too
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+        messageTimer = null;
+        awaitingResponse = false;
+      }
+      
       addLogEntry("Timer cancelled: " + customReason, "step");
       if (currentStepId) {
         markStepCompleted(currentStepId);
         enableNextStep(currentStepId);
       }
     }
-  }
+}
 
   // Reset timer display
   const display = document.getElementById("timerDisplay");
