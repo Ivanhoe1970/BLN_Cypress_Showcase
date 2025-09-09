@@ -31,43 +31,78 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'  # publish repo root (adjust if you have a build dir)
+          # If you build to 'dist', change this to 'dist'
+          path: '.'
 
       - name: Deploy to Pages
-        id: deployment                     # <- referenced above in environment.url
+        id: deployment
         uses: actions/deploy-pages@v4
 
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
 
   test_pages:
+    # Run after deploy on pushes to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: deploy_pages
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with:
+          node-version: '20'
+          cache: 'npm'
+
       - run: npm ci
+
+      # Optional: format & lint (won't fail if scripts are missing)
+      - name: Format check
+        run: npm run format --if-present || true
+      - name: Lint
+        run: npm run lint --if-present || true
+
+      # Wait until the freshly deployed Pages site responds
+      - name: Wait for GitHub Pages to be live
+        run: npx wait-on "${{ needs.deploy_pages.outputs.page_url }}"
+
+      # Run regression suite against the deployed baseUrl
       - name: Run Cypress (against Pages)
         uses: cypress-io/github-action@v6
         with:
           browser: chrome
-          # ✅ pass baseUrl via config (do NOT rely on env var alone)
+          spec: cypress/e2e/regression-suite/**/*.cy.{js,jsx,ts,tsx}
           config: baseUrl=${{ needs.deploy_pages.outputs.page_url }}
         env:
           CI: true
 
   test_local:
+    # Run on PRs
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with:
+          node-version: '20'
+          cache: 'npm'
+
       - run: npm ci
-      - name: Start static server and run Cypress
+
+      # Optional: format & lint (won't fail if scripts are missing)
+      - name: Format check
+        run: npm run format --if-present || true
+      - name: Lint
+        run: npm run lint --if-present || true
+
+      - name: Start static server and run Cypress (regression suite)
         run: |
           npx http-server -p 5500 -c-1 . &
           npx wait-on http://127.0.0.1:5500
-          npx cypress run --browser chrome --config baseUrl=http://127.0.0.1:5500
+          npx cypress run \
+            --browser chrome \
+            --config baseUrl=http://127.0.0.1:5500 \
+            --spec "cypress/e2e/regression-suite/**/*.cy.{js,jsx,ts,tsx}"

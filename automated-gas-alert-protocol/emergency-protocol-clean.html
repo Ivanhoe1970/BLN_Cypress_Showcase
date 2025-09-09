@@ -8461,14 +8461,13 @@ function handleIntelligentActions(analysis, noteText) {
           return;
         }
 
-        // Prevent typing if we're on line 2 and it exceeds 16 chars
-        if (lines.length === 2 && lines[1].length > 16) {
-          input.value = lines[0] + "\n" + lines[1].substring(0, 16);
-          // Set cursor at end of line 2
-          const newPos = lines[0].length + 1 + 16;
-          input.setSelectionRange(newPos, newPos);
-          return;
-        }
+        // REMOVED: Line 2 auto-truncation - let validation handle it
+        // if (lines.length === 2 && lines[1].length > 16) {
+        //   input.value = lines[0] + "\n" + lines[1].substring(0, 16);
+        //   const newPos = lines[0].length + 1 + 16;
+        //   input.setSelectionRange(newPos, newPos);
+        //   return;
+        // }
 
         // Prevent more than 2 lines
         if (lines.length > 2) {

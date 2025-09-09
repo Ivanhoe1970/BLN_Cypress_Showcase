@@ -8,7 +8,13 @@
     "cypress:protocol-specific": "cypress run --spec 'cypress/e2e/local-testing/automated-basic-non-gas-alert-protocol/*.cy.js'",
     "cypress:debug": "cypress run --spec 'cypress/e2e/local-testing/automated-basic-non-gas-alert-protocol/protocol-dispatch-logic.cy.js'",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "test:regression": "cypress run --spec 'cypress/e2e/regression-suite/**'",
+    "test:regression:critical": "cypress run --spec 'cypress/e2e/regression-suite/critical-path/**'",
+    "test:regression:components": "cypress run --spec 'cypress/e2e/regression-suite/component-tests/**'",
+    "test:regression:integration": "cypress run --spec 'cypress/e2e/regression-suite/integration/**'",
+    "test:regression:fast": "cypress run --spec 'cypress/e2e/regression-suite/**' --config video=false,screenshotOnRunFailure=true",
+    "test:regression:open": "cypress open --spec 'cypress/e2e/regression-suite/**'"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +23,8 @@
   "devDependencies": {
     "ajv": "^8.17.1",
     "cypress": "^14.0.2",
-    "cypress-plugin-steps": "^1.2.0"
+    "cypress-plugin-steps": "^1.2.0",
+    "http-server": "^14.1.1",
+    "wait-on": "^8.0.4"
   }
 }
