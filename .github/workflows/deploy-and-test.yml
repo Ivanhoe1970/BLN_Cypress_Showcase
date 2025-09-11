@@ -1,4 +1,4 @@
-name: CI – Deploy (main) and Test (PRs & main)
+name: Deploy and Test
 
 on:
   push:
@@ -11,98 +11,41 @@ permissions:
   pages: write
   id-token: write
 
-jobs:
-  deploy_pages:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
-    # REQUIRED for Pages
+jobs:
+  # Test PRs and main branch locally (fast & reliable)
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Test locally
+        run: |
+          npx http-server -p 5500 -c-1 . &
+          npx wait-on http://127.0.0.1:5500 --timeout 30000
+          npx cypress run --browser chrome --config baseUrl=http://127.0.0.1:5500
+
+  # Deploy main branch (no testing, just deploy)
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test]  # Only deploy if tests pass
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          # If you build to 'dist', change this to 'dist'
           path: '.'
-
-      - name: Deploy to Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-    outputs:
-      page_url: ${{ steps.deployment.outputs.page_url }}
-
-  test_pages:
-    # Run after deploy on pushes to main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: deploy_pages
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      # Optional: format & lint (won't fail if scripts are missing)
-      - name: Format check
-        run: npm run format --if-present || true
-      - name: Lint
-        run: npm run lint --if-present || true
-
-      # Wait until the freshly deployed Pages site responds
-      - name: Wait for GitHub Pages to be live
-        run: npx wait-on "${{ needs.deploy_pages.outputs.page_url }}"
-
-      # Run regression suite against the deployed baseUrl
-      - name: Run Cypress (against Pages)
-        uses: cypress-io/github-action@v6
-        with:
-          browser: chrome
-          spec: cypress/e2e/regression-suite/**/*.cy.{js,jsx,ts,tsx}
-          config: baseUrl=${{ needs.deploy_pages.outputs.page_url }}
-        env:
-          CI: true
-
-  test_local:
-    # Run on PRs
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - run: npm ci
-
-      # Optional: format & lint (won't fail if scripts are missing)
-      - name: Format check
-        run: npm run format --if-present || true
-      - name: Lint
-        run: npm run lint --if-present || true
-
-      - name: Start static server and run Cypress (regression suite)
-        run: |
-          npx http-server -p 5500 -c-1 . &
-          npx wait-on http://127.0.0.1:5500
-          npx cypress run \
-            --browser chrome \
-            --config baseUrl=http://127.0.0.1:5500 \
-            --spec "cypress/e2e/regression-suite/**/*.cy.{js,jsx,ts,tsx}"
+      - uses: actions/deploy-pages@v4
