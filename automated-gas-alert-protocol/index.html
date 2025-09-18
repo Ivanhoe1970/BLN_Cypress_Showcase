@@ -773,7 +773,7 @@
         display: grid;
         grid-template-columns: 1fr 200px 1fr 300px;
         gap: 15px;
-        align-items: start; /* Ensures top alignment */
+        align-items: start; 
       }
 
       .panel-box {
@@ -794,7 +794,7 @@
         border: 1px solid #90caf9;
         background-color: #fff;
         box-sizing: border-box;
-        height: 48px; /* 2 lines of text */
+        height: 48px; 
         outline: none;
       }
 
@@ -1114,7 +1114,6 @@
         display: inline-block;
         margin-left: 0.25rem;
         font-variant-numeric: tabular-nums;
-        /* OPTIONAL: uncomment these two lines if you want numbers to line up vertically */
         min-width: 7ch;
         text-align: right;
       }
@@ -1177,6 +1176,119 @@
         opacity: 1 !important;
         pointer-events: auto !important;
       }
+
+      /* ADD THESE NEW CLASSES ONLY */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.connectivity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.connectivity-item-full {
+  grid-column: 1 / -1;
+}
+
+.connectivity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.connectivity-label {
+  font-size: 0.8em;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Online/Offline color coding */
+.connectivity-value.online {
+  color: #28a745; /* Green - device online */
+  font-weight: bold;
+}
+
+.connectivity-value.offline {
+  color: #dc3545; /* Red - device offline */
+  font-weight: bold;
+}
+
+.section-separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+  margin: 16px 0;
+}
+
+.location-header {
+  font-size: 0.9em;
+  color: #495057;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.location-section .connectivity-item {
+  margin-bottom: 8px;
+}
+
+.location-section .connectivity-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced status pill - OVERWRITES existing */
+.status-pill {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-pill.online {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.status-pill.offline {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+}
+
+/* Panel health indicators */
+.connectivity-panel.warning {
+  border-color: #ffc107;
+}
+
+.connectivity-panel.critical {
+  border-color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .connectivity-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+.gas-status.depletion,
+.gas-status.enrichment {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
     </style>
   </head>
   <body>
@@ -1498,62 +1610,55 @@
   </div>
 
   <!-- Device Connectivity Panel -->
-  <div class="connectivity-panel" id="connectivityPanel" data-cy="connectivity-panel">
+<div class="connectivity-panel" id="connectivityPanel" data-cy="connectivity-panel">
+  <div class="panel-header">
     <h3>📡 Device Connectivity</h3>
-
+    <span class="status-pill online" id="device-online-status" data-cy="device-status">🟢 ONLINE</span>
+  </div>
+  
+  <div class="connectivity-grid">
     <div class="connectivity-item">
-      <span>Status:</span>
-      <span class="status-pill online" id="device-online-status" data-cy="device-status">🟢 Online</span>
-        
-    </div>
-
-    <div class="connectivity-item">
-      <span>Last Communication:</span>
-      <span class="connectivity-value" id="last-comm-time" data-cy="last-comm-time"
-        >Aug 02, 2025 at 17:11 MDT</span
-      >
-    </div>
-
-    <div class="connectivity-item">
-      <span>Battery Level:</span>
+      <span class="connectivity-label">Battery Level:</span>
       <span class="connectivity-value" id="battery-level" data-cy="battery-level">85%</span>
     </div>
-
+    
     <div class="connectivity-item">
-      <span>Signal Strength:</span>
+      <span class="connectivity-label">Signal Strength:</span>
       <span class="connectivity-value" id="signal-strength" data-cy="signal-strength">70%</span>
     </div>
-
-    <div class="location-section">
-      <h4>📍 Last Known Location</h4>
-
-      <div class="connectivity-item">
-        <span>Address:</span>
-        <span class="connectivity-value" id="device-location" data-cy="device-location"
-          >144252 434 Ave E, Aldersyde, AB</span
-        >
-      </div>
-
-      <div class="connectivity-item">
-        <span>Coordinates:</span>
-        <span class="connectivity-value" id="device-coordinates" data-cy="device-coordinates"
-          >50.66004, -113.7685769</span
-        >
-      </div>
-
-      <div class="connectivity-item">
-        <span>Speed:</span>
-        <span class="connectivity-value" id="device-speed" data-cy="device-speed">0.0 km/h</span>
-      </div>
-
-      <div class="connectivity-item">
-        <span>Location Updated:</span>
-        <span class="connectivity-value" id="location-timestamp" data-cy="location-timestamp"
-          >Aug 02, 2025 at 15:28 MDT</span
-        >
-      </div>
+    
+    <div class="connectivity-item connectivity-item-full">
+      <span class="connectivity-label">Last Comm:</span>
+      <span class="connectivity-value" id="last-comm-time" data-cy="last-comm-time">Aug 02, 2025 at 17:11 MDT</span>
     </div>
   </div>
+
+  <div class="section-separator"></div>
+  
+  <div class="location-section">
+    <h4 class="location-header">📍 LOCATION DETAILS</h4>
+
+    <div class="connectivity-item">
+      <span class="connectivity-label">Last Location:</span>
+      <span class="connectivity-value" id="location-timestamp" data-cy="location-timestamp">Aug 02, 2025 at 15:28 MDT</span>
+    </div>
+
+    <div class="connectivity-item">
+      <span class="connectivity-label">Approximate Address:</span>
+      <span class="connectivity-value" id="device-location" data-cy="device-location">144252 434 Ave E, Aldersyde, AB</span>
+    </div>
+
+    <div class="connectivity-item">
+      <span class="connectivity-label">GPS Coord:</span>
+      <span class="connectivity-value" id="device-coordinates" data-cy="device-coordinates">Latitude 50.660040, Longitude -113.768577</span>
+    </div>
+
+    <div class="connectivity-item">
+      <span class="connectivity-label">Speed:</span>
+      <span class="connectivity-value" id="device-speed" data-cy="device-speed">0.0 km/h</span>
+    </div>
+  </div>
+</div>
 </div>
 
     <!-- Gas Override Modal -->
@@ -1658,10 +1763,13 @@
             const ageHours = alertData.alertAge;
             const isOld = ageHours > 24;
             
-            addLogEntry(
-                `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                "system"
-            );
+            // Only log if it's actually a pre-alert
+            if (isOld) {
+                addLogEntry(
+                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                    "system"
+                );
+            }
             return isOld;
         }
 
@@ -1674,10 +1782,13 @@
                 const ageHours = Math.round(ageMs / (1000 * 60 * 60));
                 const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-                addLogEntry(
-                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                    "system"
-                );
+                // Only log if it's actually a pre-alert
+                if (isOld) {
+                    addLogEntry(
+                        `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                        "system"
+                    );
+                }
                 return isOld;
             }
         }
@@ -1708,10 +1819,13 @@
                 const ageHours = Math.round(ageMs / (1000 * 60 * 60));
                 const isOld = ageMs > PRE_ALERT_THRESHOLD;
 
-                addLogEntry(
-                    `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: ${isOld}`,
-                    "system"
-                );
+                // Only log if it's actually a pre-alert
+                if (isOld) {
+                    addLogEntry(
+                        `[PreAlert] Alert age validation: ${ageHours}h old, threshold: 24h, isPreAlert: true`,
+                        "system"
+                    );
+                }
                 return isOld;
             }
         }
@@ -2198,6 +2312,10 @@
       let localTimerInterval = null;
       let beepTimeouts = [];
       let originalTitle = "Enhanced Blackline Live - Alert Management";
+
+      let alertStartTime = null;
+      let alertTimeUpdateInterval = null;
+
 
       // Context tracking variables
       let lastPromptSent = null;
@@ -3092,144 +3210,116 @@ window.classifyIncomingMessage = classifyIncomingMessage;
       }
 
       // Device Connectivity System
-      class DeviceConnectivity {
-        static currentStatus = {
-          online: true,
-          lastCommunication: new Date(),
-          battery: 85,
-          signal: 70,
-          connectionType: "Cellular",
-        };
+class DeviceConnectivity {
+  static currentStatus = {
+    online: true,
+    lastCommunication: new Date(),
+    battery: 85,
+    signal: 70,
+    connectionType: "Cellular",
+  };
 
-        static isDeviceOnline() {
-          const info = this.currentStatus;
-          if (!info) return false;
+  static isDeviceOnline() {
+    const info = this.currentStatus;
+    if (!info) return false;
 
-          const lastComm = new Date(info.lastCommunication);
-          const now = new Date();
-          const diffMinutes = (now - lastComm) / (1000 * 60);
-          if (diffMinutes > 30) return false; // Last communication ≤ 30 minutes ago
-          if (info.battery <= 10) return false; // Battery > 10%
-          if (info.signal <= 10) return false; // Signal strength > 10%
+    const lastComm = new Date(info.lastCommunication);
+    const now = new Date();
+    const diffMinutes = (now - lastComm) / (1000 * 60);
+    if (diffMinutes > 30) return false; // Last communication ≤ 30 minutes ago
+    if (info.battery <= 10) return false; // Battery > 10%
+    if (info.signal <= 10) return false; // Signal strength > 10%
 
-          return true;
-        }
+    return true;
+  }
 
-        static updateConnectivityDisplay() {
-          const panel = document.getElementById("connectivityPanel");
-          const statusElement = document.getElementById("device-online-status");
-          const lastCommElement = document.getElementById("last-comm-time");
-          const batteryElement = document.getElementById("battery-level");
-          const signalElement = document.getElementById("signal-strength");
+  static updateConnectivityDisplay() {
+    const panel = document.getElementById("connectivityPanel");
+    const statusElement = document.getElementById("device-online-status");
+    const lastCommElement = document.getElementById("last-comm-time");
+    const batteryElement = document.getElementById("battery-level");
+    const signalElement = document.getElementById("signal-strength");
 
-          if (!this.currentStatus) {
-            if (panel) panel.style.display = "none";
-            return;
-          } else {
-            if (panel) panel.style.display = "";
-          }
+    if (!this.currentStatus) {
+      if (panel) panel.style.display = "none";
+      return;
+    } else {
+      if (panel) panel.style.display = "";
+    }
 
-          const isOnline = this.isDeviceOnline();
+    const isOnline = this.isDeviceOnline();
 
-          // Status badge
-          if (statusElement) {
-            if (isOnline) {
-              statusElement.textContent = "🟢 Online";
-              statusElement.className = "status-pill online";
-            } else {
-              statusElement.textContent = "🔴 Offline";
-              statusElement.className = "status-pill offline";
-            }
-          }
-
-          // Battery with color coding
-          if (batteryElement) {
-            batteryElement.textContent = this.currentStatus.battery + "%";
-            if (this.currentStatus.battery > 50) {
-              batteryElement.style.color = "#28a745"; // Green
-            } else if (this.currentStatus.battery > 20) {
-              batteryElement.style.color = "#ffc107"; // Yellow
-            } else {
-              batteryElement.style.color = "#dc3545"; // Red
-            }
-          }
-
-          // Signal strength
-          if (signalElement) {
-            signalElement.textContent = this.currentStatus.signal + "%";
-          }
-
-          // Last communication
-          if (lastCommElement) {
-            const lastComm = new Date(this.currentStatus.lastCommunication);
-            const now = new Date();
-            const diffMinutes = Math.floor((now - lastComm) / 60000);
-
-            const timeStr =
-              lastComm.toLocaleTimeString("en-US", {
-                hour12: false,
-                timeZone: "America/Denver",
-                hour: "2-digit",
-                minute: "2-digit",
-              }) + " MDT";
-
-            let timeAgo = "";
-            if (diffMinutes === 0) timeAgo = "(just now)";
-            else if (diffMinutes === 1) timeAgo = "(1 minute ago)";
-            else if (diffMinutes < 60) timeAgo = `(${diffMinutes} minutes ago)`;
-            else {
-              const hours = Math.floor(diffMinutes / 60);
-              const mins = diffMinutes % 60;
-              timeAgo = `(${hours}h${mins > 0 ? ` ${mins}m` : ""} ago)`;
-            }
-
-            lastCommElement.textContent = `${timeStr} ${timeAgo}`;
-            lastCommElement.style.color =
-              diffMinutes > 5 || !isOnline ? "#dc3545" : "";
-            lastCommElement.style.fontWeight =
-              diffMinutes > 5 || !isOnline ? "bold" : "";
-          }
-        }
-
-        // Test Scenarios for Demo/Testing
-        static setDeviceOnlineScenario() {
-          this.currentStatus = {
-            online: true,
-            lastCommunication: new Date(Date.now() - 2 * 60 * 1000), // 2 min ago
-            battery: 85,
-            signal: 70,
-            connectionType: "Cellular",
-          };
-          this.updateConnectivityDisplay();
-        }
-
-        static setDeviceOfflineScenario(reason = "battery") {
-          const scenarios = {
-            battery: {
-              lastCommunication: new Date(Date.now() - 10 * 60 * 1000),
-              battery: 0,
-              signal: 60,
-            },
-            signal: {
-              lastCommunication: new Date(Date.now() - 15 * 60 * 1000),
-              battery: 80,
-              signal: 0,
-            },
-            communication: {
-              lastCommunication: new Date(Date.now() - 45 * 60 * 1000),
-              battery: 80,
-              signal: 60,
-            },
-          };
-
-          this.currentStatus = {
-            online: false,
-            connectionType: "Cellular",
-            ...scenarios[reason],
-          };
-          this.updateConnectivityDisplay();
-        }
+    // Status badge
+    if (statusElement) {
+      if (isOnline) {
+        statusElement.textContent = "Online";
+        statusElement.className = "status-pill online";
+      } else {
+        statusElement.textContent = "Offline";
+        statusElement.className = "status-pill offline";
       }
+    }
+
+    // Battery with color coding
+    if (batteryElement) {
+      const battery = this.currentStatus.battery;
+      batteryElement.textContent = battery + "%";
+      const batteryClass = battery <= 10 ? 'offline' : 'online';
+      batteryElement.className = `connectivity-value ${batteryClass}`;
+    }
+
+    // Signal strength
+    if (signalElement) {
+      const signal = this.currentStatus.signal;
+      signalElement.textContent = signal + "%";
+      const signalClass = signal <= 10 ? 'offline' : 'online';
+      signalElement.className = `connectivity-value ${signalClass}`;
+    }
+
+    // Last communication time
+    if (lastCommElement) {
+      const lastComm = new Date(this.currentStatus.lastCommunication);
+      const now = new Date();
+      const diffMinutes = Math.floor((now - lastComm) / (1000 * 60));
+      
+      if (diffMinutes < 1) {
+        lastCommElement.textContent = "Just now";
+      } else if (diffMinutes === 1) {
+        lastCommElement.textContent = "1 minute ago";
+      } else {
+        lastCommElement.textContent = `${diffMinutes} minutes ago`;
+      }
+    }
+  }
+
+  static setDeviceOfflineScenario(reason = "battery") {
+    switch (reason) {
+      case "battery":
+        this.currentStatus.battery = 5; // Below 10% threshold
+        break;
+      case "signal":
+        this.currentStatus.signal = 5; // Below 10% threshold
+        break;
+      case "communication":
+        this.currentStatus.lastCommunication = new Date(Date.now() - 45 * 60 * 1000); // 45 min ago
+        break;
+      default:
+        this.currentStatus.battery = 5;
+    }
+    this.updateConnectivityDisplay();
+  }
+
+  static setDeviceOnlineScenario() {
+    this.currentStatus = {
+      online: true,
+      lastCommunication: new Date(),
+      battery: 85,
+      signal: 70,
+      connectionType: "Cellular",
+    };
+    this.updateConnectivityDisplay();
+  }
+}
 
       function getEmergencyContactsStepId() {
         try {
@@ -4140,11 +4230,7 @@ function handleCallDeviceOutcome(
           aFd;
         } else if (stepAction === "dispatch") {
           console.log(
-            "DEBUG: Matched dispatch action, setting dispatchMade = true"
-          );
-          dispatchMade = true;
-          console.log(
-            "DEBUG: Set dispatchMade = true in postNote for dispatch step"
+            "DEBUG: Processing dispatch action in autoPopulate - NOT setting dispatchMade flag"
           );
 
           const result = handleDispatchOutcome(
@@ -4308,23 +4394,18 @@ function handleCallDeviceOutcome(
                 ? isAnyGasDangerousNow()
                 : !isGasCurrentlyNormalized();
 
-            if (gasStillHigh) {
-              const warningText = "⚠️ Gas levels still HIGH.";
-              console.log("🔴 AUTOPOP: Adding HIGH gas warning to noteText");
-              noteText += `\n\n${warningText}\n\n${gasBlockWithTs}`;
-            } else {
-              const alreadyResolving = /confirmed they are okay/i.test(
-                noteText
-              );
-              const preface = alreadyResolving
-                ? "Gas readings back to normal."
-                : "Gas readings back to normal. Resolving alert.";
-              console.log("🔴 AUTOPOP: Adding NORMAL gas data to noteText");
-              noteText += `\n\n${preface}\n\n${gasBlockWithTs}`;
-            }
-          } else {
-            console.log("DEBUG GAS: No gasBlockRaw data!");
-          }
+                if (gasStillHigh) {
+  const warningText = "⚠️ Gas levels still HIGH.";
+  console.log("🔴 AUTOPOP: Adding HIGH gas warning to noteText");
+  noteText += `\n\n${warningText}\n\n${gasBlockWithTs}`;
+} else {
+  // FIXED: Don't add "Gas readings back to normal." here at all - let postNote() handle it
+  console.log("🔴 AUTOPOP: Adding NORMAL gas data to noteText");
+  noteText += `\n\n${gasBlockWithTs}`;
+}
+} else {
+  console.log("DEBUG GAS: No gasBlockRaw data!");
+}
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -4533,14 +4614,14 @@ function handleCallDeviceOutcome(
         const isGas = window.isGasAlert?.(currentAlert) || false;
 
         // Unified logger (gas data already appended by autoPopulateFromDropdown)
-        const logStep = (text) => {
+const logStep = (text) => {
   // Check if CURRENT alert is actually a gas alert
   const isCurrentlyGasAlert = window.isGasAlert?.(currentAlert) || false;
   
   if (
     isCurrentlyGasAlert &&  // ← Add this check
     typeof addGasLogEntry === "function" &&
-    !/Gas Type:|Gas Reading:| Gas levels still HIGH/i.test(text)
+    !/Gas levels still HIGH/i.test(text)
   ) {
     console.log("Gas logging from: postNote -> addGasLogEntry");
     addGasLogEntry(text, stepId);
@@ -4759,63 +4840,75 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
           }
 
           // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
-          if (dispatchDecision === "yes") {
-            console.log("DEBUG: Setting dispatchMade = true");
-            dispatchMade = true;
-            const serviceDropdown = document.getElementById("service-type");
-            const serviceName = serviceDropdown
-              ? serviceDropdown.options[serviceDropdown.selectedIndex]?.text ||
-                "Emergency Services"
-              : "Emergency Services";
+if (dispatchDecision === "yes") {
+  console.log("DEBUG: Dispatch YES - Setting dispatchMade = true");
+  dispatchMade = true;
+  window.dispatchMade = true;
+  if (window.protocolState) {
+    window.protocolState.dispatchMade = true;
+  }
+  
+  const serviceDropdown = document.getElementById("service-type");
+  const serviceName = serviceDropdown
+    ? serviceDropdown.options[serviceDropdown.selectedIndex]?.text ||
+      "Emergency Services"
+    : "Emergency Services";
 
-            // Start 30-minute dispatch follow-up timer
-            if (typeof startGlobalTimer === "function") {
-              startGlobalTimer(stepId, "Dispatch Follow-up", serviceName, 1800);
-              addLogEntry(
-                `⏰ Started 30-minute dispatch follow-up timer for ${serviceName}`,
-                "timer"
-              );
+  // Start 30-minute dispatch follow-up timer
+  if (typeof startGlobalTimer === "function") {
+    startGlobalTimer(stepId, "Dispatch Follow-up", serviceName, 1800);
+    addLogEntry(
+      `⏰ Started 30-minute dispatch follow-up timer for ${serviceName}`,
+      "timer"
+    );
 
-              // Disable only the Post Note button
-              const postBtn = document.getElementById(stepId + "-post-btn");
-              if (postBtn) {
-                postBtn.disabled = true;
-                postBtn.classList.remove("btn-success");
-                postBtn.classList.add("btn-secondary");
-              }
+    // Disable only the Post Note button
+    const postBtn = document.getElementById(stepId + "-post-btn");
+    if (postBtn) {
+      postBtn.disabled = true;
+      postBtn.classList.remove("btn-success");
+      postBtn.classList.add("btn-secondary");
+    }
 
-              // Set step status to "Waiting" after other processing completes
-              setTimeout(() => {
-                const statusBadge = document.getElementById(stepId + "-status");
-                if (statusBadge) {
-                  statusBadge.textContent = "Waiting";
-                  statusBadge.className = "status-badge waiting";
-                  statusBadge.style.background = "#ffc107";
-                  statusBadge.style.color = "#000";
-                }
-              }, 200); // Small delay to ensure it runs after other status updates
+    // Set step status to "Waiting" after other processing completes
+    setTimeout(() => {
+      const statusBadge = document.getElementById(stepId + "-status");
+      if (statusBadge) {
+        statusBadge.textContent = "Waiting";
+        statusBadge.className = "status-badge waiting";
+        statusBadge.style.background = "#ffc107";
+        statusBadge.style.color = "#000";
+      }
+    }, 200);
 
-              // Scroll to timer
-              setTimeout(() => {
-                const timerElement = document.getElementById("globalTimer");
-                if (timerElement) {
-                  timerElement.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                }
-              }, 100);
+    // Scroll to timer
+    setTimeout(() => {
+      const timerElement = document.getElementById("globalTimer");
+      if (timerElement) {
+        timerElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
 
-              // Ensure callback section stays active
-              const callbackDropdown = document.querySelector(
-                'select[data-cy="global-cancel-dropdown"]'
-              );
-              if (callbackDropdown) {
-                callbackDropdown.disabled = false;
-              }
-            }
-          }
-
+    // Ensure callback section stays active
+    const callbackDropdown = document.querySelector(
+      'select[data-cy="global-cancel-dropdown"]'
+    );
+    if (callbackDropdown) {
+      callbackDropdown.disabled = false;
+    }
+  }
+} else {
+  // CRITICAL FIX: Explicitly set dispatch flags to false for "no" or empty decisions
+  console.log("DEBUG: Dispatch NO/empty - Setting dispatchMade = false");
+  dispatchMade = false;
+  window.dispatchMade = false;
+  if (window.protocolState) {
+    window.protocolState.dispatchMade = false;
+  }
+}
           // Ensure callback section stays fully active
           setTimeout(() => {
             // Enable the callback dropdown
@@ -5124,10 +5217,12 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
               const warningText = "⚠️ Gas levels still HIGH.";
               body += `\n\n${warningText}\n\n${gasBlockWithTs}`;
             } else {
-              const preface = /Gas readings back to normal/i.test(body)
-                ? ""
-                : "Gas readings back to normal.";
-              body += `\n\n${preface}\n\n${gasBlockWithTs}`;
+              // Insert "Gas readings back to normal." into the main sentence
+if (!/Gas readings back to normal/i.test(body)) {
+  body = body.replace(/resolving alert\./i, "Gas readings back to normal. Resolving alert.");
+}
+// Add gas data block separately without preface
+body += `\n\n${gasBlockWithTs}`;
             }
           }
         }
@@ -5174,46 +5269,70 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
             console.log("DEBUG NORMALIZED o2Status:", U("o2-status"));
             console.log("DEBUG NORMALIZED h2sStatus:", U("h2s-status"));
             if (normalized) {
-              if (!/[.?!]$/.test(msg)) msg += ".";
+  if (!/[.?!]$/.test(msg)) msg += ".";
 
-              // Check textarea content for gas data instead of msg
-              const noteValue =
-                document.getElementById(stepId + "-note")?.value || "";
-              if (!/Gas Type:|Gas Reading:/i.test(noteValue)) {
-                let block = "";
-                try {
-                  block =
-                    typeof getGasSnapshotFromPanel === "function"
-                      ? getGasSnapshotFromPanel()
-                      : "";
-                  if (block) {
-                    const now = new Date();
-                    const ts =
-                      typeof FORMATTERS?.timestampMST === "function"
-                        ? FORMATTERS.timestampMST(now)
-                        : new Intl.DateTimeFormat("en-US", {
-                            timeZone: "America/Denver",
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            hour12: false,
-                          }).format(now) + " MDT";
-                    block = block.replace(
-                      /(Gas Reading:\s*[^\n]+)/i,
-                      `$1 (${ts})`
-                    );
-                  }
-                } catch {}
-                msg += `\n\nGas readings back to normal. Resolving alert.`;
-              } else {
-                msg += `\n\nGas readings back to normal. Resolving alert.`;
-              }
-            } else {
-              if (!/[.?!]$/.test(msg)) msg += ".";
-              suppressResolutionFlow = true;
+  // Check textarea content for gas data instead of msg
+  const noteValue =
+    document.getElementById(stepId + "-note")?.value || "";
+  if (!/Gas Type:|Gas Reading:/i.test(noteValue)) {
+    let block = "";
+    try {
+      block =
+        typeof getGasSnapshotFromPanel === "function"
+          ? getGasSnapshotFromPanel()
+          : "";
+      if (block) {
+        const now = new Date();
+        const ts =
+          typeof FORMATTERS?.timestampMST === "function"
+            ? FORMATTERS.timestampMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
+        block = block.replace(
+          /(Gas Reading:\s*[^\n]+)/i,
+          `$1 (${ts})`
+        );
+      }
+    } catch {}
+    
+    // Add gas normalization text before "Resolving alert."
+    if (!/Gas readings back to normal/i.test(msg)) {
+      const alreadyHasResolving = /resolving alert/i.test(msg);
+      if (alreadyHasResolving) {
+        // Insert "Gas readings back to normal." before existing "Resolving alert."
+        msg = msg.replace(/(\s*)resolving alert\.?/i, " Gas readings back to normal. Resolving alert.");
+      } else {
+        // Add gas normalization text
+        msg += " Gas readings back to normal.";
+      }
+    }
+
+    // Add gas data block if available
+    if (block) {
+      msg += `\n\n${block}`;
+    }
+  } else {
+    // Textarea already contains gas data, just add normalization text if needed
+    if (!/Gas readings back to normal/i.test(msg)) {
+      const alreadyHasResolving = /resolving alert/i.test(msg);
+      if (alreadyHasResolving) {
+        msg = msg.replace(/(\s*)resolving alert\.?/i, " Gas readings back to normal. Resolving alert.");
+      } else {
+        msg += " Gas readings back to normal.";
+      }
+    }
+  }
+} else {
+  if (!/[.?!]$/.test(msg)) msg += ".";
+  suppressResolutionFlow = true;
 
               const resSection =
                 document.querySelector(".resolution-section") ||
@@ -5740,6 +5859,8 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
       }
 
       function completeResolution(reason, overrideReason) {
+        stopDynamicAlertTime();
+
         // Cancel any active timer when resolving alert
         cancelGlobalTimer();
 
@@ -5783,6 +5904,8 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
       }
 
       function resolveAlert(stepId) {
+        stopDynamicAlertTime();
+
         // ⛔️ Guard first: Gas alert + any dangerous reading → force override modal
         if (
           typeof isGasAlert === "function" &&
@@ -6200,6 +6323,11 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
         document.getElementById("alert-time").textContent = alertTime;
         document.getElementById("alert-trigger").textContent =
           alertConfig.displayName;
+
+          if (!window.currentAlert?.isPreAlert) {
+          startDynamicAlertTime(new Date());
+        }
+
       }
 
       function formatAlertTime(alertDate) {
@@ -6222,11 +6350,11 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
         let timeAgo = "";
 
         if (diffMinutes === 0) timeAgo = "(just now)";
-        else if (diffMinutes === 1) timeAgo = "(-1 minute ago)";
-        else if (diffMinutes < 60) timeAgo = `(-${diffMinutes} minutes ago)`;
+        else if (diffMinutes === 1) timeAgo = "(1 minute ago)";
+        else if (diffMinutes < 60) timeAgo = `(${diffMinutes} minutes ago)`;
         else if (diffMinutes < 1440)
-          timeAgo = `(-${Math.floor(diffMinutes / 60)} hours ago)`;
-        else timeAgo = `(-${Math.floor(diffMinutes / 1440)} days ago)`;
+          timeAgo = `(${Math.floor(diffMinutes / 60)} hours ago)`;
+        else timeAgo = `(${Math.floor(diffMinutes / 1440)} days ago)`;
 
         // NEW: Set pre-alert flag if alert is older than 24 hours (1440 minutes)
         if (diffMinutes >= 1440) {
@@ -6237,6 +6365,37 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
 
         return `${timeStr} ${timeAgo}`;
       }
+
+      function startDynamicAlertTime(alertDate) {
+    // Store the alert start time
+    alertStartTime = alertDate || new Date();
+    
+    // Clear any existing interval
+    if (alertTimeUpdateInterval) {
+        clearInterval(alertTimeUpdateInterval);
+    }
+    
+    // Function to update the display
+    function updateAlertTimeDisplay() {
+        const alertTimeElement = document.querySelector('[data-cy="alert-time"]');
+        if (alertTimeElement && alertStartTime) {
+            alertTimeElement.textContent = formatAlertTime(alertStartTime);
+        }
+    }
+    
+    // Update immediately
+    updateAlertTimeDisplay();
+    
+    // Set interval to update every second
+    alertTimeUpdateInterval = setInterval(updateAlertTimeDisplay, 1000);
+}
+
+function stopDynamicAlertTime() {
+    if (alertTimeUpdateInterval) {
+        clearInterval(alertTimeUpdateInterval);
+        alertTimeUpdateInterval = null;
+    }
+}
 
       function addAlertSequenceLogs(userConfig) {
         const now = new Date();
@@ -7208,7 +7367,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
   document.getElementById("protocol-content").innerHTML = protocolHTML;
 }
 
-      function autoPopulateNote(contactStepId) {
+function autoPopulateNote(contactStepId) {
         const select = document.getElementById(contactStepId + "-select");
         const note = document.getElementById(contactStepId + "-note");
 
@@ -7227,7 +7386,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
 
         // GROUP 1: RESOLUTION OUTCOMES
         if (selectedValue === "confirmed-ok") {
-          noteText = "Confirmed user is okay and advised to resolve alert";
+          noteText = `Called ${contact.name} at ${contact.phone}. Confirmed user is okay and advised to resolve alert`;
           shouldScrollToResolution = true;
         } else if (selectedValue === "ec-callback") {
           noteText = "Emergency contact called in and confirmed user is okay";
@@ -7507,11 +7666,20 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
       }
 
       function loadAlert(alertType) {
-        const alertConfig = AlertDataManager.alertTypesData[alertType];
-        if (!alertConfig) {
-          console.error(`Alert type ${alertType} not found`);
-          return;
-        }
+    // Reset dispatch state variables for new alert
+    window.dispatchMade = false;
+    if (window.protocolState) {
+        window.protocolState.dispatchMade = false;
+    }
+    if (typeof dispatchMade !== 'undefined') {
+        dispatchMade = false;
+    }
+
+    const alertConfig = AlertDataManager.alertTypesData[alertType];
+    if (!alertConfig) {
+        console.error(`Alert type ${alertType} not found`);
+        return;
+    }
 
         // NEW: Check for pre-alert condition FIRST
         if (isPreAlert(alertConfig)) {
@@ -7876,7 +8044,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
 
   document.getElementById("alert-header").classList.remove("active");
   updateGasReadings("default");
-  clearDeviceConnectivity(); // ADD THIS LINE
+  clearDeviceConnectivity(); 
   document.getElementById("triggeredBy").style.display = "none";
   document.getElementById("lastUpdated").style.display = "none";
   document.getElementById("protocolLog").innerHTML =
@@ -7949,8 +8117,7 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
                   `$1 (${ts})`
                 );
 
-                const preface = "Gas readings back to normal.";
-                logEntry += `\n\n${preface}\n\n${gasBlockWithTs}`;
+                logEntry += `\n\n${gasBlockWithTs}`;
 
                 console.log("DEBUG: Final logEntry with gas data:", logEntry);
               } else {
@@ -8453,14 +8620,13 @@ function handleIntelligentActions(analysis, noteText) {
           return;
         }
 
-        // Prevent typing if we're on line 2 and it exceeds 16 chars
-        if (lines.length === 2 && lines[1].length > 16) {
-          input.value = lines[0] + "\n" + lines[1].substring(0, 16);
-          // Set cursor at end of line 2
-          const newPos = lines[0].length + 1 + 16;
-          input.setSelectionRange(newPos, newPos);
-          return;
-        }
+        // REMOVED: Line 2 auto-truncation - let validation handle it
+        // if (lines.length === 2 && lines[1].length > 16) {
+        //   input.value = lines[0] + "\n" + lines[1].substring(0, 16);
+        //   const newPos = lines[0].length + 1 + 16;
+        //   input.setSelectionRange(newPos, newPos);
+        //   return;
+        // }
 
         // Prevent more than 2 lines
         if (lines.length > 2) {
@@ -8704,7 +8870,30 @@ function handleMessageClassification(classification, responseText, isResponse) {
       );
       break;
 
-    case "RESOLUTION":
+      case "RESOLUTION":
+      // CRITICAL: For gas alerts, check gas levels FIRST before canceling any timers
+      const isGasAlert = window.isGasAlert?.(currentAlert) || false;
+      
+      if (isGasAlert) {
+        // Use established gas danger detection
+        const dangerousNow = typeof isAnyGasDangerousNow === "function"
+          ? isAnyGasDangerousNow()
+          : typeof isGasLevelHigh === "function"
+          ? isGasLevelHigh()
+          : !isGasCurrentlyNormalized();
+
+        if (dangerousNow) {
+          addLogEntry(
+            `Received '${responseText}' from device. Gas levels still HIGH - Continue actioning protocol.`,
+            "step"
+          );
+          // DO NOT cancel timers, DO NOT proceed with resolution
+          return; // Exit early - timer keeps running
+        }
+      }
+
+      // Only proceed with timer cancellation and resolution if gas is normal (or not a gas alert)
+      
       // Cancel message timer using established pattern
       if (messageTimer) {
         clearTimeout(messageTimer);
@@ -8734,6 +8923,7 @@ function handleMessageClassification(classification, responseText, isResponse) {
       console.log("DEBUG: isSOSConfirmation =", lastPromptSent === "Do you need help?" && responseText === "No");
 
       if (isGasAlert) {
+        // Continue with existing gas alert logging logic (this will only run if gas is normal)
         const isSOSConfirmation = lastPromptSent === "Do you need help?" && responseText === "No";
         
         // Use established gas reading helper
@@ -8750,28 +8940,12 @@ function handleMessageClassification(classification, responseText, isResponse) {
             
         const gasBlock = `Gas Type: ${reading.type}\nGas Level: ${reading.status}\nGas Reading: ${reading.type}: ${reading.value}${reading.unit} (${timeOnly})`;
 
-        // Use established gas danger detection
-        const dangerousNow = typeof isAnyGasDangerousNow === "function"
-          ? isAnyGasDangerousNow()
-          : typeof isGasLevelHigh === "function"
-          ? isGasLevelHigh()
-          : !isGasCurrentlyNormalized();
-
         if (isSOSConfirmation) {
-          if (dangerousNow) {
-            addLogEntry(
-              `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas levels still HIGH.\n\n${gasBlock}`,
-              "step"
-            );
-            return; // block resolution while HIGH
-          }
           addLogEntry(
             `[${timestamp}] Received '${responseText}' from device, confirming no SOS. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
             "step"
           );
         } else {
-          // Spontaneous resolution messages like "Issue resolved", "False alarm", "I'm OK"
-          if (dangerousNow) return; // ignore spontaneous resolution while HIGH
           addLogEntry(
             `[${timestamp}] Received '${responseText}' from device, confirming user is okay. Gas readings back to normal. Resolving alert.\n\n${gasBlock}`,
             "step"
@@ -10143,6 +10317,8 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
           DeviceConnectivity.updateConnectivityDisplay();
         }, 30000);
 
+        window.addEventListener('beforeunload', stopDynamicAlertTime);
+
         // REPLACE THE OLD MESSAGE INPUT CODE WITH THIS:
         const messageInput = document.getElementById("manual-message-input");
         const charCounter = document.getElementById("charCounter");
@@ -10518,28 +10694,109 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
       function determineResolutionType(alertData) {
   const alert = alertData || window.currentAlert || {};
 
+  // EMERGENCY DEBUG - Find the source of dispatchMade = true
+  console.log("=== DISPATCH RESOLUTION DEBUG ===");
+  console.log("window.dispatchMade:", window.dispatchMade);
+  console.log("window.protocolState?.dispatchMade:", window.protocolState?.dispatchMade);
+  console.log("typeof dispatchMade:", typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined');
+  console.log("CALL STACK TRACE:");
+  console.trace();
+  
+  // Force all dispatch flags to false temporarily to test
+  console.log("FORCING ALL DISPATCH FLAGS TO FALSE FOR TESTING");
+  window.dispatchMade = false;
+  if (window.protocolState) {
+    window.protocolState.dispatchMade = false;
+  }
+  if (typeof dispatchMade !== 'undefined') {
+    dispatchMade = false;
+  }
+  
   // Pre-alert always wins
   if (alert?.isPreAlert === true || window.currentAlert?.isPreAlert === true) {
     return "pre-alert";
   }
 
   // Gas vs non-gas
-  const isGas =
+  const isGas = 
     (typeof isGasAlert === "function" && isGasAlert(alert)) ||
     /(^gas-|h2s|co|o2|lel)/i.test(alert?.id || "") ||
     /h2s|co|o2|lel/i.test(alert?.gasType || "");
+
   const category = isGas ? "incident" : "false-alert";
 
-  // Source of truth: the dispatch decision dropdown
-  const dd = document.querySelector('#dispatch-decision, [data-cy="dispatch-decision"]');
-  const val = (dd?.value || "").toLowerCase();
+  // COMPREHENSIVE DISPATCH DETECTION - Check multiple sources
+  let wasDispatched = false;
 
-  // Default is "without-dispatch" unless the UI explicitly says "yes"
-  const suffix = val === "yes" ? "with-dispatch" : "without-dispatch";
-  return `${category}-${suffix}`;
+  // Method 1: Check global dispatch flags
+  wasDispatched = window.dispatchMade === true || 
+                 window.protocolState?.dispatchMade === true ||
+                 (typeof dispatchMade !== 'undefined' && dispatchMade === true);
+
+  // Method 2: Check dispatch step completion + decision
+  if (!wasDispatched) {
+    const dispatchStepCompleted = window.protocolState?.completedSteps?.some(stepId => 
+      stepId === 'step-5' || stepId.includes('dispatch')
+    );
+    const dispatchDecisionMade = document.querySelector('#dispatch-decision')?.value === 'yes';
+    wasDispatched = dispatchStepCompleted && dispatchDecisionMade;
+  }
+
+  // Method 3: Check logs for dispatch evidence (MOST RELIABLE)
+  if (!wasDispatched) {
+    const logContainer = document.getElementById("protocolLog");
+    if (logContainer) {
+      const logText = logContainer.textContent || "";
+      // Look for specific dispatch log patterns
+      wasDispatched = /step \d+:.*dispatch decision - yes|dispatched.*emergency services|called dispatch.*services|dispatch.*yes.*services/i.test(logText);
+    }
+  }
+
+  // Method 4: Check for dispatch notes in completed steps
+  if (!wasDispatched && window.protocolState?.completedSteps) {
+    for (const stepId of window.protocolState.completedSteps) {
+      const noteElement = document.getElementById(`${stepId}-note`);
+      if (noteElement && noteElement.value) {
+        const noteText = noteElement.value.toLowerCase();
+        if (noteText.includes('dispatch') && (noteText.includes('yes') || noteText.includes('emergency services'))) {
+          wasDispatched = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Method 5: Check log entries for dispatch activity
+  if (!wasDispatched) {
+    const logEntries = document.querySelectorAll('.log-entry');
+    for (const entry of logEntries) {
+      const entryText = (entry.textContent || "").toLowerCase();
+      if (/dispatch.*confirmed|emergency services.*dispatched|ems.*dispatched|called dispatch.*services/i.test(entryText)) {
+        wasDispatched = true;
+        break;
+      }
+    }
+  }
+
+  const suffix = wasDispatched ? "with-dispatch" : "without-dispatch";
+  const result = `${category}-${suffix}`;
+  
+  console.log("DEBUG RESOLUTION:");
+  console.log("  - Alert ID:", alert?.id);
+  console.log("  - Is Gas:", isGas);
+  console.log("  - Category:", category);
+  console.log("  - Dispatch Flags:", {
+    dispatchMade: window.dispatchMade,
+    protocolDispatchMade: window.protocolState?.dispatchMade,
+    globalDispatchMade: typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined'
+  });
+  console.log("  - Completed Steps:", window.protocolState?.completedSteps);
+  console.log("  - Dispatch Decision:", document.querySelector('#dispatch-decision')?.value);
+  console.log("  - Was Dispatched:", wasDispatched);
+  console.log("  - Final Result:", result);
+  
+  return result;
 }
-
-
 
 function handleMessageDeviceOutcome(selectedValue, currentUser, currentAlert) {
   const prompt = (window.lastPromptSent || '').toLowerCase();
@@ -10646,16 +10903,56 @@ function getTimerCancelOptions(stepId, label) {
 }
 
 function handleGlobalTimerCancellation(reason) {
+
+  console.log("=== DISPATCH STATE DEBUG BEFORE PRESERVATION ===");
+  console.log("window.dispatchMade:", window.dispatchMade);
+  console.log("window.protocolState?.dispatchMade:", window.protocolState?.dispatchMade);
+  console.log("typeof dispatchMade:", typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined');
+  console.log("protocolState.completedSteps:", window.protocolState?.completedSteps);
+
   if (!reason) return;
 
   console.log("Timer cancellation selected:", reason);
+
+  // CRITICAL FIX: Preserve dispatch state BEFORE any resolution processing (CORRECTED)
+const wasDispatched = 
+  window.dispatchMade === true || 
+  window.protocolState?.dispatchMade === true || 
+  (typeof dispatchMade !== 'undefined' && dispatchMade === true);
+
+// REMOVED the faulty log scanning and DOM element checking that was causing false positives
+
+// Set dispatch state in multiple places to ensure persistence
+if (wasDispatched) {
+  window.dispatchMade = true;
+  dispatchMade = true;
+  if (window.protocolState) {
+    window.protocolState.dispatchMade = true;
+  }
+  console.log("PRESERVED dispatch state before resolution:", wasDispatched);
+}
+
+  // Handle ec-callback-30min for dispatch timers FIRST - don't stop the timer!
+  if (reason === "ec-callback-30min") {
+    const isDispatchTimer = activeTimerData?.label?.includes("Dispatch Follow-up");
+    
+    if (isDispatchTimer) {
+      // For dispatch timers: keep running unaffected, just log the entry
+      addLogEntry(
+        "Emergency contact called in, will check on user and call back within 30 minutes.",
+        "step"
+      );
+      console.log("DEBUG: Keeping dispatch timer running - EC will call back");
+      return; // Exit without stopping or affecting the timer
+    }
+  }
 
   // Store timer state BEFORE stopping it
   const wasTimerActive = !!globalTimerInterval;
   const wasDispatchTimer =
     activeTimerData?.label?.includes("Dispatch Follow-up");
 
-  // Stop the timer
+  // Stop the timer (only reached for non-dispatch timers or other reasons)
   if (globalTimerInterval) {
     clearInterval(globalTimerInterval);
     globalTimerInterval = null;
@@ -10838,6 +11135,7 @@ function handleGlobalTimerCancellation(reason) {
       console.error("NO STEP ID - Resolution flow failed!");
     }
   } else if (reason === "ec-callback-30min") {
+    // Handle non-dispatch timers (dispatch timers already handled above)
     console.log("DEBUG: dispatchMade =", dispatchMade);
     console.log("DEBUG: globalTimerInterval =", globalTimerInterval);
     console.log(
@@ -10851,25 +11149,25 @@ function handleGlobalTimerCancellation(reason) {
 
     // Only start new timer if no dispatch is active
     if (!dispatchMade && !globalTimerInterval) {
-      console.log("DEBUG: Starting new timer");
-      if (currentStepId) {
-        startGlobalTimer(
-          "ec-callback",
-          "EC Callback",
-          "Emergency Contact",
-          1800
-        );
-      }
+        console.log("DEBUG: Starting new timer");
+        if (currentStepId) {
+            startGlobalTimer(
+                "ec-callback",
+                "EC Callback",
+                "Emergency Contact",
+                1800
+            );
+        }
 
-      // Update timer info display
-      const info = document.getElementById("timerInfo");
-      if (info) {
-        info.innerHTML = "<strong>Waiting for EC callback</strong>";
-      }
+        // Update timer info display
+        const info = document.getElementById("timerInfo");
+        if (info) {
+            info.innerHTML = "<strong>Waiting for EC callback</strong>";
+        }
     } else {
-      console.log(
-        "DEBUG: NOT starting new timer - keeping existing dispatch timer"
-      );
+        console.log(
+            "DEBUG: NOT starting new timer - keeping existing dispatch timer"
+        );
     }
 
     // Don't show "Timer cancelled" - return early
@@ -10914,13 +11212,20 @@ function handleGlobalTimerCancellation(reason) {
   } else if (reason === "custom") {
     const customReason = prompt("Enter cancellation reason:");
     if (customReason) {
+      // FIXED: Clear message timer too
+      if (messageTimer) {
+        clearTimeout(messageTimer);
+        messageTimer = null;
+        awaitingResponse = false;
+      }
+      
       addLogEntry("Timer cancelled: " + customReason, "step");
       if (currentStepId) {
         markStepCompleted(currentStepId);
         enableNextStep(currentStepId);
       }
     }
-  }
+}
 
   // Reset timer display
   const display = document.getElementById("timerDisplay");
@@ -10958,13 +11263,29 @@ function clearDeviceConnectivity() {
   setText("battery-level", "--%");
   setText("signal-strength", "--%");
   setText("device-location", "No location data");
-  setText("device-coordinates", "--");           
+  setText("device-coordinates", "--");           // ADD: missing element
   setText("device-speed", "-- km/h");
-  setText("location-timestamp", "--");           
+  setText("location-timestamp", "--");           // ADD: missing element
   
   // Clear gas timestamp
   const gasTimestamp = document.getElementById("gas-timestamp");
   if (gasTimestamp) gasTimestamp.textContent = "-- MDT";
+}
+
+function updateO2Status(value, status) {
+    const statusElement = document.getElementById('o2-status');
+    if (!statusElement) return;
+    
+    statusElement.textContent = status;
+    statusElement.classList.remove('normal', 'high', 'depletion', 'enrichment');
+    
+    if (status === 'O2 Depletion' || status === 'DEPLETION') {
+        statusElement.classList.add('depletion');
+    } else if (status === 'O2 Enrichment' || status === 'ENRICHMENT') {
+        statusElement.classList.add('enrichment');
+    } else {
+        statusElement.classList.add('normal');
+    }
 }
     </script>
   </body>
