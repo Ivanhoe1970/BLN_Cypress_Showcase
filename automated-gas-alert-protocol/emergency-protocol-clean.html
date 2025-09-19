@@ -4842,13 +4842,21 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
           }
 
           // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
-if (dispatchDecision === "yes") {
-  console.log("DEBUG: Dispatch YES - Setting dispatchMade = true");
-  dispatchMade = true;
-  window.dispatchMade = true;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = true;
-  }
+          if (dispatchDecision === "yes") {
+    console.log("DEBUG: Dispatch YES - Setting dispatchMade = true");
+    
+    // Set all three dispatch tracking variables consistently
+    dispatchMade = true;
+    window.dispatchMade = true;
+    if (window.protocolState) {
+        window.protocolState.dispatchMade = true;
+    }
+    
+    console.log("DEBUG: All dispatch flags set:", {
+        dispatchMade,
+        windowDispatchMade: window.dispatchMade,
+        protocolDispatchMade: window.protocolState?.dispatchMade
+    });
   
   const serviceDropdown = document.getElementById("service-type");
   const serviceName = serviceDropdown
@@ -4903,13 +4911,19 @@ if (dispatchDecision === "yes") {
     }
   }
 } else {
-  // CRITICAL FIX: Explicitly set dispatch flags to false for "no" or empty decisions
-  console.log("DEBUG: Dispatch NO/empty - Setting dispatchMade = false");
-  dispatchMade = false;
-  window.dispatchMade = false;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = false;
-  }
+    // CRITICAL FIX: Explicitly set dispatch flags to false for "no" or empty decisions
+    console.log("DEBUG: Dispatch NO/empty - Setting dispatchMade = false");
+    dispatchMade = false;
+    window.dispatchMade = false;
+    if (window.protocolState) {
+        window.protocolState.dispatchMade = false;
+    }
+    
+    console.log("DEBUG: All dispatch flags cleared:", {
+        dispatchMade,
+        windowDispatchMade: window.dispatchMade,
+        protocolDispatchMade: window.protocolState?.dispatchMade
+    });
 }
           // Ensure callback section stays fully active
           setTimeout(() => {
@@ -10704,15 +10718,6 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
   console.log("CALL STACK TRACE:");
   console.trace();
   
-  // Force all dispatch flags to false temporarily to test
-  console.log("FORCING ALL DISPATCH FLAGS TO FALSE FOR TESTING");
-  window.dispatchMade = false;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = false;
-  }
-  if (typeof dispatchMade !== 'undefined') {
-    dispatchMade = false;
-  }
   
   // Pre-alert always wins
   if (alert?.isPreAlert === true || window.currentAlert?.isPreAlert === true) {
@@ -10931,7 +10936,14 @@ if (wasDispatched) {
   if (window.protocolState) {
     window.protocolState.dispatchMade = true;
   }
-  console.log("PRESERVED dispatch state before resolution:", wasDispatched);
+  console.log("PRESERVED dispatch state before resolution:", {
+    wasDispatched,
+    allFlags: {
+      dispatchMade,
+      windowDispatchMade: window.dispatchMade,
+      protocolDispatchMade: window.protocolState?.dispatchMade
+    }
+  });
 }
 
   // Handle ec-callback-30min for dispatch timers FIRST - don't stop the timer!
