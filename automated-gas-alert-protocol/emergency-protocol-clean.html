@@ -3339,40 +3339,42 @@ class DeviceConnectivity {
       }
 
       function confirmOverride() {
-        const overrideReasonSelect = document.getElementById("override-reason");
-        const overrideReason = overrideReasonSelect.value;
+  const overrideReasonSelect = document.getElementById("override-reason");
+  const overrideReason = overrideReasonSelect.value;
 
-        if (!overrideReason) {
-          alert("Please select an override reason");
-          return;
-        }
+  if (!overrideReason) {
+    alert("Please select an override reason");
+    return;
+  }
 
-        // Get the display text BEFORE clearing anything
-        const overrideText =
-          overrideReasonSelect.options[overrideReasonSelect.selectedIndex].text;
+  // Get the display text BEFORE clearing anything
+  const overrideText =
+    overrideReasonSelect.options[overrideReasonSelect.selectedIndex].text;
 
-        const reasonSelect = document.getElementById("resolution-reason");
-        let reason = reasonSelect ? reasonSelect.value : "";
+  const reasonSelect = document.getElementById("resolution-reason");
+  let reason = reasonSelect ? reasonSelect.value : "";
 
-        // If no resolution reason was selected, set a default one
-        if (!reason) {
-          reason = determineResolutionType(currentAlert);
-          if (reasonSelect) {
-            reasonSelect.value = reason;
-          }
-        }
+  // ALWAYS determine the correct resolution reason based on dispatch state
+  const correctReason = determineResolutionType(currentAlert);
+  console.log("DEBUG OVERRIDE: Current reason:", reason, "Correct reason:", correctReason);
+  
+  // Use the determined reason (respects dispatch state)
+  reason = correctReason;
+  if (reasonSelect) {
+    reasonSelect.value = reason;
+  }
 
-        // Close the override modal
-        document.getElementById("modalOverlay").style.display = "none";
-        document.getElementById("overrideModal").style.display = "none";
-        document.getElementById("override-reason").value = ""; // This clears it
-        document.getElementById("confirmOverrideBtn").disabled = true;
+  // Close the override modal
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("overrideModal").style.display = "none";
+  document.getElementById("override-reason").value = ""; // This clears it
+  document.getElementById("confirmOverrideBtn").disabled = true;
 
-        lockUIForResolution();
+  lockUIForResolution();
 
-        // Pass the display text, not the value
-        completeResolution(reason, overrideText); // Pass the text, not the value
-      }
+  // Pass the display text, not the value
+  completeResolution(reason, overrideText); // Pass the text, not the value
+}
 
       function startGlobalTimer(
         stepId,
@@ -10711,6 +10713,7 @@ window.handleMessageClassification = handleMessageClassification;
   console.log("=== DISPATCH RESOLUTION DEBUG ===");
   console.log("window.dispatchMade:", window.dispatchMade);
   console.log("window.protocolState?.dispatchMade:", window.protocolState?.dispatchMade);
+  console.log("protocolState?.dispatchMade:", protocolState?.dispatchMade);
   console.log("typeof dispatchMade:", typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined');
   console.log("CALL STACK TRACE:");
   console.trace();
@@ -10735,6 +10738,7 @@ window.handleMessageClassification = handleMessageClassification;
   // Method 1: Check global dispatch flags
   wasDispatched = window.dispatchMade === true || 
                  window.protocolState?.dispatchMade === true ||
+                 protocolState?.dispatchMade === true ||
                  (typeof dispatchMade !== 'undefined' && dispatchMade === true);
 
   // Method 2: Check dispatch step completion + decision
@@ -10792,6 +10796,7 @@ window.handleMessageClassification = handleMessageClassification;
   console.log("  - Dispatch Flags:", {
     dispatchMade: window.dispatchMade,
     protocolDispatchMade: window.protocolState?.dispatchMade,
+    globalProtocolDispatchMade: protocolState?.dispatchMade,
     globalDispatchMade: typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined'
   });
   console.log("  - Completed Steps:", window.protocolState?.completedSteps);
