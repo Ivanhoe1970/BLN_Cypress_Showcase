@@ -10513,37 +10513,38 @@ window.handleMessageClassification = handleMessageClassification;
       }
 
       function triggerResolutionFlow(
-        fromStepId,
-        reason = "User confirmed okay"
-      ) {
-        // 1. Mark current step complete
-        if (fromStepId) {
-          markStepCompleted(fromStepId);
-        }
+  fromStepId,
+  reason = "User confirmed okay"
+) {
+  // 1. Mark current step complete
+  if (fromStepId) {
+    markStepCompleted(fromStepId);
+  }
 
-        // 2. Block all remaining steps
-        blockRemainingSteps(fromStepId, reason);
+  // 2. Block all remaining steps
+  blockRemainingSteps(fromStepId, reason);
 
-        // 3. Auto-populate resolution dropdown
-        const resolutionSelect = document.getElementById("resolution-reason");
-        if (resolutionSelect && !resolutionSelect.value) {
-          const resolutionType = determineResolutionType(currentAlert);
-          resolutionSelect.value = resolutionType;
-        }
+  // 3. ALWAYS determine correct resolution type based on dispatch state
+  const resolutionSelect = document.getElementById("resolution-reason");
+  if (resolutionSelect) {
+    const resolutionType = determineResolutionType(currentAlert);
+    resolutionSelect.value = resolutionType;
+    console.log("DEBUG TRIGGER RESOLUTION: Set resolution to:", resolutionType);
+  }
 
-        // 4. Scroll to resolution panel
-        setTimeout(() => {
-          const resolutionSection = document.querySelector(
-            ".resolution-section"
-          );
-          if (resolutionSection) {
-            resolutionSection.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-        }, 300);
-      }
+  // 4. Scroll to resolution panel
+  setTimeout(() => {
+    const resolutionSection = document.querySelector(
+      ".resolution-section"
+    );
+    if (resolutionSection) {
+      resolutionSection.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, 300);
+}
 
       function canStepTriggerResolution(stepId) {
         // Any step can potentially trigger resolution based on its outcome
