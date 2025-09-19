@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Automated Emergency Response Platform</title>
     <style>
       body {
@@ -1410,7 +1410,7 @@
   </div>
 
   <div class="demo-button-single">
-    <button type="button" class="btn btn-secondary" onclick="clearAlert()" data-cy="clear-alert-btn">
+    <button class="btn btn-secondary" onclick="clearAlert()" data-cy="clear-alert-btn">
       Clear Alert
     </button>
   </div>
@@ -1564,6 +1564,8 @@
     </div>
   </div>
 </div>
+
+
 
 <!-- Column 4: Gas Readings -->
 <div
@@ -3290,7 +3292,34 @@ class DeviceConnectivity {
         lastCommElement.textContent = `${diffMinutes} minutes ago`;
       }
     }
-  }
+
+    const locationElement = document.getElementById("location-timestamp");
+if (locationElement && locationElement.textContent !== '--') {
+    const originalText = locationElement.textContent.replace(/\s*\([^)]+\)\s*$/, '');
+    const timeAgo = DeviceConnectivity.calculateLocationTimeAgo(originalText);
+    locationElement.textContent = `${originalText} ${timeAgo}`;
+}
+}
+
+// MOVE THIS METHOD INSIDE THE CLASS:
+static calculateLocationTimeAgo(timestampText) {
+    if (!timestampText || timestampText === '--') return '';
+    
+    // Parse timestamp like "Sep 19, 2025 at 11:51 MDT"
+    const cleanTimestamp = timestampText.replace(' at ', ' ').replace(/\s+[A-Z]{2,4}$/, '');
+    const locationDate = new Date(cleanTimestamp);
+    
+    if (isNaN(locationDate.getTime())) return '';
+    
+    const now = new Date();
+    const diffMinutes = Math.floor((now - locationDate.getTime()) / 60000);
+    
+    if (diffMinutes === 0) return "(just now)";
+    if (diffMinutes === 1) return "(1 minute ago)";
+    if (diffMinutes < 60) return `(${diffMinutes} minutes ago)`;
+    if (diffMinutes < 1440) return `(${Math.floor(diffMinutes / 60)} hours ago)`;
+    return `(${Math.floor(diffMinutes / 1440)} days ago)`;
+}
 
   static setDeviceOfflineScenario(reason = "battery") {
     switch (reason) {
@@ -3337,40 +3366,42 @@ class DeviceConnectivity {
       }
 
       function confirmOverride() {
-        const overrideReasonSelect = document.getElementById("override-reason");
-        const overrideReason = overrideReasonSelect.value;
+  const overrideReasonSelect = document.getElementById("override-reason");
+  const overrideReason = overrideReasonSelect.value;
 
-        if (!overrideReason) {
-          alert("Please select an override reason");
-          return;
-        }
+  if (!overrideReason) {
+    alert("Please select an override reason");
+    return;
+  }
 
-        // Get the display text BEFORE clearing anything
-        const overrideText =
-          overrideReasonSelect.options[overrideReasonSelect.selectedIndex].text;
+  // Get the display text BEFORE clearing anything
+  const overrideText =
+    overrideReasonSelect.options[overrideReasonSelect.selectedIndex].text;
 
-        const reasonSelect = document.getElementById("resolution-reason");
-        let reason = reasonSelect ? reasonSelect.value : "";
+  const reasonSelect = document.getElementById("resolution-reason");
+  let reason = reasonSelect ? reasonSelect.value : "";
 
-        // If no resolution reason was selected, set a default one
-        if (!reason) {
-          reason = determineResolutionType(currentAlert);
-          if (reasonSelect) {
-            reasonSelect.value = reason;
-          }
-        }
+  // ALWAYS determine the correct resolution reason based on dispatch state
+  const correctReason = determineResolutionType(currentAlert);
+  console.log("DEBUG OVERRIDE: Current reason:", reason, "Correct reason:", correctReason);
+  
+  // Use the determined reason (respects dispatch state)
+  reason = correctReason;
+  if (reasonSelect) {
+    reasonSelect.value = reason;
+  }
 
-        // Close the override modal
-        document.getElementById("modalOverlay").style.display = "none";
-        document.getElementById("overrideModal").style.display = "none";
-        document.getElementById("override-reason").value = ""; // This clears it
-        document.getElementById("confirmOverrideBtn").disabled = true;
+  // Close the override modal
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("overrideModal").style.display = "none";
+  document.getElementById("override-reason").value = ""; // This clears it
+  document.getElementById("confirmOverrideBtn").disabled = true;
 
-        lockUIForResolution();
+  lockUIForResolution();
 
-        // Pass the display text, not the value
-        completeResolution(reason, overrideText); // Pass the text, not the value
-      }
+  // Pass the display text, not the value
+  completeResolution(reason, overrideText); // Pass the text, not the value
+}
 
       function startGlobalTimer(
         stepId,
@@ -4840,13 +4871,21 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
           }
 
           // ===== ADD 30-MINUTE TIMER FOR DISPATCH "YES" =====
-if (dispatchDecision === "yes") {
-  console.log("DEBUG: Dispatch YES - Setting dispatchMade = true");
-  dispatchMade = true;
-  window.dispatchMade = true;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = true;
-  }
+          if (dispatchDecision === "yes") {
+    console.log("DEBUG: Dispatch YES - Setting dispatchMade = true");
+    
+    // Set all three dispatch tracking variables consistently
+    dispatchMade = true;
+    window.dispatchMade = true;
+    if (window.protocolState) {
+        window.protocolState.dispatchMade = true;
+    }
+    
+    console.log("DEBUG: All dispatch flags set:", {
+        dispatchMade,
+        windowDispatchMade: window.dispatchMade,
+        protocolDispatchMade: window.protocolState?.dispatchMade
+    });
   
   const serviceDropdown = document.getElementById("service-type");
   const serviceName = serviceDropdown
@@ -4901,13 +4940,19 @@ if (dispatchDecision === "yes") {
     }
   }
 } else {
-  // CRITICAL FIX: Explicitly set dispatch flags to false for "no" or empty decisions
-  console.log("DEBUG: Dispatch NO/empty - Setting dispatchMade = false");
-  dispatchMade = false;
-  window.dispatchMade = false;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = false;
-  }
+    // CRITICAL FIX: Explicitly set dispatch flags to false for "no" or empty decisions
+    console.log("DEBUG: Dispatch NO/empty - Setting dispatchMade = false");
+    dispatchMade = false;
+    window.dispatchMade = false;
+    if (window.protocolState) {
+        window.protocolState.dispatchMade = false;
+    }
+    
+    console.log("DEBUG: All dispatch flags cleared:", {
+        dispatchMade,
+        windowDispatchMade: window.dispatchMade,
+        protocolDispatchMade: window.protocolState?.dispatchMade
+    });
 }
           // Ensure callback section stays fully active
           setTimeout(() => {
@@ -7359,8 +7404,8 @@ function stopDynamicAlertTime() {
     '<option value="pre-alert">Pre-alert</option>' +
     "</select>" +
     '<div class="resolution-buttons" data-cy="resolution-buttons">' +
-    '<button type="button" class="btn btn-danger" data-cy="resolve-alert-btn" onclick="resolveAlert()">✅ Resolve Alert</button>' +
-    '<button type="button" class="btn btn-secondary" data-cy="cancel-resolution-btn" onclick="cancelResolution()">❌ Cancel Resolution</button>' +
+    '<button class="btn btn-danger" data-cy="resolve-alert-btn" onclick="resolveAlert()">✅ Resolve Alert</button>' +
+    '<button class="btn btn-secondary" data-cy="cancel-resolution-btn" onclick="cancelResolution()">❌ Cancel Resolution</button>' +
     "</div>" +
     "</div>";
 
@@ -8713,7 +8758,6 @@ function handleIntelligentActions(analysis, noteText) {
       }
 
       function triggerImmediateDispatch() {
-        dispatchMade = true;
       }
 
       // Enhanced simulateDeviceResponse function - DROP-IN REPLACEMENT
@@ -9558,8 +9602,6 @@ window.handleMessageClassification = handleMessageClassification;
           );
 
           if (newValue === "yes") {
-            window.dispatchMade = true;
-if (window.protocolState) window.protocolState.dispatchMade = true;
             if (serviceContainer) serviceContainer.style.display = "block";
             if (skipContainer) skipContainer.style.display = "none";
           } else {
@@ -10498,37 +10540,38 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
       }
 
       function triggerResolutionFlow(
-        fromStepId,
-        reason = "User confirmed okay"
-      ) {
-        // 1. Mark current step complete
-        if (fromStepId) {
-          markStepCompleted(fromStepId);
-        }
+  fromStepId,
+  reason = "User confirmed okay"
+) {
+  // 1. Mark current step complete
+  if (fromStepId) {
+    markStepCompleted(fromStepId);
+  }
 
-        // 2. Block all remaining steps
-        blockRemainingSteps(fromStepId, reason);
+  // 2. Block all remaining steps
+  blockRemainingSteps(fromStepId, reason);
 
-        // 3. Auto-populate resolution dropdown
-        const resolutionSelect = document.getElementById("resolution-reason");
-        if (resolutionSelect && !resolutionSelect.value) {
-          const resolutionType = determineResolutionType(currentAlert);
-          resolutionSelect.value = resolutionType;
-        }
+  // 3. ALWAYS determine correct resolution type based on dispatch state
+  const resolutionSelect = document.getElementById("resolution-reason");
+  if (resolutionSelect) {
+    const resolutionType = determineResolutionType(currentAlert);
+    resolutionSelect.value = resolutionType;
+    console.log("DEBUG TRIGGER RESOLUTION: Set resolution to:", resolutionType);
+  }
 
-        // 4. Scroll to resolution panel
-        setTimeout(() => {
-          const resolutionSection = document.querySelector(
-            ".resolution-section"
-          );
-          if (resolutionSection) {
-            resolutionSection.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-        }, 300);
-      }
+  // 4. Scroll to resolution panel
+  setTimeout(() => {
+    const resolutionSection = document.querySelector(
+      ".resolution-section"
+    );
+    if (resolutionSection) {
+      resolutionSection.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, 300);
+}
 
       function canStepTriggerResolution(stepId) {
         // Any step can potentially trigger resolution based on its outcome
@@ -10698,19 +10741,11 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
   console.log("=== DISPATCH RESOLUTION DEBUG ===");
   console.log("window.dispatchMade:", window.dispatchMade);
   console.log("window.protocolState?.dispatchMade:", window.protocolState?.dispatchMade);
+  console.log("protocolState?.dispatchMade:", protocolState?.dispatchMade);
   console.log("typeof dispatchMade:", typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined');
   console.log("CALL STACK TRACE:");
   console.trace();
   
-  // Force all dispatch flags to false temporarily to test
-  console.log("FORCING ALL DISPATCH FLAGS TO FALSE FOR TESTING");
-  window.dispatchMade = false;
-  if (window.protocolState) {
-    window.protocolState.dispatchMade = false;
-  }
-  if (typeof dispatchMade !== 'undefined') {
-    dispatchMade = false;
-  }
   
   // Pre-alert always wins
   if (alert?.isPreAlert === true || window.currentAlert?.isPreAlert === true) {
@@ -10731,6 +10766,7 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
   // Method 1: Check global dispatch flags
   wasDispatched = window.dispatchMade === true || 
                  window.protocolState?.dispatchMade === true ||
+                 protocolState?.dispatchMade === true ||
                  (typeof dispatchMade !== 'undefined' && dispatchMade === true);
 
   // Method 2: Check dispatch step completion + decision
@@ -10788,6 +10824,7 @@ if (window.protocolState) window.protocolState.dispatchMade = true;
   console.log("  - Dispatch Flags:", {
     dispatchMade: window.dispatchMade,
     protocolDispatchMade: window.protocolState?.dispatchMade,
+    globalProtocolDispatchMade: protocolState?.dispatchMade,
     globalDispatchMade: typeof dispatchMade !== 'undefined' ? dispatchMade : 'undefined'
   });
   console.log("  - Completed Steps:", window.protocolState?.completedSteps);
@@ -10929,7 +10966,14 @@ if (wasDispatched) {
   if (window.protocolState) {
     window.protocolState.dispatchMade = true;
   }
-  console.log("PRESERVED dispatch state before resolution:", wasDispatched);
+  console.log("PRESERVED dispatch state before resolution:", {
+    wasDispatched,
+    allFlags: {
+      dispatchMade,
+      windowDispatchMade: window.dispatchMade,
+      protocolDispatchMade: window.protocolState?.dispatchMade
+    }
+  });
 }
 
   // Handle ec-callback-30min for dispatch timers FIRST - don't stop the timer!

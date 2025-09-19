@@ -3291,34 +3291,7 @@ class DeviceConnectivity {
       } else {
         lastCommElement.textContent = `${diffMinutes} minutes ago`;
       }
-    }
-
-    const locationElement = document.getElementById("location-timestamp");
-if (locationElement && locationElement.textContent !== '--') {
-    const originalText = locationElement.textContent.replace(/\s*\([^)]+\)\s*$/, '');
-    const timeAgo = DeviceConnectivity.calculateLocationTimeAgo(originalText);
-    locationElement.textContent = `${originalText} ${timeAgo}`;
-}
-}
-
-// MOVE THIS METHOD INSIDE THE CLASS:
-static calculateLocationTimeAgo(timestampText) {
-    if (!timestampText || timestampText === '--') return '';
-    
-    // Parse timestamp like "Sep 19, 2025 at 11:51 MDT"
-    const cleanTimestamp = timestampText.replace(' at ', ' ').replace(/\s+[A-Z]{2,4}$/, '');
-    const locationDate = new Date(cleanTimestamp);
-    
-    if (isNaN(locationDate.getTime())) return '';
-    
-    const now = new Date();
-    const diffMinutes = Math.floor((now - locationDate.getTime()) / 60000);
-    
-    if (diffMinutes === 0) return "(just now)";
-    if (diffMinutes === 1) return "(1 minute ago)";
-    if (diffMinutes < 60) return `(${diffMinutes} minutes ago)`;
-    if (diffMinutes < 1440) return `(${Math.floor(diffMinutes / 60)} hours ago)`;
-    return `(${Math.floor(diffMinutes / 1440)} days ago)`;
+    }  
 }
 
   static setDeviceOfflineScenario(reason = "battery") {
@@ -9374,17 +9347,17 @@ window.handleMessageClassification = handleMessageClassification;
         };
 
         // NEW: handles absolute timestamps like "Aug 02, 2025 at 15:28 MDT"
-        const parseAbsMins = (txt) => {
-          const raw = String(txt || "").trim();
-          if (!raw) return NaN;
-          const norm = raw
-            .replace(" at ", " ")
-            .replace(/\s([A-Z]{2,4})\.?$/, "");
-          const d = new Date(norm);
-          return isNaN(d.getTime())
-            ? NaN
-            : Math.floor((Date.now() - d.getTime()) / 60000);
-        };
+const parseAbsMins = (txt) => {
+    const raw = String(txt || "").trim();
+    if (!raw) return NaN;
+    const norm = raw
+        .replace(" at ", " ")
+        .replace(/\s([A-Z]{2,4})\.?$/, "");
+    const d = new Date(norm);
+    return isNaN(d.getTime())
+        ? NaN
+        : Math.floor((Date.now() - d.getTime()) / 60000);
+};
 
         // ── user confirmation check (triggers resolution flow) ──────────────────
         const userConfirmedOK =
