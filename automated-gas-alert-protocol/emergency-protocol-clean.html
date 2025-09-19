@@ -8729,7 +8729,6 @@ function handleIntelligentActions(analysis, noteText) {
       }
 
       function triggerImmediateDispatch() {
-        dispatchMade = true;
       }
 
       // Enhanced simulateDeviceResponse function - DROP-IN REPLACEMENT
@@ -9574,8 +9573,6 @@ window.handleMessageClassification = handleMessageClassification;
           );
 
           if (newValue === "yes") {
-            window.dispatchMade = true;
-if (window.protocolState) window.protocolState.dispatchMade = true;
             if (serviceContainer) serviceContainer.style.display = "block";
             if (skipContainer) skipContainer.style.display = "none";
           } else {
