@@ -2204,19 +2204,16 @@
         );
 
         // Use existing FORMATTERS for consistency with rest of system
-        const formattedDate =
-          typeof FORMATTERS?.timestampMST === "function"
-            ? FORMATTERS.timestampMST(alertDate)
-            : alertDate.toLocaleString("en-US", {
-                timeZone: "America/Denver",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              }) + " MDT";
+  const formattedDate =
+    typeof FORMATTERS?.timeOnlyMST === "function"
+      ? FORMATTERS.timeOnlyMST(alertDate)
+      : alertDate.toLocaleString("en-US", {
+          timeZone: "America/Denver",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }) + " MDT";
 
         return `Pre-alert - alert triggered ${hoursAgo} hours ago. Resolving as per Blackline Safety policy.`;
       }
@@ -4375,18 +4372,15 @@ function handleCallDeviceOutcome(
           if (gasBlockRaw) {
             const now = new Date();
             const ts =
-              typeof FORMATTERS?.timestampMST === "function"
-                ? FORMATTERS.timestampMST(now)
-                : new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/Denver",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
             const gasBlockWithTs = gasBlockRaw.replace(
               /(Gas Reading:\s*[^\n]+)/i,
@@ -4479,13 +4473,10 @@ function handleCallDeviceOutcome(
           if (!block) return "";
           const now = new Date();
           const ts =
-            typeof FORMATTERS?.timestampMST === "function"
-              ? FORMATTERS.timestampMST(now)
+            typeof FORMATTERS?.timeOnlyMST === "function"
+              ? FORMATTERS.timeOnlyMST(now)
               : new Intl.DateTimeFormat("en-US", {
                   timeZone: "America/Denver",
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
                   hour: "2-digit",
                   minute: "2-digit",
                   second: "2-digit",
@@ -4798,18 +4789,15 @@ const logStep = (text) => {
                   if (block) {
                     const now = new Date();
                     const ts =
-                      typeof FORMATTERS?.timestampMST === "function"
-                        ? FORMATTERS.timestampMST(now)
-                        : new Intl.DateTimeFormat("en-US", {
-                            timeZone: "America/Denver",
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            hour12: false,
-                          }).format(now) + " MDT";
+              typeof FORMATTERS?.timeOnlyMST === "function"
+                ? FORMATTERS.timeOnlyMST(now)
+                : new Intl.DateTimeFormat("en-US", {
+                    timeZone: "America/Denver",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                  }).format(now) + " MDT";
                     block = block.replace(
                       /(Gas Reading:\s*[^\n]+)/i,
                       `$1 (${ts})`
@@ -5208,18 +5196,15 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
           if (gasBlockRaw) {
             const now = new Date();
             const ts =
-              typeof FORMATTERS?.timestampMST === "function"
-                ? FORMATTERS.timestampMST(now)
-                : new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/Denver",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
             const gasBlockWithTs = gasBlockRaw.replace(
               /(Gas Reading:\s*[^\n]+)/i,
@@ -5302,13 +5287,10 @@ body += `\n\n${gasBlockWithTs}`;
       if (block) {
         const now = new Date();
         const ts =
-          typeof FORMATTERS?.timestampMST === "function"
-            ? FORMATTERS.timestampMST(now)
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
             : new Intl.DateTimeFormat("en-US", {
                 timeZone: "America/Denver",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
@@ -8117,18 +8099,15 @@ function autoPopulateNote(contactStepId) {
 
                 const now = new Date();
                 const ts =
-                  typeof FORMATTERS?.timestampMST === "function"
-                    ? FORMATTERS.timestampMST(now)
-                    : new Intl.DateTimeFormat("en-US", {
-                        timeZone: "America/Denver",
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: false,
-                      }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
                 const gasBlockWithTs = gasBlockRaw.replace(
                   /(Gas Reading:\s*[^\n]+)/i,
@@ -9631,18 +9610,15 @@ const parseAbsMins = (txt) => {
                       if (block) {
                         const now = new Date();
                         const ts =
-                          typeof FORMATTERS?.timestampMST === "function"
-                            ? FORMATTERS.timestampMST(now)
-                            : new Intl.DateTimeFormat("en-US", {
-                                timeZone: "America/Denver",
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                                hour12: false,
-                              }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
                         block = block.replace(
                           /(Gas Reading:\s*[^\n]+)/i,
                           `$1 (${ts})`
