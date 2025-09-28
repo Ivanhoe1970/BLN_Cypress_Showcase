@@ -2204,19 +2204,16 @@
         );
 
         // Use existing FORMATTERS for consistency with rest of system
-        const formattedDate =
-          typeof FORMATTERS?.timestampMST === "function"
-            ? FORMATTERS.timestampMST(alertDate)
-            : alertDate.toLocaleString("en-US", {
-                timeZone: "America/Denver",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              }) + " MDT";
+  const formattedDate =
+    typeof FORMATTERS?.timeOnlyMST === "function"
+      ? FORMATTERS.timeOnlyMST(alertDate)
+      : alertDate.toLocaleString("en-US", {
+          timeZone: "America/Denver",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }) + " MDT";
 
         return `Pre-alert - alert triggered ${hoursAgo} hours ago. Resolving as per Blackline Safety policy.`;
       }
@@ -3291,34 +3288,7 @@ class DeviceConnectivity {
       } else {
         lastCommElement.textContent = `${diffMinutes} minutes ago`;
       }
-    }
-
-    const locationElement = document.getElementById("location-timestamp");
-if (locationElement && locationElement.textContent !== '--') {
-    const originalText = locationElement.textContent.replace(/\s*\([^)]+\)\s*$/, '');
-    const timeAgo = DeviceConnectivity.calculateLocationTimeAgo(originalText);
-    locationElement.textContent = `${originalText} ${timeAgo}`;
-}
-}
-
-// MOVE THIS METHOD INSIDE THE CLASS:
-static calculateLocationTimeAgo(timestampText) {
-    if (!timestampText || timestampText === '--') return '';
-    
-    // Parse timestamp like "Sep 19, 2025 at 11:51 MDT"
-    const cleanTimestamp = timestampText.replace(' at ', ' ').replace(/\s+[A-Z]{2,4}$/, '');
-    const locationDate = new Date(cleanTimestamp);
-    
-    if (isNaN(locationDate.getTime())) return '';
-    
-    const now = new Date();
-    const diffMinutes = Math.floor((now - locationDate.getTime()) / 60000);
-    
-    if (diffMinutes === 0) return "(just now)";
-    if (diffMinutes === 1) return "(1 minute ago)";
-    if (diffMinutes < 60) return `(${diffMinutes} minutes ago)`;
-    if (diffMinutes < 1440) return `(${Math.floor(diffMinutes / 60)} hours ago)`;
-    return `(${Math.floor(diffMinutes / 1440)} days ago)`;
+    }  
 }
 
   static setDeviceOfflineScenario(reason = "battery") {
@@ -4402,18 +4372,15 @@ function handleCallDeviceOutcome(
           if (gasBlockRaw) {
             const now = new Date();
             const ts =
-              typeof FORMATTERS?.timestampMST === "function"
-                ? FORMATTERS.timestampMST(now)
-                : new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/Denver",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
             const gasBlockWithTs = gasBlockRaw.replace(
               /(Gas Reading:\s*[^\n]+)/i,
@@ -4506,13 +4473,10 @@ function handleCallDeviceOutcome(
           if (!block) return "";
           const now = new Date();
           const ts =
-            typeof FORMATTERS?.timestampMST === "function"
-              ? FORMATTERS.timestampMST(now)
+            typeof FORMATTERS?.timeOnlyMST === "function"
+              ? FORMATTERS.timeOnlyMST(now)
               : new Intl.DateTimeFormat("en-US", {
                   timeZone: "America/Denver",
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
                   hour: "2-digit",
                   minute: "2-digit",
                   second: "2-digit",
@@ -4825,18 +4789,15 @@ const logStep = (text) => {
                   if (block) {
                     const now = new Date();
                     const ts =
-                      typeof FORMATTERS?.timestampMST === "function"
-                        ? FORMATTERS.timestampMST(now)
-                        : new Intl.DateTimeFormat("en-US", {
-                            timeZone: "America/Denver",
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            hour12: false,
-                          }).format(now) + " MDT";
+              typeof FORMATTERS?.timeOnlyMST === "function"
+                ? FORMATTERS.timeOnlyMST(now)
+                : new Intl.DateTimeFormat("en-US", {
+                    timeZone: "America/Denver",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                  }).format(now) + " MDT";
                     block = block.replace(
                       /(Gas Reading:\s*[^\n]+)/i,
                       `$1 (${ts})`
@@ -4886,6 +4847,19 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
         windowDispatchMade: window.dispatchMade,
         protocolDispatchMade: window.protocolState?.dispatchMade
     });
+
+    // ADD THIS NEW BLOCK HERE (don't replace anything above):
+  // Ensure structure
+  window.protocolState ??= {};
+  window.protocolState.dispatch ??= {};
+  
+  // Canonical timestamp (idempotent)
+  window.protocolState.dispatch.requestedAt ??= new Date().toISOString();
+  
+  // Back-compat mirror (do not rely on it elsewhere)
+  if (window.currentAlert) {
+    window.currentAlert.dispatchedAt ??= window.protocolState.dispatch.requestedAt;
+  }
   
   const serviceDropdown = document.getElementById("service-type");
   const serviceName = serviceDropdown
@@ -5235,18 +5209,15 @@ if (isCurrentlyGasAlert && typeof addGasLogEntry === "function") {
           if (gasBlockRaw) {
             const now = new Date();
             const ts =
-              typeof FORMATTERS?.timestampMST === "function"
-                ? FORMATTERS.timestampMST(now)
-                : new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/Denver",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
             const gasBlockWithTs = gasBlockRaw.replace(
               /(Gas Reading:\s*[^\n]+)/i,
@@ -5329,13 +5300,10 @@ body += `\n\n${gasBlockWithTs}`;
       if (block) {
         const now = new Date();
         const ts =
-          typeof FORMATTERS?.timestampMST === "function"
-            ? FORMATTERS.timestampMST(now)
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
             : new Intl.DateTimeFormat("en-US", {
                 timeZone: "America/Denver",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
@@ -6442,43 +6410,35 @@ function stopDynamicAlertTime() {
     }
 }
 
-      function addAlertSequenceLogs(userConfig) {
-        const now = new Date();
-        const ackTime = new Date(now.getTime() - 9000);
-        const serverTime = new Date(now.getTime() - 18000);
-        const deviceTime = new Date(now.getTime() - 18000);
+function addAlertSequenceLogs(userConfig) {
+  const now = new Date();
+  const ackTime = new Date(now.getTime() - 9000);
+  const serverTime = new Date(now.getTime() - 18000);
+  const deviceTime = new Date(now.getTime() - 18000);
 
-        const formatEDT = function (date) {
-          return (
-            date.toLocaleTimeString("en-US", {
-              hour12: false,
-              timeZone: "America/New_York",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }) + " EDT"
-          );
-        };
+  // MT time-only + DST-safe suffix (MST/MDT) for protocol log display
+  const MT = 'America/Edmonton';
+  const formatMT = (date) => {
+    const hhmmss = new Intl.DateTimeFormat('en-GB', {
+      timeZone: MT, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).format(date);
+    const abbr = new Intl.DateTimeFormat('en-US', {
+      timeZone: MT, timeZoneName: 'short'
+    }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'MT';
+    return `${hhmmss} ${abbr}`;
+  };
 
-        addLogEntry(
-          "Alert triggered by device.",
-          "system",
-          "*" + userConfig.company + "*",
-          formatEDT(deviceTime)
-        );
-        addLogEntry(
-          "Alert received by server.",
-          "system",
-          "*" + userConfig.company + "*",
-          formatEDT(serverTime)
-        );
-        addLogEntry(
-          "Alert acknowledged.",
-          "system",
-          "*Blackline Safety Operations Centre*",
-          formatEDT(ackTime)
-        );
-      }
+  // Existing log rows (now rendered in MT for consistency)
+  addLogEntry("Alert triggered by device.", "system", `*${userConfig.company}*`, formatMT(deviceTime));
+  addLogEntry("Alert received by server.", "system", `*${userConfig.company}*`, formatMT(serverTime));
+  addLogEntry("Alert acknowledged.", "system", "*Blackline Safety Operations Centre*", formatMT(ackTime));
+
+  // Store UTC instants in the data model (idempotent)
+  const ca = window.currentAlert || (window.currentAlert = {});
+  ca.triggeredAt ??= deviceTime.toISOString();
+  ca.receivedAt ??= serverTime.toISOString();
+  ca.acknowledgedAt ??= ackTime.toISOString();
+}
 
       function addLogEntry(message, type, source, customTime) {
   // 1) Prevent duplicate gas logs within 3s (unchanged)
@@ -8144,18 +8104,15 @@ function autoPopulateNote(contactStepId) {
 
                 const now = new Date();
                 const ts =
-                  typeof FORMATTERS?.timestampMST === "function"
-                    ? FORMATTERS.timestampMST(now)
-                    : new Intl.DateTimeFormat("en-US", {
-                        timeZone: "America/Denver",
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: false,
-                      }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
 
                 const gasBlockWithTs = gasBlockRaw.replace(
                   /(Gas Reading:\s*[^\n]+)/i,
@@ -9285,6 +9242,19 @@ window.handleMessageClassification = handleMessageClassification;
     protocolState.dispatchMade = true;
   }
 
+  // ADD THIS BLOCK HERE (after the dispatch flags):
+  // Ensure structure
+  window.protocolState ??= {};
+  window.protocolState.dispatch ??= {};
+  
+  // Canonical timestamp (idempotent)
+  window.protocolState.dispatch.requestedAt ??= new Date().toISOString();
+  
+  // Back-compat mirror (do not rely on it elsewhere)
+  if (window.currentAlert) {
+    window.currentAlert.dispatchedAt ??= window.protocolState.dispatch.requestedAt;
+  }
+
   console.log("DEBUG: dispatchMade is now:", dispatchMade);
   console.log("DEBUG: protocolState.dispatchMade is now:", protocolState.dispatchMade);
 
@@ -9311,7 +9281,6 @@ window.handleMessageClassification = handleMessageClassification;
     resolutionSelect.value = resolutionType;
   }
 }
-
 
       function handleDispatchDecision(stepId) {
         const decisionElement = document.getElementById("dispatch-decision");
@@ -9374,17 +9343,17 @@ window.handleMessageClassification = handleMessageClassification;
         };
 
         // NEW: handles absolute timestamps like "Aug 02, 2025 at 15:28 MDT"
-        const parseAbsMins = (txt) => {
-          const raw = String(txt || "").trim();
-          if (!raw) return NaN;
-          const norm = raw
-            .replace(" at ", " ")
-            .replace(/\s([A-Z]{2,4})\.?$/, "");
-          const d = new Date(norm);
-          return isNaN(d.getTime())
-            ? NaN
-            : Math.floor((Date.now() - d.getTime()) / 60000);
-        };
+const parseAbsMins = (txt) => {
+    const raw = String(txt || "").trim();
+    if (!raw) return NaN;
+    const norm = raw
+        .replace(" at ", " ")
+        .replace(/\s([A-Z]{2,4})\.?$/, "");
+    const d = new Date(norm);
+    return isNaN(d.getTime())
+        ? NaN
+        : Math.floor((Date.now() - d.getTime()) / 60000);
+};
 
         // ── user confirmation check (triggers resolution flow) ──────────────────
         const userConfirmedOK =
@@ -9658,18 +9627,15 @@ window.handleMessageClassification = handleMessageClassification;
                       if (block) {
                         const now = new Date();
                         const ts =
-                          typeof FORMATTERS?.timestampMST === "function"
-                            ? FORMATTERS.timestampMST(now)
-                            : new Intl.DateTimeFormat("en-US", {
-                                timeZone: "America/Denver",
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                                hour12: false,
-                              }).format(now) + " MDT";
+          typeof FORMATTERS?.timeOnlyMST === "function"
+            ? FORMATTERS.timeOnlyMST(now)
+            : new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Denver",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).format(now) + " MDT";
                         block = block.replace(
                           /(Gas Reading:\s*[^\n]+)/i,
                           `$1 (${ts})`
@@ -11332,5 +11298,174 @@ function updateO2Status(value, status) {
     }
 }
     </script>
+
+  <!-- START DROP-IN: Customer Protocols (UI + Runtime hookup, EC panel OFF) -->
+<script>
+  (function () {
+    /* ---------------- config ---------------- */
+    const CONFIGS_BASE = './configs/';  // folder next to index.html
+    const PROTOCOLS = [
+      { id: 'demo-fall-g7c-v1', label: 'Demo Industries — Fall (G7c)' },
+      { id: 'demo-fall-g7x-v1', label: 'Demo Industries — Fall (G7x)' },
+    ];
+    const SHOW_CUSTOM_EC_PANEL = false;                 // keep UI identical
+    const USE_SIMULATED_ALERT_FALLBACK = true;          // render safety net
+  
+    /* ---------------- helpers ---------------- */
+    const sysLog = (msg) => {
+      try {
+        if (typeof window.addLogEntry === 'function') {
+          window.addLogEntry(`[CustomerProtocols] ${msg}`, 'system');
+          return;
+        }
+      } catch {}
+      console.log(`[CustomerProtocols] ${msg}`);
+    };
+  
+    function ensureFallUI() {
+      // Prefer a stable data-cy if present
+      const btnCy = document.querySelector('[data-cy="fall-protocol-cycle"]');
+      if (btnCy) { btnCy.click(); return; }
+  
+      // Fallback to button text variants already in your demo
+      const btn = Array.from(document.querySelectorAll('button,.btn'))
+        .find(b => /fall\s*-\s*protocol/i.test(b.textContent || '')) ||
+        Array.from(document.querySelectorAll('button,.btn'))
+        .find(b => /fall/i.test(b.textContent || ''));
+      if (btn) btn.click();
+    }
+  
+    function renderHeaderBadge(proto) {
+      const hdr = Array.from(document.querySelectorAll('h2,h3,h4'))
+        .find(el => /Emergency Response Protocol/i.test(el.textContent || ''));
+      if (!hdr) return;
+      const old = document.getElementById('customer-protocol-badge');
+      if (old) old.remove();
+  
+      const badge = document.createElement('div');
+      badge.id = 'customer-protocol-badge';
+      badge.style.marginTop = '6px';
+      badge.style.fontSize = '12px';
+      badge.style.opacity = '0.8';
+      const org = proto?.meta?.org || 'Customer';
+      const type = proto?.meta?.alertType ? ` — ${proto.meta.alertType}` : '';
+      badge.textContent = `Loaded: ${org}${type}`;
+      hdr.parentElement.insertBefore(badge, hdr.nextSibling);
+    }
+  
+    function removeLegacyEcPanel() {
+      document.getElementById('customer-protocol-ec-quicklist')?.remove();
+      document.querySelector('[data-cy="customer-ec-list"]')?.remove();
+    }
+  
+    /* ---------------- loader ---------------- */
+    window.__loadCustomerProtocol = async function (protocolId) {
+      removeLegacyEcPanel(); // ensure nothing extra stays around
+  
+      try {
+        const url = `${CONFIGS_BASE}${protocolId}.json`;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+        const proto = await res.json();
+        proto.steps?.forEach(s => { 
+  s.type = ({ 
+    messageDevice: 'send-message',
+    callDevice:    'call-device',
+    callUser:      'call-user',
+    callECs:       'contact-ecs',
+    followUp:      'followup-ems'
+  }[s.type]) || s.type;
+});
+  
+        // Optional engine hooks (don’t break if missing)
+        const clearAlert = window.clearAlert || (() => {});
+        const loadProtocolData = window.loadProtocolData || (() => {});
+        const renderProtocolFromJSON = (typeof window.renderProtocolFromJSON === 'function')
+          ? window.renderProtocolFromJSON : null;
+        const simulateCustomerAlert = (typeof window.simulateCustomerAlert === 'function')
+          ? window.simulateCustomerAlert : null;
+  
+        // Reset UI/log to a clean state
+        try { clearAlert(); } catch(e) { console.warn('clearAlert failed:', e); }
+  
+        // Seed runtime state
+        try { loadProtocolData(proto); } catch(e) { console.warn('loadProtocolData failed:', e); }
+  
+        // Render: prefer direct renderer; otherwise fall back to simulator
+        let rendered = false;
+        if (renderProtocolFromJSON) {
+          try { renderProtocolFromJSON(proto); rendered = true; } catch (e) { console.warn('renderProtocolFromJSON failed:', e); }
+        }
+        if (!rendered && USE_SIMULATED_ALERT_FALLBACK && simulateCustomerAlert) {
+          try { simulateCustomerAlert(proto); rendered = true; } catch (e) { console.warn('simulateCustomerAlert failed:', e); }
+        }
+  
+        // Ensure the correct “Fall” UI tab is visible in your demo
+        ensureFallUI();
+  
+        // Small non-invasive badge so the operator knows what is loaded
+        renderHeaderBadge(proto);
+  
+        // Intentionally NO EC panel injection
+        if (SHOW_CUSTOM_EC_PANEL) {
+          /* intentionally disabled for MVP UI parity */
+        }
+  
+        sysLog(`Loaded ${protocolId}`);
+      } catch (err) {
+        console.error('[CustomerProtocols] load failed:', err);
+        alert(`Failed to load protocol: ${protocolId}\n${err.message}`);
+      }
+    };
+  
+    /* ---------------- gear-panel injection ---------------- */
+    function buildSection() {
+      const sec = document.createElement('div');
+      sec.setAttribute('data-cy', 'customer-protocols-section');
+      sec.style.marginTop = '10px';
+      sec.innerHTML = `
+        <hr style="margin:10px 0 12px 0; border:none; border-top:1px solid #e5e7eb;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <h4 style="margin:0;font-size:16px;line-height:1.2;">Customer Protocols</h4>
+        </div>
+        <div class="demo-button-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+          ${PROTOCOLS.map(p => `
+            <button class="btn btn-primary" data-cy="customer-protocol-${p.id}"
+                    style="padding:.6rem .8rem; font-weight:600;"
+                    onclick="__loadCustomerProtocol('${p.id}')">
+              ${p.label}
+            </button>
+          `).join('')}
+        </div>
+      `;
+      return sec;
+    }
+  
+    function injectIntoGearPanel() {
+      // Insert above “Clear Alert”
+      const clearBtn = Array.from(document.querySelectorAll('button,.btn'))
+        .find(b => b.textContent?.trim().toLowerCase() === 'clear alert');
+      if (clearBtn) {
+        const panel = clearBtn.closest('div') || clearBtn.parentNode;
+        panel?.parentNode?.insertBefore(buildSection(), panel);
+        return;
+      }
+      // Fallback: append under any settings/gear section header
+      const hdr = Array.from(document.querySelectorAll('h3,h4,h5'))
+        .find(h => /gas alert tests|non-gas tests|settings|gear/i.test(h.textContent || ''));
+      hdr?.parentElement?.appendChild(buildSection());
+    }
+  
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectIntoGearPanel, { once: true });
+    } else {
+      injectIntoGearPanel();
+    }
+  })();
+  </script>
+  <!-- END DROP-IN: Customer Protocols (UI + Runtime hookup, EC panel OFF) -->
+  
+  <script src="protocol-log-hydrator-v22.js"></script>
+  <script src="incident-report-v22.js"></script>
   </body>
 </html>

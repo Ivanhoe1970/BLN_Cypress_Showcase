@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Protocol Configuration Manager (PCM)</title>
+  <style>
+    :root{--ink:#1f2937;--blue:#2563eb;--blue-d:#1e40af;--green:#16a34a;--red:#dc2626;--line:#e5e7eb;--bg:#f7f7f7}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:24px}
+    .wrap{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.08);overflow:hidden}
+    .hdr{background:#0f172a;color:#fff;padding:20px 24px}
+    .hdr h1{margin:0 0 6px;font-size:20px}
+    .hdr p{margin:0;color:#cbd5e1}
+    .sec{padding:20px 24px;border:2px solid var(--line);border-radius:12px;margin:16px 24px;background:#fafafa}
+    .sec h2{margin:0 0 10px;font-size:15px;color:var(--ink);border-bottom:2px solid var(--blue);padding-bottom:8px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grp{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    label{font-size:12px;font-weight:600;color:#374151}
+    input,select{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px}
+    input[readonly]{background:#f9fafb;color:#6b7280}
+    .phone-input{font-family:monospace}
+    .phone-group{display:flex;gap:8px}
+    .phone-group input{flex:2}
+    .phone-group select{flex:1}
+    .hint{font-size:12px;color:#6b7280;margin-top:-4px}
+    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn-ghost{background:#f3f4f6}
+    .btn-pri{background:var(--blue);color:#fff}
+    .btn-pri:hover{background:var(--blue-d)}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn-ok{background:var(--green);color:#fff}
+    .footer{padding:18px 24px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .list{border:1px solid var(--line);border-radius:12px;padding:8px;background:#fafafa;max-height:200px;overflow:auto}
+    .list-item{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}
+    .lib{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+    .lib .btn{padding:8px 12px;border-radius:10px}
+    .lib .selected{outline:2px solid var(--blue);background:#e0e7ff}
+    .lib .selected::after{content:" ✓";font-weight:800}
+    .steps{border:1px solid var(--line);border-radius:12px;min-height:120px;background:#fafafa}
+    .step{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px}
+    .num{width:26px;height:26px;border-radius:999px;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px}
+    .pills{display:flex;gap:6px;flex-wrap:wrap}
+    .pill{background:#eef2ff;border:1px solid #c7d2fe;color:#1f2937;border-radius:999px;padding:3px 8px;font-size:12px}
+    .toast{position:fixed;top:16px;right:16px;z-index:9999;display:none;padding:12px 14px;border-radius:12px;color:#fff;font-weight:700}
+    .toast.err{background:var(--red)} .toast.ok{background:var(--green)}
+    .status{font-size:13px;color:#374151}
+    .service-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .service-option{display:flex;align-items:center;gap:8px;font-weight:normal;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+    .service-option input[type="checkbox"]{width:auto}
+
+    .admin-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+  background: #fff;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.admin-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.toggle-container input[type="checkbox"] {
+  width: auto;
+}
+
+.inherited-admin {
+  opacity: 0.7;
+  background: #f8f9fa;
+}
+
+.admin-phones {
+  margin: 8px 0;
+}
+
+.admin-phone-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 2px 0;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 13px;
+}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>Protocol Configuration Manager</h1>
+    <p>Build JSON protocols from BLN-aligned forms</p>
+  </div>
+
+  <!-- Organization & Device -->
+  <div class="sec" data-cy="org-section">
+    <h2>Organization & Device</h2>
+    <div class="row">
+      <div class="grp">
+        <label for="org">Organization</label>
+        <input id="org" data-cy="org-input">
+      </div>
+      <div class="grp">
+        <label for="company">Company (tag)</label>
+        <input id="company" data-cy="company-input">
+      </div>
+    </div>
+    <div class="row">
+      <div class="grp">
+        <label for="alertType">Alert type</label>
+        <select id="alertType" data-cy="alert-type-select">
+          <option value="">Select alert type</option>
+          <option value="fall">Fall Detection</option>
+          <option value="gas">Gas Alert</option>
+          <option value="sos">SOS Alert</option>
+          <option value="no-motion">No Motion</option>
+          <option value="missed-check-in">Missed Check-In</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label for="deviceType">Device type</label>
+        <select id="deviceType" onchange="deviceAwareness()" data-cy="device-type-select">
+          <option value="">Select device type</option>
+          <option value="G7c">G7c</option>
+          <option value="G7x">G7x</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assigned team member -->
+  <div class="sec" data-cy="user-section">
+    <h2>Assigned team member</h2>
+    <div class="row">
+      <div class="grp">
+        <label for="userName">Name</label>
+        <input id="userName" data-cy="user-name">
+      </div>
+      <div class="grp">
+        <label>Primary phone</label>
+        <div class="phone-group">
+          <input id="userPhone" class="phone-input" data-cy="user-phone" 
+                 oninput="this.value=formatPhoneInput(this)" placeholder="+1 403 555-0100">
+          <select id="userPhoneTag" data-cy="user-phone-tag">
+            <option value="Work Mobile">Work Mobile</option>
+            <option value="Personal Mobile">Personal Mobile</option>
+            <option value="Office">Office</option>
+            <option value="Home">Home</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost" onclick="addUserPhone()" data-cy="add-user-phone">Add Phone Number</button>
+    <div id="userPhoneList" class="list" data-cy="user-phone-list" style="display:none;margin-top:8px"></div>
+  </div>
+
+  <!-- Organization Admins -->
+<div class="sec" data-cy="org-admins-section">
+  <h2>Organization Admins</h2>
+  <div class="row">
+    <div class="grp">
+      <label for="orgAdminName">Name</label>
+      <input id="orgAdminName" data-cy="org-admin-name-input">
+    </div>
+    <div class="grp">
+      <label for="orgAdminTitle">Role / Title</label>
+      <input id="orgAdminTitle" data-cy="org-admin-title-input">
+    </div>
+  </div>
+  <div class="row">
+    <div class="grp">
+      <label>Phone</label>
+      <div class="phone-group">
+        <input id="orgAdminPhone" class="phone-input" data-cy="org-admin-phone-input" 
+               oninput="this.value=formatPhoneInput(this)" placeholder="+1 403 555-0110">
+        <select id="orgAdminPhoneTag" data-cy="org-admin-phone-tag">
+          <option value="Work Mobile">Work Mobile</option>
+          <option value="Personal Mobile">Personal Mobile</option>
+          <option value="Office">Office</option>
+          <option value="Home">Home</option>
+        </select>
+      </div>
+    </div>
+    <div class="grp">
+      <label for="orgAdminEmail">Email (optional)</label>
+      <input id="orgAdminEmail" type="email" data-cy="org-admin-email-input">
+    </div>
+  </div>
+  <button class="btn btn-pri" onclick="addOrgAdmin()" data-cy="add-org-admin">Add Organization Admin</button>
+  <div id="orgAdminList" class="list" data-cy="org-admin-list"></div>
+  <div class="hint">Organization-level administrators for escalation and oversight.</div>
+</div>
+
+<!-- Group Admins -->
+<div class="sec" data-cy="group-admins-section">
+  <h2>Group Admins</h2>
+  <div class="toggle-container">
+    <input type="checkbox" id="inheritOrgAdmins" data-cy="inherit-org-admins" onchange="toggleInheritOrgAdmins()">
+    <label for="inheritOrgAdmins">Inherit organization admins</label>
+  </div>
+  <div class="row">
+    <div class="grp">
+      <label for="groupAdminName">Name</label>
+      <input id="groupAdminName" data-cy="group-admin-name-input">
+    </div>
+    <div class="grp">
+      <label for="groupAdminTitle">Role / Title</label>
+      <input id="groupAdminTitle" data-cy="group-admin-title-input">
+    </div>
+  </div>
+  <div class="row">
+    <div class="grp">
+      <label>Phone</label>
+      <div class="phone-group">
+        <input id="groupAdminPhone" class="phone-input" data-cy="group-admin-phone-input" 
+               oninput="this.value=formatPhoneInput(this)" placeholder="+1 403 555-0115">
+        <select id="groupAdminPhoneTag" data-cy="group-admin-phone-tag">
+          <option value="Work Mobile">Work Mobile</option>
+          <option value="Personal Mobile">Personal Mobile</option>
+          <option value="Office">Office</option>
+          <option value="Home">Home</option>
+        </select>
+      </div>
+    </div>
+    <div class="grp">
+      <label for="groupAdminEmail">Email (optional)</label>
+      <input id="groupAdminEmail" type="email" data-cy="group-admin-email-input">
+    </div>
+  </div>
+  <button class="btn btn-pri" onclick="addGroupAdmin()" data-cy="add-group-admin">Add Group Admin</button>
+  <div id="groupAdminList" class="list" data-cy="group-admin-list"></div>
+  <div class="hint">Site/team-level administrators. Toggle inheritance to include org admins.</div>
+</div>
+
+  <!-- Emergency Response Contacts -->
+  <div class="sec" data-cy="ec-section">
+    <h2>Emergency Response Contacts (EC)</h2>
+    <div class="row">
+      <div class="grp">
+        <label for="ecName">Name</label>
+        <input id="ecName" data-cy="ec-name">
+      </div>
+      <div class="grp">
+        <label>Phone</label>
+        <div class="phone-group">
+          <input id="ecPhone" class="phone-input" data-cy="ec-phone" 
+                 oninput="this.value=formatPhoneInput(this)" placeholder="+1 403 555-0101">
+          <select id="ecPhoneTag" data-cy="ec-phone-tag">
+            <option value="Work Mobile">Work Mobile</option>
+            <option value="Personal Mobile">Personal Mobile</option>
+            <option value="Office">Office</option>
+            <option value="Home">Home</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="grp">
+        <label for="ecRole">Role (optional)</label>
+        <input id="ecRole" data-cy="ec-role">
+      </div>
+      <div class="grp" style="align-items:flex-end">
+        <button class="btn btn-pri" onclick="addEC()" data-cy="add-ec">Add EC</button>
+      </div>
+    </div>
+    <div id="ecList" class="list" data-cy="ec-list"></div>
+    <div class="hint">Order = priority. Phone tags support global customers.</div>
+  </div>
+
+  <!-- Timer settings -->
+  <div class="sec" data-cy="timer-section">
+    <h2>Timer settings</h2>
+    <div class="row">
+      <div class="grp">
+        <label for="messageWaitMin">Message wait (minutes)</label>
+        <input id="messageWaitMin" type="number" min="0" max="15" value="2" 
+               oninput="syncTimerValues()" data-cy="message-wait-input">
+      </div>
+      <div class="grp">
+        <label for="ecCallbackMin">EC callback wait (minutes)</label>
+        <input id="ecCallbackMin" type="number" min="0" max="240" value="30" 
+               oninput="syncTimerValues()" data-cy="ec-callback-input">
+      </div>
+    </div>
+    <div class="row">
+      <div class="grp">
+        <label for="servicesFollowUpMin">Services follow-up (minutes)</label>
+        <input id="servicesFollowUpMin" type="number" min="0" max="240" value="30" 
+               oninput="syncTimerValues()" data-cy="services-followup-input">
+      </div>
+      <div class="grp">
+        <label for="dispatchWaitMin">Dispatch wait (minutes)</label>
+        <input id="dispatchWaitMin" type="number" min="1" max="15" value="5" 
+               oninput="syncTimerValues()" data-cy="dispatch-wait-input">
+      </div>
+    </div>
+  </div>
+
+  <!-- Dispatch policy -->
+  <div class="sec" data-cy="dispatch-section">
+    <h2>Dispatch policy</h2>
+    <div class="row">
+      <div class="grp">
+        <label for="dispatchMode">Mode</label>
+        <select id="dispatchMode" data-cy="dispatch-mode-select">
+          <option value="">Select mode</option>
+          <option value="allowed">Allowed</option>
+          <option value="always">Always</option>
+          <option value="never">Never</option>
+        </select>
+      </div>
+      <div class="grp">
+        <label>Services</label>
+        <div class="service-options" data-cy="service-options">
+          <label class="service-option"><input type="checkbox" value="EMS" data-cy="service-ems"> EMS</label>
+          <label class="service-option"><input type="checkbox" value="Fire" data-cy="service-fire"> Fire</label>
+          <label class="service-option"><input type="checkbox" value="Police" data-cy="service-police"> Police</label>
+          <label class="service-option"><input type="checkbox" value="EMS-Fire" data-cy="service-ems-fire"> EMS + Fire</label>
+          <label class="service-option"><input type="checkbox" value="EMS-Police" data-cy="service-ems-police"> EMS + Police</label>
+          <label class="service-option"><input type="checkbox" value="Fire-Police" data-cy="service-fire-police"> Fire + Police</label>
+          <label class="service-option"><input type="checkbox" value="All" data-cy="service-all"> EMS + Fire + Police</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Protocol steps -->
+  <div class="sec" data-cy="steps-section">
+    <h2>Protocol steps</h2>
+    <div class="lib">
+      <button class="btn btn-ghost" id="lib-callDevice" onclick="addStep('callDevice')" 
+              data-cy="step-btn-call-device">Call device</button>
+      <button class="btn btn-ghost" id="lib-callUser" onclick="addStep('callUser')" 
+              data-cy="step-btn-call-user">Call user phone</button>
+      <button class="btn btn-ghost" id="lib-messageDevice" onclick="addStep('messageDevice')" 
+              data-cy="step-btn-message-device">Send message to device</button>
+      <button class="btn btn-ghost" id="lib-callECs" onclick="addStep('callECs')" 
+              data-cy="step-btn-call-ecs">Call emergency contacts</button>
+      <button class="btn btn-ghost" id="lib-dispatch" onclick="addStep('dispatch')" 
+              data-cy="step-btn-dispatch">Dispatch emergency services</button>
+      <button class="btn btn-ghost" id="lib-followUp" onclick="addStep('followUp')" 
+              data-cy="step-btn-follow-up">Follow up with emergency services</button>
+    </div>
+
+    <div id="stepsBox" class="steps" data-cy="steps-container">
+      <div style="padding:18px;color:#6b7280;text-align:center">No steps yet. Add them in order.</div>
+    </div>
+    <div class="hint">Selected step types are marked above. Wait times sync with timer settings.</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <button class="btn" style="background:#374151;color:#fff" onclick="chooseConfigsFolder()" 
+            data-cy="set-configs-folder">Set configs folder</button>
+    <span id="cfgStatus" class="status" data-cy="configs-status">No folder set (will download if you export).</span>
+    <div style="flex:1"></div>
+    <button class="btn btn-ok" onclick="exportProtocol()" data-cy="export-protocol">Export Protocol JSON</button>
+    <button class="btn btn-danger" onclick="clearAll()" data-cy="clear-form">Clear</button>
+  </div>
+</div>
+
+<div id="toastOK" class="toast ok" data-cy="toast-success"></div>
+<div id="toastERR" class="toast err" data-cy="toast-error"></div>
+
+<script>
+  // ---------- State ----------
+  const START_BLANK = true;
+  let ecs = [];
+  let steps = [];
+  let userPhones = [];
+  let configsDirHandle = null;
+  let orgAdmins = [];
+  let groupAdmins = [];
+  let inheritOrgAdmins = false;
+  let orgAdminPhones = [];
+  let groupAdminPhones = [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!START_BLANK) {
+      ecs = [
+        { priority:1, name:"Sarah Martinez", role:"Site Supervisor", phone:"+1-403-555-0101", phoneTag:"Work Mobile" },
+        { priority:2, name:"Control Room Operations", role:"", phone:"+1-403-555-0102", phoneTag:"Office" },
+        { priority:3, name:"Mike Chen", role:"Safety Coordinator", phone:"+1-403-555-0103", phoneTag:"Work Mobile" }
+      ];
+    }
+    renderECs(); renderSteps(); renderUserPhones(); deviceAwareness(); updateCfgStatus();
+    renderOrgAdmins(); renderGroupAdmins();
+  });
+
+  const ok = m => { const t=document.getElementById('toastOK'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); };
+  const err= m => { const t=document.getElementById('toastERR');t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',4500); };
+
+  function formatPhoneInput(input) {
+    let x = input.value.replace(/\D/g, '');
+    if (x.length === 0) return '';
+    
+    // International format: +[country code] [area code] [number]
+    if (x.length <= 1) return `+${x}`;
+    if (x.length <= 4) return `+${x.slice(0,1)} ${x.slice(1)}`;
+    if (x.length <= 7) return `+${x.slice(0,1)} ${x.slice(1,4)} ${x.slice(4)}`;
+    if (x.length <= 10) return `+${x.slice(0,1)} ${x.slice(1,4)} ${x.slice(4,7)}-${x.slice(7)}`;
+    return `+${x.slice(0,1)} ${x.slice(1,4)} ${x.slice(4,7)}-${x.slice(7,11)}`;
+  }
+
+  function deviceAwareness(){
+    const isG7x = document.getElementById('deviceType').value==='G7x';
+    const btn = document.getElementById('lib-callDevice');
+    btn.disabled = isG7x; btn.title = isG7x?'Call device not applicable to G7x':'';
+    btn.style.opacity = isG7x ? 0.6 : 1;
+  }
+
+  // ---------- User Phones ----------
+  function addUserPhone() {
+    const phone = document.getElementById('userPhone').value.trim();
+    const tag = document.getElementById('userPhoneTag').value;
+    
+    if (!phone) return err('Enter a phone number first');
+    if (!validPhone(phone)) return err('Phone number must be valid international format');
+    
+    userPhones.push({ number: normalizePhone(phone), tag: tag });
+    document.getElementById('userPhone').value = '';
+    renderUserPhones();
+  }
+
+  function removeUserPhone(index) {
+    userPhones.splice(index, 1);
+    renderUserPhones();
+  }
+
+  function renderUserPhones() {
+    const container = document.getElementById('userPhoneList');
+    if (userPhones.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    container.style.display = 'block';
+    container.innerHTML = userPhones.map((phone, i) => `
+      <div class="list-item" data-cy="user-phone-item-${i}">
+        <span>${phone.number} (${phone.tag})</span>
+        <button class="btn btn-danger" onclick="removeUserPhone(${i})" data-cy="remove-user-phone-${i}">Remove</button>
+      </div>
+    `).join('');
+  }
+
+  // ---------- ECs ----------
+  function renderECs(){
+    const box=document.getElementById('ecList');
+    if(!ecs.length){ box.innerHTML='<div class="hint" style="padding:8px 10px">No ECs added yet.</div>'; return; }
+    box.innerHTML = ecs.map((e,i)=>`
+      <div class="list-item" data-cy="ec-item-${i}">
+        <div><strong>P${e.priority}</strong> — ${e.name}${e.role?` <span class="hint">(${e.role})</span>`:''} — ${e.phone} (${e.phoneTag})</div>
+        <button class="btn btn-danger" onclick="removeEC(${i})" data-cy="remove-ec-${i}">Remove</button>
+      </div>`).join('');
+  }
+  
+  function addEC(){
+    const name = document.getElementById('ecName').value.trim();
+    const phone = document.getElementById('ecPhone').value.trim();
+    const tag = document.getElementById('ecPhoneTag').value;
+    const role = document.getElementById('ecRole').value.trim();
+    
+    if(!name || !phone) return err('EC name and phone are required');
+    if(!validPhone(phone)) return err('EC phone must be valid international format');
+    
+    ecs.push({
+      priority: ecs.length + 1,
+      name,
+      role,
+      phone: normalizePhone(phone),
+      phoneTag: tag
+    });
+    
+    document.getElementById('ecName').value='';
+    document.getElementById('ecPhone').value='';
+    document.getElementById('ecRole').value='';
+    renderECs();
+  }
+  
+  function removeEC(i){ ecs.splice(i,1); ecs.forEach((e,ix)=>e.priority=ix+1); renderECs(); }
+
+  // ---------- Steps ----------
+  const singleUseTypes = ['callDevice','callUser','messageDevice','callECs','dispatch','followUp'];
+  
+  function addStep(type){
+    if(singleUseTypes.includes(type) && steps.some(s=>s.type===type)) return;
+    if(type==='callDevice' && document.getElementById('deviceType').value==='G7x') return err('G7x protocols cannot include "Call device".');
+
+    const labels = {
+      callDevice:'Call G7c device',
+      callUser:'Call user phone',
+      messageDevice:'Send message "Do you need help?"',
+      callECs:'Call emergency contacts in priority order',
+      dispatch:'Dispatch emergency services if valid location',
+      followUp:'Follow up with emergency services'
+    };
+    
+    const s = { type, label: labels[type] };
+    
+    // Add wait times for specific steps
+    if(type === 'messageDevice') {
+      s.waitSec = minutesToSec(currentMsgWaitMin());
+      s.waitLabel = `Wait ${currentMsgWaitMin()} min for response`;
+    }
+    
+    if(type === 'callECs') {
+      s.callbackWaitMin = currentEcCallbackMin();
+      s.waitLabel = `Wait ${currentEcCallbackMin()} min for callback`;
+      s.infoFields = ["employeeName","company","alertType","time","gps","address"];
+    }
+    
+    if(type === 'dispatch') {
+      s.dispatchWaitMin = currentDispatchWaitMin();
+      s.waitLabel = `Wait ${currentDispatchWaitMin()} min for dispatch confirmation`;
+      s.condition = "validLocation";
+      s.services = getSelectedServices();
+    }
+    
+    if(type === 'followUp') {
+      s.minutes = currentServicesFollowUpMin();
+      s.waitLabel = `Follow up after ${currentServicesFollowUpMin()} min`;
+    }
+    
+    steps.push(s);
+    renderSteps(); markLibrary();
+  }
+  
+  function removeStep(i){ steps.splice(i,1); renderSteps(); markLibrary(); }
+
+  function renderSteps(){
+    const box=document.getElementById('stepsBox');
+    if(!steps.length){ box.innerHTML='<div style="padding:18px;color:#6b7280;text-align:center">No steps yet. Add them in order.</div>'; return; }
+    box.innerHTML = steps.map((s,i)=>{
+      const pills=[];
+      if(s.waitLabel) pills.push(`<span class="pill">${s.waitLabel}</span>`);
+      if(s.type==='dispatch') pills.push(`<span class="pill">Services: ${s.services.join(', ')||'—'}</span>`);
+      return `
+        <div class="step" data-cy="step-${i}">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="num">${i+1}</div>
+            <div>${s.label}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pills">${pills.join('')}</div>
+            <button class="btn btn-danger" onclick="removeStep(${i})" data-cy="remove-step-${i}">Remove</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function markLibrary(){
+    const ids=['callDevice','callUser','messageDevice','callECs','dispatch','followUp'];
+    ids.forEach(id=>{
+      const btn=document.getElementById('lib-'+id);
+      const present = steps.some(s=>s.type===id);
+      btn.classList.toggle('selected', present);
+      btn.disabled = present || (id==='callDevice' && document.getElementById('deviceType').value==='G7x');
+    });
+  }
+
+  function syncTimerValues(){
+    steps.forEach(s=>{
+      if(s.type==='messageDevice') {
+        s.waitSec = minutesToSec(currentMsgWaitMin());
+        s.waitLabel = `Wait ${currentMsgWaitMin()} min for response`;
+      }
+      if(s.type==='callECs') {
+        s.callbackWaitMin = currentEcCallbackMin();
+        s.waitLabel = `Wait ${currentEcCallbackMin()} min for callback`;
+      }
+      if(s.type==='dispatch') {
+        s.dispatchWaitMin = currentDispatchWaitMin();
+        s.waitLabel = `Wait ${currentDispatchWaitMin()} min for dispatch confirmation`;
+      }
+      if(s.type==='followUp') {
+        s.minutes = currentServicesFollowUpMin();
+        s.waitLabel = `Follow up after ${currentServicesFollowUpMin()} min`;
+      }
+    });
+    renderSteps();
+  }
+
+  function getSelectedServices() {
+    const checkboxes = document.querySelectorAll('.service-option input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+  }
+
+  // Organization Admin Functions
+function addOrgAdmin() {
+  const name = document.getElementById('orgAdminName').value.trim();
+  const title = document.getElementById('orgAdminTitle').value.trim();
+  const phone = document.getElementById('orgAdminPhone').value.trim();
+  const phoneTag = document.getElementById('orgAdminPhoneTag').value;
+  const email = document.getElementById('orgAdminEmail').value.trim();
+  
+  if (!name) return err('Admin name is required');
+  if (!phone && !email) return err('Admin must have at least one phone or email');
+  if (phone && !validPhone(phone)) return err('Phone must be valid international format');
+  
+  const admin = {
+    name,
+    title,
+    phones: phone ? [{number: normalizePhone(phone), tag: phoneTag}] : [],
+    email: email || undefined
+  };
+  
+  orgAdmins.push(admin);
+  
+  // Clear inputs
+  document.getElementById('orgAdminName').value = '';
+  document.getElementById('orgAdminTitle').value = '';
+  document.getElementById('orgAdminPhone').value = '';
+  document.getElementById('orgAdminEmail').value = '';
+  
+  renderOrgAdmins();
+}
+
+function removeOrgAdmin(index) {
+  orgAdmins.splice(index, 1);
+  renderOrgAdmins();
+}
+
+function renderOrgAdmins() {
+  const container = document.getElementById('orgAdminList');
+  if (orgAdmins.length === 0) {
+    container.innerHTML = '<div class="hint" style="padding:8px 10px">No organization admins added yet.</div>';
+    return;
+  }
+  
+  container.innerHTML = orgAdmins.map((admin, i) => `
+    <div class="admin-card" data-cy="org-admin-${i}">
+      <div class="admin-header">
+        <div>
+          <div class="admin-name">${admin.name}</div>
+          ${admin.title ? `<div class="hint">${admin.title}</div>` : ''}
+        </div>
+        <button class="btn btn-danger" onclick="removeOrgAdmin(${i})" data-cy="remove-org-admin-${i}">Remove</button>
+      </div>
+      <div class="admin-phones">
+        ${admin.phones.map(p => `<div class="admin-phone-item">${p.number} (${p.tag})</div>`).join('')}
+      </div>
+      ${admin.email ? `<div class="hint">📧 ${admin.email}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// Group Admin Functions
+function addGroupAdmin() {
+  const name = document.getElementById('groupAdminName').value.trim();
+  const title = document.getElementById('groupAdminTitle').value.trim();
+  const phone = document.getElementById('groupAdminPhone').value.trim();
+  const phoneTag = document.getElementById('groupAdminPhoneTag').value;
+  const email = document.getElementById('groupAdminEmail').value.trim();
+  
+  if (!name) return err('Admin name is required');
+  if (!phone && !email) return err('Admin must have at least one phone or email');
+  if (phone && !validPhone(phone)) return err('Phone must be valid international format');
+  
+  const admin = {
+    name,
+    title,
+    phones: phone ? [{number: normalizePhone(phone), tag: phoneTag}] : [],
+    email: email || undefined
+  };
+  
+  groupAdmins.push(admin);
+  
+  // Clear inputs
+  document.getElementById('groupAdminName').value = '';
+  document.getElementById('groupAdminTitle').value = '';
+  document.getElementById('groupAdminPhone').value = '';
+  document.getElementById('groupAdminEmail').value = '';
+  
+  renderGroupAdmins();
+}
+
+function removeGroupAdmin(index) {
+  groupAdmins.splice(index, 1);
+  renderGroupAdmins();
+}
+
+function toggleInheritOrgAdmins() {
+  inheritOrgAdmins = document.getElementById('inheritOrgAdmins').checked;
+  renderGroupAdmins();
+}
+
+function renderGroupAdmins() {
+  const container = document.getElementById('groupAdminList');
+  let adminsToShow = [...groupAdmins];
+  
+  // Add inherited org admins if enabled
+  if (inheritOrgAdmins) {
+    const inheritedAdmins = orgAdmins.map(admin => ({...admin, inherited: true}));
+    adminsToShow = [...inheritedAdmins, ...groupAdmins];
+  }
+  
+  if (adminsToShow.length === 0) {
+    container.innerHTML = '<div class="hint" style="padding:8px 10px">No group admins added yet.</div>';
+    return;
+  }
+  
+  container.innerHTML = adminsToShow.map((admin, i) => {
+    const isInherited = admin.inherited;
+    const actualIndex = isInherited ? i : i - (inheritOrgAdmins ? orgAdmins.length : 0);
+    
+    return `
+      <div class="admin-card ${isInherited ? 'inherited-admin' : ''}" data-cy="group-admin-${i}">
+        <div class="admin-header">
+          <div>
+            <div class="admin-name">${admin.name} ${isInherited ? '(Inherited)' : ''}</div>
+            ${admin.title ? `<div class="hint">${admin.title}</div>` : ''}
+          </div>
+          ${!isInherited ? `<button class="btn btn-danger" onclick="removeGroupAdmin(${actualIndex})" data-cy="remove-group-admin-${actualIndex}">Remove</button>` : ''}
+        </div>
+        <div class="admin-phones">
+          ${admin.phones.map(p => `<div class="admin-phone-item">${p.number} (${p.tag})</div>`).join('')}
+        </div>
+        ${admin.email ? `<div class="hint">📧 ${admin.email}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+  // ---------- Export ----------
+  function buildProtocol(){
+    const dev = document.getElementById('deviceType').value;
+    const alert = document.getElementById('alertType').value;
+    const protocolId = `demo-${alert}-${dev.toLowerCase()}-v1`;
+    
+    // Collect all user phones
+    const allUserPhones = [];
+    const primaryPhone = document.getElementById('userPhone').value.trim();
+    const primaryTag = document.getElementById('userPhoneTag').value;
+    if (primaryPhone) allUserPhones.push({number: normalizePhone(primaryPhone), tag: primaryTag});
+    userPhones.forEach(p => allUserPhones.push(p));
+    
+    return {
+      schema_version:"1.0",
+      meta:{
+        protocol_id: protocolId,
+        display_name: `Demo • ${alert.charAt(0).toUpperCase()+alert.slice(1)} (${dev})`,
+        created_at: new Date().toISOString(),
+        org: document.getElementById('org').value.trim(),
+        company: document.getElementById('company').value.trim(),
+        alert_type: alert,
+        device_type: dev,
+        assigned_team_member: { 
+          name: document.getElementById('userName').value.trim(),
+          phones: allUserPhones.length ? allUserPhones : [{number: normalizePhone(document.getElementById('userPhone').value), tag: primaryTag}]
+        }
+  
+      },
+      emergency_response_contacts: ecs.map(e=>({
+        priority: e.priority,
+        name: e.name,
+        role: e.role || undefined,
+        phones: [{number: e.phone, tags: [e.phoneTag]}]
+      })),
+      timers:{
+        message_wait_seconds: minutesToSec(currentMsgWaitMin()),
+        ec_callback_minutes: currentEcCallbackMin(),
+        services_follow_up_minutes: currentServicesFollowUpMin(),
+        dispatch_wait_minutes: currentDispatchWaitMin(),
+        follow_up_minutes: currentServicesFollowUpMin()
+      },
+      dispatch_policy:{
+        mode: document.getElementById('dispatchMode').value,
+        services: getSelectedServices()
+      },
+      steps
+    };
+  }
+
+  function validateAll(){
+    if(!req('#org')) return 'Organization is required';
+    if(!req('#company')) return 'Company is required';
+    if(!req('#alertType')) return 'Alert type is required';
+    if(!req('#deviceType')) return 'Device type is required';
+    if(!req('#userName')) return 'Assigned team member name is required';
+    const primaryPhone = document.getElementById('userPhone').value.trim();
+    if(!primaryPhone && userPhones.length === 0) return 'At least one phone number is required';
+    if(primaryPhone && !validPhone(primaryPhone)) return 'Primary phone must be valid international format';
+    if(!ecs.length) return 'At least one EC is required';
+    if(!steps.length) return 'Protocol must include at least one step';
+    if(document.getElementById('deviceType').value==='G7x' && steps.some(s=>s.type==='callDevice')) return 'G7x cannot include "Call device"';
+    const services = getSelectedServices();
+    if(services.length === 0) return 'At least one service must be selected';
+    if(!req('#dispatchMode')) return 'Dispatch mode is required';
+    const mw=currentMsgWaitMin(); if(mw<0||mw>15) return 'Message wait must be 0–15 minutes';
+    const ecw=currentEcCallbackMin(); if(ecw<0||ecw>240) return 'EC callback wait must be 0–240 minutes';
+    const sf=currentServicesFollowUpMin(); if(sf<0||sf>240) return 'Services follow-up must be 0–240 minutes';
+    const dw=currentDispatchWaitMin(); if(dw<1||dw>15) return 'Dispatch wait must be 1–15 minutes';
+    return null;
+  }
+
+  async function exportProtocol(){
+  const v = validateAll(); if(v){ err(v); return; }
+  const obj = buildProtocol();
+  const json = JSON.stringify(obj,null,2);
+  const filename = `${obj.meta.protocol_id}.json`;
+
+  if(fsOK() && configsDirHandle){
+    try{ await writeJSON(filename,json); ok(`Saved to ${configsDirHandle.name}/${filename}`); return; }
+    catch(e){ console.warn('Auto-save failed, fallback to download', e); }
+  }
+  
+  // Fallback: traditional download
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  ok('Downloaded protocol JSON.');
+}
+
+  function clearAll(){
+    if(!confirm('Clear all fields and steps?')) return;
+    document.querySelectorAll('input[type="text"], input[type="number"], input[type="tel"]').forEach(input => input.value = '');
+    document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    ecs=[];
+    steps=[];
+    userPhones=[];
+    renderECs(); renderSteps(); renderUserPhones(); deviceAwareness(); markLibrary();
+  }
+
+  // ---------- FS Access ----------
+  function fsOK(){ return 'showDirectoryPicker' in window && window.isSecureContext; }
+  function updateCfgStatus(){ document.getElementById('cfgStatus').textContent = configsDirHandle?`Saving to: ${configsDirHandle.name}/`:'No folder set (will download if you export).'; }
+  async function chooseConfigsFolder(){
+    if(!fsOK()){ err('Auto-save needs Chrome/Edge on HTTPS/localhost. Using download fallback.'); return; }
+    try{
+      configsDirHandle = await window.showDirectoryPicker({id:'bln-configs'});
+      const okPerm = await ensurePerm(configsDirHandle,true);
+      if(!okPerm){ configsDirHandle=null; err('Permission denied. Will download instead.'); }
+      updateCfgStatus(); if(okPerm) ok('Configs folder set. Exports will save there.');
+    }catch(e){ updateCfgStatus(); }
+  }
+  async function ensurePerm(handle,write=false){
+    const opt={mode:write?'readwrite':'read'};
+    if((await handle.queryPermission(opt))==='granted') return true;
+    if((await handle.requestPermission(opt))==='granted') return true;
+    return false;
+  }
+  async function writeJSON(filename,json){
+    const file = await configsDirHandle.getFileHandle(filename,{create:true});
+    const w = await file.createWritable(); await w.write(json); await w.close();
+  }
+
+  // ---------- Helpers ----------
+  function req(sel){ const el=document.querySelector(sel); return el && el.value.trim().length>0; }
+  function validPhone(p){ return /^\+?[1-9]\d{6,14}$/.test(p.replace(/[\s\-]/g,'')); }
+  function normalizePhone(p){ return p.replace(/[\s\-]/g,'').replace(/^(?!\+)/, '+'); }
+  function currentMsgWaitMin(){ return parseInt(document.getElementById('messageWaitMin').value||'0',10); }
+  function currentEcCallbackMin(){ return parseInt(document.getElementById('ecCallbackMin').value||'0',10); }
+  function currentServicesFollowUpMin(){ return parseInt(document.getElementById('servicesFollowUpMin').value||'0',10); }
+  function currentDispatchWaitMin(){ return parseInt(document.getElementById('dispatchWaitMin').value||'5',10); }
+  function minutesToSec(m){ return Math.max(0,Math.round(m*60)); }
+  function secToMin(s){ return Math.round((s||0)/60); }
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Timestamp (en-CA) per project conventions
+    const TZ = (window.TIMEZONES && window.TIMEZONES.DEFAULT) || 'America/Edmonton';
+    const now = () => new Intl.DateTimeFormat('en-CA', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: TZ
+    }).format(new Date());
+    const log = (m) => console.log(`[PCM ${now()}] ${m}`);
+  
+    const root = document.querySelector('#pcm-root') || document.body;
+  
+    // 1) Remove ALL placeholders and clear values (text/tel/number/email/url/search + textarea)
+    root.querySelectorAll('input:not([type]),input[type="text"],input[type="tel"],input[type="number"],input[type="email"],input[type="url"],input[type="search"],textarea')
+      .forEach(el => { el.value = ''; el.removeAttribute('placeholder'); });
+  
+    // 2) Clear contenteditable widgets (if any)
+    root.querySelectorAll('[contenteditable="true"]').forEach(el => { el.textContent = ''; });
+  
+    // 3) Clear radios & checkboxes
+    root.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => { el.checked = false; });
+  
+    // 4) Force all <select> to start empty and show no caption
+    root.querySelectorAll('select').forEach(sel => {
+      // Ensure a truly blank first option with empty label
+      if (sel.options.length === 0 || sel.options[0].value !== '') {
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = ''; // no caption
+        sel.insertBefore(blank, sel.firstChild);
+      } else {
+        sel.options[0].textContent = ''; // scrub any "Select…" text
+      }
+      sel.selectedIndex = 0;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  
+    // 5) Remove any auto-added dynamic rows (user phones, ECs)
+    ['#pcm-user-phones','[data-cy="pcm-user-phones"]','.pcm-user-phones',
+     '#pcm-ecs','#pcm-ecs-list','[data-cy="pcm-ecs"]','.pcm-ecs-list'
+    ].forEach(sel => root.querySelector(sel)?.replaceChildren());
+  
+    // 6) Clear any saved draft
+    try { localStorage.removeItem('pcmFormDraft'); } catch {}
+  
+    log('opened blank (no placeholders)');
+  }, { once: true });
+</script>  
+
+<script>
+  /* Start-blank patch: clears any pre-seeded ECs after the page has finished wiring up. */
+  document.addEventListener('DOMContentLoaded', () => {
+    // Run after any other DOMContentLoaded handlers
+    setTimeout(() => {
+      // 1) Cancel any demo seeding functions if they exist
+      ['seedECs','seedDemoECs','seedSampleECs'].forEach(fn => {
+        if (typeof window[fn] === 'function') window[fn] = () => {};
+      });
+  
+      // 2) Clear the EC collection (does NOT break const arrays)
+      if (Array.isArray(window.ecs)) window.ecs.splice(0, window.ecs.length);
+  
+      // 3) Clear EC input fields if they were prefilled
+      ['ecName','ecRole','ecPhone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+  
+      // 4) Re-render the EC list so it shows the "No ECs added yet." hint
+      if (typeof window.renderECs === 'function') window.renderECs();
+      console.log('[PCM] ECs cleared; starting blank');
+    }, 0);
+  });
+</script>
+
+</body>
+</html>

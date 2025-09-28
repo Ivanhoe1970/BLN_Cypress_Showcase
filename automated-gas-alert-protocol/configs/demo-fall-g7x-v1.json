@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "protocolId": "demo-fall-g7x-v1",
+    "displayName": "Demo • Fall (G7x)",
+    "createdAt": "2025-09-21T06:42:58.512Z",
+    "org": "Northern Safety Ltd",
+    "company": "Northern Safety",
+    "alertType": "fall",
+    "deviceType": "G7x",
+    "user": {
+      "name": "Taylor Brooks",
+      "phones": [
+        "+14035551234"
+      ]
+    }
+  },
+  "ecs": [
+    {
+      "priority": 1,
+      "name": "Jordan Lee",
+      "role": "Field Supervisor",
+      "phones": [
+        {
+          "number": "+14035551235",
+          "tags": [
+            "Mobile"
+          ]
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "name": "Operations Control Desk",
+      "phones": [
+        {
+          "number": "+14035551236",
+          "tags": [
+            "Work"
+          ]
+        }
+      ]
+    },
+    {
+      "priority": 3,
+      "name": "Priya Singh",
+      "role": "Safety Officer",
+      "phones": [
+        {
+          "number": "+14035551237",
+          "tags": [
+            "Work"
+          ]
+        }
+      ]
+    }
+  ],
+  "timers": {
+    "messageWaitSec": 180,
+    "ecCallbackMin": 25,
+    "servicesFollowUpMin": 20,
+    "followUpMin": 35
+  },
+  "dispatchPolicy": {
+    "mode": "allowed",
+    "services": [
+      "EMS",
+      "Police"
+    ]
+  },
+  "steps": [
+    {
+      "type": "send-message",
+      "label": "Send satellite message \"Do you need help?\"",
+      "waitSec": 180
+    },
+    {
+      "type": "call-user",
+      "label": "Call user’s registered phone"
+    },
+    {
+      "type": "contact-ecs",
+      "label": "Escalate to emergency contacts in sequence",
+      "callbackWaitMin": 25,
+      "infoFields": [
+        "employeeName",
+        "company",
+        "alertType",
+        "time",
+        "gps",
+        "address"
+      ]
+    },
+    {
+      "type": "dispatch",
+      "label": "Dispatch EMS/Police if valid location",
+      "condition": "validLocation",
+      "services": [
+        "EMS",
+        "Police"
+      ]
+    },
+    {
+      "type": "followup-ems",
+      "label": "Follow up with responding services",
+      "minutes": 20
+    }
+  ]
+}
