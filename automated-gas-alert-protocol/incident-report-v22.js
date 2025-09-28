@@ -710,49 +710,77 @@ class IncidentReportGenerator {
           body { 
   font-family: Calibri, Arial, sans-serif; 
   font-size: 11pt; 
-  line-height: 1.1; 
+  line-height: 1.2; 
   margin: 0; 
 }
-          .logo { 
-  color: #666; 
+.logo { 
+  color: #000; 
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 24pt; 
-  font-weight: normal; /* Not bold */
-  margin-bottom: 5pt; 
+  font-weight: 400; /* normal */
+  margin-bottom: 6pt; 
 }
 .logo .safety { color: #d32f2f; }
-          .header { 
+.header { 
   text-align: right; 
-  color: #666; 
+  color: #000; 
   font-style: italic; 
-  margin-bottom: 15pt; 
+  margin-bottom: 12pt; 
   font-family: Calibri, Arial, sans-serif;
   font-size: 16pt; 
   font-weight: bold;
 }
-          h2 { color: #000; font-size: 10pt; font-weight: bold; margin: 15pt 0 5pt 0; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }
-          td { 
-  border: none; 
-  padding: 4pt; 
-  vertical-align: top; 
-  font-size: 11pt; 
+h2 { 
+  color: #d32f2f; 
+  font-size: 12pt; 
+  font-weight: bold; 
+  margin: 15pt 0 10pt 0; 
 }
-          .field-label { font-weight: bold; }
-          .timeline-table { margin-top: 10pt; }
-          .timeline-table td { border: 1pt solid #000; padding: 6pt; }
-          .time-column { width: 120pt; font-weight: bold; }
-          .note-column { }
-          .note-italic { font-style: italic; font-weight: normal; }
-          .challenges-label { font-weight: bold; margin-top: 10pt; margin-bottom: 5pt; }
-          .section-header {
-    background-color: #d32f2f;
-    color: white;
-    font-weight: bold;
-    padding: 8pt;
-    font-size: 10pt;
-    margin: 15pt 0 5pt 0;
-  }
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin-bottom: 15pt; 
+}
+td { 
+  border: 1pt solid #000; 
+  padding: 6pt; 
+  vertical-align: top; 
+  font-size: 11pt;
+  /* Remove any fixed height - let content determine row height */
+}
+
+.timeline-table td { 
+  border: 1pt solid #000; 
+  padding: 6pt; /* Reduced from 8pt for tighter spacing */
+  vertical-align: top; /* Ensure top alignment for variable content */
+}
+.field-label { font-weight: bold; }
+.timeline-table { margin-top: 10pt; }
+.timeline-table td { border: 1pt solid #000; padding: 8pt; }
+.time-column { 
+  width: 120pt; 
+  font-weight: bold;
+  white-space: nowrap; /* Prevent time from wrapping */
+}
+
+.note-column {
+  /* Let this column expand/contract based on content */
+  word-wrap: break-word; /* Allow long words to wrap if needed */
+}
+.note-italic { 
+  font-style: italic; 
+  font-weight: normal; /* Changed from bold to normal */
+}
+.challenges-label { font-weight: bold; margin-top: 10pt; margin-bottom: 5pt; }
+.section-header {
+  background-color: #d32f2f;
+  color: white;
+  font-weight: bold;
+  padding: 8pt;
+  font-size: 12pt;
+  margin: 15pt 0 10pt 0;
+}
+
   .data-table {
     width: 100%;
     border-collapse: collapse;
