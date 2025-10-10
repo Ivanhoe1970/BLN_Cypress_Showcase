@@ -1713,36 +1713,67 @@
       };
 
       // ── Centralized formatters ──────────────────────────────
-      const FORMATTERS = {
-        // Full timestamp [YYYY-MM-DD HH:mm:ss MDT]
-        timestampMST: (date) => {
-          return (
-            new Intl.DateTimeFormat("en-US", {
-              timeZone: TIMEZONES.MOUNTAIN,
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }).format(date) + " MDT"
-          );
-        },
+const FORMATTERS = {
+  // Full timestamp [YYYY-MM-DD HH:mm:ss MDT]
+  timestampMST: (date) => {
+    return (
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONES.MOUNTAIN,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date) + " MDT"
+    );
+  },
 
-        // Time only [HH:mm:ss MDT]
-        timeOnlyMST: (date) => {
-          return (
-            new Intl.DateTimeFormat("en-US", {
-              timeZone: TIMEZONES.MOUNTAIN,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }).format(date) + " MDT"
-          );
-        },
-      };
+  // Time only [HH:mm:ss MDT]
+  timeOnlyMST: (date) => {
+    return (
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONES.MOUNTAIN,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date) + " MDT"
+    );
+  },
+};
+
+//═══════════════════════════════════════════════════════════════
+// STANDARDIZED CALL-USER DROPDOWN OPTIONS
+//═══════════════════════════════════════════════════════════════
+
+/**
+ * Returns standardized call-user dropdown options
+ * Used for ALL call-user actions across all protocols
+ * 
+ * IMPORTANT: Single source of truth - do NOT create protocol-specific variations
+ * 
+ * @param {string} userName - User's name for personalization
+ * @returns {string} HTML option elements
+ */
+function getCallUserDropdownOptions(userName) {
+  const name = userName || "user";
+  
+  return `<option value="">Select outcome</option>
+<option value="confirmed-ok">Spoke with ${name}, confirmed they are okay</option>
+<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+<option value="user-callback">User called in. Confirmed they are okay</option>
+<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>
+<option value="no-answer-voicemail">No answer. Left voicemail</option>
+<option value="no-answer-already-left">No answer. Voicemail had already been left</option>
+<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>
+<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>
+<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>
+<option value="no-phone-number">Unable to call, user has no phone number assigned</option>
+<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>
+<option value="unable-to-connect">Unable to connect</option>`;
+}
 
       // ═══════════════════════════════════════════════════════════════════════════════
       // PRE-ALERT DETECTION SYSTEM
@@ -7260,24 +7291,18 @@ function addAlertSequenceLogs(userConfig) {
             '<option value="no-answer">No answer.</option>' +
             '<option value="unable-to-call">Unable to call, device offline.</option>' +
             "</select>";
-        } else if (subStep.action === "call-user") {
-          protocolHTML +=
-            '<select id="' +
-            subStepId +
-            '-select" data-cy="' +
-            subStepId +
-            '-select" onchange="autoPopulateFromDropdown(\'' +
-            subStepId +
-            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-            '<option value="">Select outcome</option>' +
-            '<option value="confirmed-ok">Spoke with ' +
-            userConfig.name +
-            ", confirmed they are okay</option>" +
-            '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-            '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-            '<option value="unable-to-connect">Unable to connect</option>' +
-            "</select>";
-        }
+} else if (subStep.action === "call-user") {
+  protocolHTML +=
+    '<select id="' +
+    subStepId +
+    '-select" data-cy="' +
+    subStepId +
+    '-select" onchange="autoPopulateFromDropdown(\'' +
+    subStepId +
+    '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+    getCallUserDropdownOptions(userConfig.name) +
+    "</select>";
+}
 
         protocolHTML +=
           '<textarea id="' +
@@ -7405,60 +7430,46 @@ function addAlertSequenceLogs(userConfig) {
     }
 
     // Outcome dropdown
-    protocolHTML +=
-      '<select id="' +
-      step.id +
-      '-select" data-cy="' +
-      step.id +
-      '-select" onchange="autoPopulateFromDropdown(\'' +
-      step.id +
-      "'); validatePostButton('" +
-      step.id +
-      '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-      '<option value="">Select outcome</option>';
+protocolHTML +=
+  '<select id="' +
+  step.id +
+  '-select" data-cy="' +
+  step.id +
+  '-select" onchange="autoPopulateFromDropdown(\'' +
+  step.id +
+  "'); validatePostButton('" +
+  step.id +
+  '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+  '<option value="">Select outcome</option>';
 
-    // Action-based dropdown options
-    if (step.action === "call-device") {
-      protocolHTML +=
-        '<option value="confirmed-ok">Spoke with ' +
-        userConfig.name +
-        ". Confirmed they are okay. Resolving alert.</option>" +
-        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-        '<option value="no-answer">No answer.</option>' +
-        '<option value="unable-to-call">Unable to call, device offline.</option>';
-    } else if (step.action === "message-device") {
-      protocolHTML +=
-        '<option value="no-response">No response</option>' +
-        '<option value="unable-to-send">Unable to send text message, device offline</option>' +
-        '<option value="device-no">Received "No" - User confirmed okay</option>' +
-        '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
-        '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
-        '<option value="understood">Received "Understood" - User confirmed okay</option>' +
-        '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
-        '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
-    } else if (step.action === "call-user") {
-      protocolHTML +=
-        '<option value="confirmed-ok">Spoke with ' +
-        userConfig.name +
-        ", confirmed they are okay</option>" +
-        '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-        '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
-        '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-        '<option value="no-answer-already-left">No answer. Voicemail had already been left</option>' +
-        '<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>' +
-        '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-        '<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>' +
-        '<option value="no-phone-number">Unable to call, user has no phone number assigned</option>' +
-        '<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>' +
-        '<option value="unable-to-connect">Unable to connect</option>';
-    } else {
-      protocolHTML +=
-        '<option value="completed">Action completed</option>' +
-        '<option value="no-answer">No answer</option>';
-    }
+// Action-based dropdown options
+if (step.action === "call-device") {
+  protocolHTML +=
+    '<option value="confirmed-ok">Spoke with ' +
+    userConfig.name +
+    ". Confirmed they are okay. Resolving alert.</option>" +
+    '<option value="user-callback">User called in. Confirmed they are okay</option>' +
+    '<option value="no-answer">No answer.</option>' +
+    '<option value="unable-to-call">Unable to call, device offline.</option>';
+} else if (step.action === "message-device") {
+  protocolHTML +=
+    '<option value="no-response">No response</option>' +
+    '<option value="unable-to-send">Unable to send text message, device offline</option>' +
+    '<option value="device-no">Received "No" - User confirmed okay</option>' +
+    '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
+    '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
+    '<option value="understood">Received "Understood" - User confirmed okay</option>' +
+    '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
+    '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
+} else if (step.action === "call-user") {
+  protocolHTML += getCallUserDropdownOptions(userConfig.name);
+} else {
+  protocolHTML +=
+    '<option value="completed">Action completed</option>' +
+    '<option value="no-answer">No answer</option>';
+}
 
-    protocolHTML += "</select>";
+protocolHTML += "</select>";
 
     // Note textarea
     protocolHTML +=

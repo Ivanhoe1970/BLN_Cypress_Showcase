@@ -2664,24 +2664,42 @@ window.classifyIncomingMessage = classifyIncomingMessage;
         return minutes;
       }
 
-      // Extract contact name from note text
-      function extractContactName(noteText) {
-        // Look for common patterns: "EC John", "Sarah called", "Mike will check"
-        const patterns = [
-          /EC\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
-          /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:called|will|is)/i,
-          /(?:called|contacted)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,
-        ];
-
-        for (const pattern of patterns) {
-          const match = pattern.exec(noteText);
-          if (match) {
-            return match[1].trim();
-          }
-        }
-
-        return null;
+      // Extract contact name from note text and validate against known ECs
+function extractContactName(noteText) {
+  // Get actual emergency contacts for validation
+  const userKey = currentAlert?.user;
+  const knownECs = userKey && AlertDataManager.usersData[userKey]?.emergencyContacts
+    ? AlertDataManager.usersData[userKey].emergencyContacts
+    : [];
+  
+  // Look for common patterns - handles "called", "called in", "called back"
+  const patterns = [
+    /EC\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,                           // "EC John Doe"
+    /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+called(?:\s+(?:in|back))?/i,   // "John called/called in/called back"
+    /(?:called|contacted)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i,        // "called John Doe"
+  ];
+  
+  for (const pattern of patterns) {
+    const match = noteText.match(pattern);
+    if (match && match[1]) {
+      const extractedName = match[1].trim();
+      
+      // ✅ VALIDATE: Check if extracted name matches a known EC
+      const matchingEC = knownECs.find(ec => 
+        ec.name.toLowerCase().includes(extractedName.toLowerCase()) ||
+        extractedName.toLowerCase().includes(ec.name.toLowerCase())
+      );
+      
+      if (matchingEC) {
+        // Return the FULL EC name from the system (proper capitalization)
+        return matchingEC.name;
       }
+    }
+  }
+  
+  // If no match found, return null
+  return null;
+}
 
       // Calculate confidence score for pattern matching
       function calculateConfidence(noteText, pattern) {
@@ -3479,6 +3497,12 @@ class DeviceConnectivity {
         }
 
         function updateDisplay() {
+          // DEFENSIVE GUARD: Exit immediately if timer data cleared (alert resolved)
+  // This prevents beeping after cleanup, even if interval fires one last time
+  if (!activeTimerData || !globalTimerEndTime) {
+    console.log("⏹ Timer update skipped - data cleared (alert resolved)");
+    return;
+  }
           const now = new Date();
           const remaining = Math.max(
             0,
@@ -3687,6 +3711,119 @@ class DeviceConnectivity {
         }
         // ===== END SOUND STOPPING =====
       }
+
+      /**
+ * Cancels ALL active timers and clears all timer-related state
+ */
+ function cancelAllActiveTimers(reason = "Alert resolved") {
+  console.log(`[TIMER CLEANUP] Cancelling all timers: ${reason}`);
+  
+  // 1. Cancel message timer (background)
+  if (typeof messageTimer !== 'undefined' && messageTimer !== null) {
+    clearTimeout(messageTimer);
+    messageTimer = null;
+    console.log("✓ Cancelled messageTimer");
+  }
+  
+  // 2. Cancel global visual timer
+  if (typeof globalTimerInterval !== 'undefined' && globalTimerInterval !== null) {
+    clearInterval(globalTimerInterval);
+    globalTimerInterval = null;
+    console.log("✓ Cancelled globalTimerInterval");
+  }
+  
+  // 3. Clear activeTimerData to prevent timer expiry logic
+  if (typeof activeTimerData !== 'undefined' && activeTimerData !== null) {
+    activeTimerData = null;
+    console.log("✓ Cleared activeTimerData");
+  }
+  
+  // 4. Clear globalTimerEndTime to prevent timer calculations
+  if (typeof globalTimerEndTime !== 'undefined' && globalTimerEndTime !== null) {
+    globalTimerEndTime = null;
+    console.log("✓ Cleared globalTimerEndTime");
+  }
+  
+  // 5. Use built-in cancel function
+  if (typeof cancelGlobalTimer === 'function') {
+    try {
+      cancelGlobalTimer();
+      console.log("✓ Called cancelGlobalTimer()");
+    } catch (e) {
+      console.warn("cancelGlobalTimer() error:", e);
+    }
+  }
+  
+  // 6. Stop audio/beeping - COMPREHENSIVE & DIRECT
+// Stop tab flashing interval directly
+if (typeof tabFlashInterval !== 'undefined' && tabFlashInterval !== null) {
+  clearInterval(tabFlashInterval);
+  tabFlashInterval = null;
+  document.title = originalTitle || "Enhanced Blackline Live - Alert Management";
+  console.log("✓ Stopped tab flashing interval");
+}
+
+// Also try window.tabFlashInterval just in case
+if (typeof window.tabFlashInterval !== 'undefined' && window.tabFlashInterval !== null) {
+  clearInterval(window.tabFlashInterval);
+  window.tabFlashInterval = null;
+  console.log("✓ Stopped window.tabFlashInterval");
+}
+
+// Call stopTabFlashing if it exists
+if (typeof stopTabFlashing === 'function') {
+  try {
+    stopTabFlashing();
+    console.log("✓ Called stopTabFlashing()");
+  } catch (e) {
+    console.warn("stopTabFlashing() error:", e);
+  }
+}
+
+// Clear all beep timeouts
+if (typeof beepTimeouts !== 'undefined' && Array.isArray(beepTimeouts)) {
+  beepTimeouts.forEach((timeout) => clearTimeout(timeout));
+  beepTimeouts = [];
+  console.log("✓ Cleared all beep timeouts");
+}
+
+// Also try window.beepTimeouts
+if (typeof window.beepTimeouts !== 'undefined' && Array.isArray(window.beepTimeouts)) {
+  window.beepTimeouts.forEach((timeout) => clearTimeout(timeout));
+  window.beepTimeouts = [];
+  console.log("✓ Cleared window.beepTimeouts");
+}
+  
+  // 7. Clear response tracking
+  if (typeof awaitingResponse !== 'undefined') {
+    awaitingResponse = false;
+  }
+  if (typeof lastPromptSent !== 'undefined') {
+    lastPromptSent = null;
+  }
+  if (typeof promptTimestamp !== 'undefined') {
+    promptTimestamp = null;
+  }
+  
+  // 8. Reset timer UI
+  const timerDisplay = document.getElementById("timerDisplay");
+  const timerInfo = document.getElementById("timerInfo");
+  const globalTimer = document.getElementById("globalTimer");
+  const cancelBtn = document.getElementById("cancelTimerBtn");
+  
+  if (timerDisplay) timerDisplay.textContent = "--:--";
+  if (timerInfo) timerInfo.innerHTML = "<strong>No active timer</strong>";
+  if (globalTimer) {
+    globalTimer.classList.remove("timer-active", "timer-alert");
+    globalTimer.classList.add("timer-inactive");
+  }
+  if (cancelBtn) cancelBtn.disabled = true;
+  
+  console.log("[TIMER CLEANUP] ✓ Complete");
+}
+
+// Make globally available
+window.cancelAllActiveTimers = cancelAllActiveTimers;
 
       // ═══════════════════════════════════════════════════════════════
       // 🚨 PROTOCOL CONTROL FUNCTIONS
@@ -5918,6 +6055,8 @@ body += `\n\n${gasBlockWithTs}`;
 
       function resolveAlert(stepId) {
         stopDynamicAlertTime();
+
+        cancelAllActiveTimers("Alert being formally resolved");
 
         // ⛔️ Guard first: Gas alert + any dangerous reading → force override modal
         if (
@@ -8156,29 +8295,16 @@ function autoPopulateNote(contactStepId) {
         showActionConfirmation(analysis);
       }
 
-      /// Handle intelligent actions based on note analysis
+      // Handle intelligent actions based on note analysis
 function handleIntelligentActions(analysis, noteText) {
   switch (analysis.type) {
     case "resolution":
-      // existing behavior (prep resolution UI, etc.)
-      handleResolutionNote(noteText, analysis.confidence);
-
-      // ── AUTO-ACK: confirm we’re proceeding to resolve (no timer, no prompt context) ──
-      (function sendAutoResolutionAck() {
-        const ack = 'Noted. Resolving alert.';
-        // Log like other outbound messages
-        addLogEntry(`Sent "${ack}" to device.`, "step");
-
-        // Optional: append to outbound thread or simulate send
-        if (typeof window.appendOutgoingMessage === "function") {
-          try { window.appendOutgoingMessage(ack, { auto: true }); } catch (_) {}
-        } else if (typeof window.sendMessageToDevice === "function") {
-          try { window.sendMessageToDevice(ack, /*auto*/ true); } catch (_) {}
-        }
-        // Do NOT set lastPromptSent or start any timers here
-      })();
-
-      break;
+  handleResolutionNote(noteText, analysis.confidence);
+  
+  // ✅ Cancel ALL active timers when resolution note is detected
+  cancelAllActiveTimers("Resolution note detected");
+  
+  break;
 
     case "callback":
       handleCallbackNote(noteText, analysis.timeframe);
@@ -8193,8 +8319,6 @@ function handleIntelligentActions(analysis, noteText) {
       break;
   }
 }
-
-
       // Enhanced format timestamp function
       function formatTimestamp() {
         const now = new Date();
@@ -8252,30 +8376,29 @@ function handleIntelligentActions(analysis, noteText) {
       }
 
       // Handle callback timer notes
-      function handleCallbackNote(noteText, timeframeMinutes) {
-        // Extract contact name from note
-        const contactName = extractContactName(noteText);
-        const timeframeSeconds = timeframeMinutes * 60;
-
-        // Start callback timer
-        if (typeof startGlobalTimer === "function") {
-          startGlobalTimer(
-            "ec-callback",
-            "EC Callback Timer",
-            contactName || "Emergency Contact",
-            timeframeSeconds,
-            "callback"
-          );
-        }
-
-        // Add timer confirmation to log
-        addLogEntry(
-          `⏰ AUTO-TIMER: ${timeframeMinutes} minute callback timer started for ${
-            contactName || "Emergency Contact"
-          }`,
-          "system"
-        );
-      }
+function handleCallbackNote(noteText, timeframeMinutes) {
+  // Extract contact name from note
+  const contactName = extractContactName(noteText);
+  const timeframeSeconds = timeframeMinutes * 60;
+  
+  // Start callback timer
+  if (typeof startGlobalTimer === "function") {
+    startGlobalTimer(
+      "ec-callback",
+      "EC Callback Timer",
+      contactName || "Emergency Contact",
+      timeframeSeconds,
+      "callback"
+    );
+  }
+  
+  // Add timer confirmation to log
+  const logMessage = contactName 
+    ? `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started (${contactName})`
+    : `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started`;
+    
+  addLogEntry(logMessage, "system");
+}
 
       // Handle dispatch request notes
       function handleDispatchNote(noteText) {
@@ -8737,7 +8860,7 @@ function handleIntelligentActions(analysis, noteText) {
       };
 
       // Context-aware message classifier
-      function classifyIncomingMessage(responseText, isResponse, promptContext) {
+function classifyIncomingMessage(responseText, isResponse, promptContext) {
   // Handle "Send help" - always SOS regardless of context
   if (responseText === "Send help") {
     return { action: "SOS", reason: "Emergency request" };
@@ -8770,23 +8893,35 @@ function handleIntelligentActions(analysis, noteText) {
         return { action: "SOS", reason: "Not okay" };
     } else if (promptContext === "Leave the area, understood?") {
       if (responseText === "Yes" || responseText === "Understood") {
-        return { action: "CONTINUE", reason: "Acknowledged evacuation" };
+        return { action: "RESOLUTION", reason: "Acknowledged evacuation" };  // ✅ FIXED
       }
       if (responseText === "No")
         return { action: "SOS", reason: "Refused evacuation" };
     }
   }
 
-  // Spontaneous messages or fallback classification
-  const clearResolutionMessages = ["Issue resolved", "False alarm", "I'm OK"];
-  if (clearResolutionMessages.includes(responseText)) {
-    return { action: "RESOLUTION", reason: "Status indicates resolution" };
+  // ============================================================================
+  // FIX: Flexible pattern matching for spontaneous resolution messages
+  // ============================================================================
+  const resolutionPatterns = [
+    /^issue\s*resolved$/i,
+    /^false\s*alarm$/i,
+    /^i['']?m\s*ok(ay)?$/i,        // Matches: "I'm OK", "I'm okay", "Im OK", "Im okay"
+    /^i\s*am\s*ok(ay)?$/i,         // Matches: "I am OK", "I am okay"
+    /^all\s*clear$/i,
+    /^no\s*emergency$/i
+  ];
+  
+  const normalizedResponse = responseText.toLowerCase().trim();
+  for (const pattern of resolutionPatterns) {
+    if (pattern.test(normalizedResponse)) {
+      return { action: "RESOLUTION", reason: "Status indicates resolution" };
+    }
   }
 
   // Default: continue protocol
   return { action: "CONTINUE", reason: "Standard message" };
 }
-
 
 function handleMessageClassification(classification, responseText, isResponse) {
   console.log("DEBUG: Message classification =", classification);
