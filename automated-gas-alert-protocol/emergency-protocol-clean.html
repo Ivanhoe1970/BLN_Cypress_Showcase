@@ -8404,28 +8404,38 @@ function handleIntelligentActions(analysis, noteText) {
         );
       }
 
-      // Handle callback timer notes
-function handleCallbackNote(noteText, timeframeMinutes) {
-  // Extract contact name from note
+      // Handle callback timer notes (dynamic detection)
+function handleCallbackNote(noteText, timeframeMinutes = 30) {
   const contactName = extractContactName(noteText);
-  const timeframeSeconds = timeframeMinutes * 60;
-  
-  // Start callback timer
+
+  // --- Dynamic detection of callback time ---
+  const timeMatch = noteText.match(/(\d+)\s*(?:min|minute|minutes)\b/i);
+  let minutes = timeframeMinutes; // default fallback (usually 30)
+
+  if (timeMatch) {
+    const value = parseInt(timeMatch[1], 10);
+    if (value >= 1 && value <= 60) minutes = value; // sane bounds
+  }
+
+  const seconds = minutes * 60;
+  const label = `${minutes}min follow-up`;
+
+  // --- Start callback timer ---
   if (typeof startGlobalTimer === "function") {
     startGlobalTimer(
       "ec-callback",
-      "EC Callback Timer",
+      label,
       contactName || "Emergency Contact",
-      timeframeSeconds,
+      seconds,
       "callback"
     );
   }
-  
-  // Add timer confirmation to log
-  const logMessage = contactName 
-    ? `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started (${contactName})`
-    : `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started`;
-    
+
+  // --- Log confirmation ---
+  const logMessage = contactName
+    ? `AUTO-TIMER: ${minutes} minute EC callback timer started (${contactName})`
+    : `AUTO-TIMER: ${minutes} minute EC callback timer started`;
+
   addLogEntry(logMessage, "system");
 }
 

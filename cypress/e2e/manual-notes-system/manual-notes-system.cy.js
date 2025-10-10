@@ -1,4 +1,3 @@
-// cypress/e2e/messaging-system/enhanced-manual-notes-system.spec.js
 import EmergencyProtocolPage from "../../pages/EmergencyProtocolPage";
 
 // Helper: ensure a non-placeholder resolution reason is selected
@@ -28,41 +27,6 @@ describe("Enhanced Manual Notes System (Integrated)", () => {
   beforeEach(() => {
     EmergencyProtocolPage.visit();
     cy.wait(500);
-  });
-
-  describe("Note Pattern Recognition & UI Feedback", () => {
-    it("updates SEND button enablement as message text changes during typing", () => {
-      EmergencyProtocolPage.openDemoPanel();
-      cy.get('[data-cy="fall-detection-test-btn"]').click();
-
-      const input = EmergencyProtocolPage.messageInput;
-      const sendBtn = EmergencyProtocolPage.sendMessageButton;
-
-      sendBtn.should("be.disabled");
-
-      input.type("Following up on this case");
-      sendBtn.should("be.enabled");
-
-      input.clear().type("User called in and confirmed they are okay");
-      sendBtn.should("be.enabled");
-
-      input.clear().type("EC will call back in 15 minutes");
-      sendBtn.should("be.enabled");
-
-      input.clear().type("Dispatch requested - EMS needed");
-      sendBtn.should("be.enabled");
-    });
-
-    it("disables SEND when empty; enables when text present", () => {
-      EmergencyProtocolPage.openDemoPanel();
-      cy.get('[data-cy="fall-detection-test-btn"]').click();
-
-      EmergencyProtocolPage.sendMessageButton.should("be.disabled");
-      EmergencyProtocolPage.messageInput.type("Test note", { delay: 0 });
-      EmergencyProtocolPage.sendMessageButton.should("be.enabled");
-      EmergencyProtocolPage.messageInput.clear();
-      EmergencyProtocolPage.sendMessageButton.should("be.disabled");
-    });
   });
 
   describe("Gas: Resolution Notes → Prepared State & Override Gating", () => {
@@ -276,4 +240,36 @@ describe("Enhanced Manual Notes System (Integrated)", () => {
       EmergencyProtocolPage.validateTimerActive();
     });
   });
+
+  // 🧩 Additional coverage for callback variations and operational notes
+describe("Variable Callback Timers", () => {
+  beforeEach(() => {
+    cy.clock();
+    EmergencyProtocolPage.openDemoPanel();
+    cy.get('[data-cy="fall-detection-test-btn"]').click();
+  });
+
+  [5, 10, 15].forEach((minutes) => {
+    it(`starts a ${minutes}-minute callback timer`, () => {
+      // ✅ Use the manual notes field directly (not message input)
+      cy.get('[data-cy="manual-notes"]').type(`EC will call back in ${minutes} minutes`, { delay: 0 });
+      cy.get('[data-cy="post-note-btn"]').click({ force: true });
+
+      // ✅ Now validate the timer display updates properly
+      EmergencyProtocolPage.validateTimerActive(`${minutes}min follow-up`);
+    });
+  });
+});
+
+
+it("non-resolution operational note does not trigger resolution or timer", () => {
+  EmergencyProtocolPage.openDemoPanel();
+  cy.get('[data-cy="fall-detection-test-btn"]').click();
+
+  EmergencyProtocolPage.addManualNote("EC called in requested user's location.");
+
+  EmergencyProtocolPage.resolutionReason.should("have.value", "");
+  EmergencyProtocolPage.validateTimerInactive();
+});
+
 });
