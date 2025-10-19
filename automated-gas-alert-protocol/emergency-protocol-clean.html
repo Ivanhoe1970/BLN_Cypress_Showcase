@@ -4036,12 +4036,12 @@ window.cancelAllActiveTimers = cancelAllActiveTimers;
       if (action === "message-device") {
         const protocolName = protocolConfig?.name || "";
         
-        // Only apply gas-aware messaging for Gas Emergency protocols
-        if (protocolName.includes("Gas Emergency")) {
-          messageText = gasCurrentlyDangerous 
-            ? "Leave the area, understood?" 
-            : "Do you need help?";
-        }
+        // Apply gas-aware messaging for ANY gas alert
+      if (isGasAlert) {
+        messageText = gasCurrentlyDangerous 
+          ? "Leave the area, understood?" 
+          : "Do you need help?";
+      }
       }
 
       const stepNum = stepId.replace("step-", "");
@@ -4663,14 +4663,16 @@ function handleCallDeviceOutcome(
       function _gasStatus(id) {
         return (document.getElementById(id)?.textContent || "").toUpperCase();
       }
+
       function isGasCurrentlyNormalized() {
-        const dangerO2 = /ENRICHED|DEPLETED/.test(_gasStatus("o2-status"));
+        const dangerO2 = /ENRICHED|DEPLETED|ENRICHMENT|DEPLETION/.test(_gasStatus("o2-status"));
         const dangerOthers =
           /\bHIGH\b/.test(_gasStatus("h2s-status")) ||
           /\bHIGH\b/.test(_gasStatus("co-status")) ||
           /\bHIGH\b/.test(_gasStatus("lel-status"));
         return !(dangerO2 || dangerOthers);
       }
+
       function buildGasSnapshotWithTs() {
         try {
           let block =
