@@ -5656,7 +5656,8 @@ body += `\n\n${gasBlockWithTs}`;
 
             if (
               selectedOutcome === "no-answer" ||
-              selectedOutcome === "unable-to-call"
+              selectedOutcome === "unable-to-call" ||
+              selectedOutcome === "unable-to-call-disabled"
             ) {
               const nextSubStepId = `${mainStepId}-${subStepNum + 1}`;
               const nextSubStep = document.getElementById(nextSubStepId);

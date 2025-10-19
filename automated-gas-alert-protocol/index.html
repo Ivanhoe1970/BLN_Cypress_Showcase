@@ -1713,36 +1713,104 @@
       };
 
       // ── Centralized formatters ──────────────────────────────
-      const FORMATTERS = {
-        // Full timestamp [YYYY-MM-DD HH:mm:ss MDT]
-        timestampMST: (date) => {
-          return (
-            new Intl.DateTimeFormat("en-US", {
-              timeZone: TIMEZONES.MOUNTAIN,
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }).format(date) + " MDT"
-          );
-        },
+const FORMATTERS = {
+  // Full timestamp [YYYY-MM-DD HH:mm:ss MDT]
+  timestampMST: (date) => {
+    return (
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONES.MOUNTAIN,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date) + " MDT"
+    );
+  },
 
-        // Time only [HH:mm:ss MDT]
-        timeOnlyMST: (date) => {
-          return (
-            new Intl.DateTimeFormat("en-US", {
-              timeZone: TIMEZONES.MOUNTAIN,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }).format(date) + " MDT"
-          );
-        },
-      };
+  // Time only [HH:mm:ss MDT]
+  timeOnlyMST: (date) => {
+    return (
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: TIMEZONES.MOUNTAIN,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date) + " MDT"
+    );
+  },
+};
+
+//═══════════════════════════════════════════════════════════════
+// STANDARDIZED CALL-USER DROPDOWN OPTIONS
+//═══════════════════════════════════════════════════════════════
+
+/**
+ * Returns standardized call-user dropdown options
+ * Used for ALL call-user actions across all protocols
+ * 
+ * IMPORTANT: Single source of truth - do NOT create protocol-specific variations
+ * 
+ * @param {string} userName - User's name for personalization
+ * @returns {string} HTML option elements
+ */
+ function getCallUserDropdownOptions(userName) {
+  const name = userName || "user";
+  
+  return `<option value="">Select outcome</option>
+<option value="confirmed-ok">Spoke with ${name}, confirmed they are okay</option>
+<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+<option value="user-callback">User called in. Confirmed they are okay</option>
+<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>
+<option value="no-answer-voicemail">No answer. Left voicemail</option>
+<option value="no-answer-already-left">No answer. Voicemail had already been left</option>
+<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>
+<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>
+<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>
+<option value="no-phone-number">Unable to call, user has no phone number assigned</option>
+<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>
+<option value="unable-to-connect">Unable to connect</option>`;
+}
+
+/**
+ * Returns standardized call-device dropdown options
+ * Used for ALL call-device actions across all protocols
+ * 
+ * @param {string} userName - User's name for personalization
+ * @returns {string} HTML option elements
+ */
+function getCallDeviceDropdownOptions(userName) {
+  const name = userName || "user";
+  
+  return `<option value="">Select outcome</option>
+<option value="confirmed-ok">Spoke with ${name}. Confirmed they are okay. Resolving alert.</option>
+<option value="user-callback">User called in. Confirmed they are okay</option>
+<option value="no-answer">No answer.</option>
+<option value="unable-to-call">Unable to call, device offline.</option>
+<option value="unable-to-call-disabled">Unable to call, option unavailable/disabled</option>`;
+}
+
+/**
+ * Returns standardized emergency contact dropdown options
+ * Used for ALL call-emergency-contacts actions across all protocols
+ * 
+ * @returns {string} HTML option elements
+ */
+function getEmergencyContactDropdownOptions() {
+  return `<option value="">Select outcome</option>
+<option value="confirmed-ok">Confirmed user is okay</option>
+<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>
+<option value="user-callback">User called in. Confirmed they are okay</option>
+<option value="ec-callback-30min-outbound">EC will check on user and call back within 30 minutes</option>
+<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>
+<option value="no-answer-voicemail">No answer, left voicemail</option>
+<option value="no-answer-unable">No answer, unable to leave voicemail</option>
+<option value="wrong-number">Wrong number</option>
+<option value="unable-to-connect">Unable to connect</option>`;
+}
 
       // ═══════════════════════════════════════════════════════════════════════════════
       // PRE-ALERT DETECTION SYSTEM
@@ -4107,6 +4175,8 @@ function handleCallDeviceOutcome(
     noteText = `Called device. No answer`;
   } else if (selectedValue === "unable-to-call") {
     noteText = `Unable to call, device offline`;
+  } else if (selectedValue === "unable-to-call-disabled") {
+    noteText = `Unable to call, option unavailable/disabled`;
   }
 
   return { noteText, shouldScrollToResolution };
@@ -7101,100 +7171,91 @@ function addAlertSequenceLogs(userConfig) {
     }
 
     // Handle Emergency Contacts
-    if (step.action === "call-emergency-contacts") {
-      const userKey = currentAlert.user;
-      const emergencyContacts = AlertDataManager.usersData[userKey]
-        ? AlertDataManager.usersData[userKey].emergencyContacts
-        : [];
+if (step.action === "call-emergency-contacts") {
+  const userKey = currentAlert.user;
+  const emergencyContacts = AlertDataManager.usersData[userKey]
+    ? AlertDataManager.usersData[userKey].emergencyContacts
+    : [];
 
-      // Add individual EC sections as sub-steps
-      emergencyContacts.forEach(function (contact, index) {
-        const contactStepId = step.id + "-" + (index + 1);
+  // Add individual EC sections as sub-steps
+  emergencyContacts.forEach(function (contact, index) {
+    const contactStepId = step.id + "-" + (index + 1);
 
-        protocolHTML +=
-          '<div class="sub-step" id="' +
-          contactStepId +
-          '" data-cy="' +
-          contactStepId +
-          '">' +
-          '<div class="step-header">' +
-          '<h5 class="step-title" data-cy="' +
-          contactStepId +
-          '-title">📞 Call ' +
-          contact.name +
-          " at " +
-          contact.phone +
-          "</h5>" +
-          '<span class="status-badge" id="' +
-          contactStepId +
-          '-status" data-cy="' +
-          contactStepId +
-          '-status">Pending</span>' +
-          "</div>" +
-          '<div class="contact-info" data-cy="' +
-          contactStepId +
-          '-contact-info">' +
-          "<strong>👤 " +
-          contact.name +
-          "</strong> 📞 " +
-          contact.phone +
-          " 🏷️ " +
-          contact.role +
-          "</div>" +
-          '<button class="btn btn-primary" data-cy="' +
-          contactStepId +
-          '-button" onclick="startStep(\'' +
-          contactStepId +
-          "')\" disabled>" +
-          "📞 Call Emergency Contact" +
-          "</button>" +
-          '<div class="step-outcome" id="' +
-          contactStepId +
-          '-outcome" data-cy="' +
-          contactStepId +
-          '-outcome" style="display: none; margin-top: 15px;">' +
-          '<select id="' +
-          contactStepId +
-          '-select" data-cy="' +
-          contactStepId +
-          '-select" onchange="autoPopulateNote(\'' +
-          contactStepId +
-          '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-          '<option value="">Select outcome</option>' +
-          '<option value="confirmed-ok">Confirmed user is okay</option>' +
-          '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-          '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-          '<option value="ec-callback-30min-outbound">EC will check on user and call back within 30 minutes</option>' +
-          '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
-          '<option value="no-answer-voicemail">No answer, left voicemail</option>' +
-          '<option value="no-answer-unable">No answer, unable to leave voicemail</option>' +
-          '<option value="wrong-number">Wrong number</option>' +
-          '<option value="unable-to-connect">Unable to connect</option>' +
-          "</select>" +
-          '<textarea id="' +
-          contactStepId +
-          '-note" data-cy="' +
-          contactStepId +
-          '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
-          contactStepId +
-          "')\"></textarea>" +
-          '<button class="btn btn-secondary" data-cy="' +
-          contactStepId +
-          '-post-btn" onclick="postNote(\'' +
-          contactStepId +
-          '\')" style="margin-top: 8px;" disabled id="' +
-          contactStepId +
-          '-post-btn">✅ Post Note</button>' +
-          "</div>" +
-          "</div>";
-      });
+    protocolHTML +=
+      '<div class="sub-step" id="' +
+      contactStepId +
+      '" data-cy="' +
+      contactStepId +
+      '">' +
+      '<div class="step-header">' +
+      '<h5 class="step-title" data-cy="' +
+      contactStepId +
+      '-title">📞 Call ' +
+      contact.name +
+      " at " +
+      contact.phone +
+      "</h5>" +
+      '<span class="status-badge" id="' +
+      contactStepId +
+      '-status" data-cy="' +
+      contactStepId +
+      '-status">Pending</span>' +
+      "</div>" +
+      '<div class="contact-info" data-cy="' +
+      contactStepId +
+      '-contact-info">' +
+      "<strong>👤 " +
+      contact.name +
+      "</strong> 📞 " +
+      contact.phone +
+      " 🏷️ " +
+      contact.role +
+      "</div>" +
+      '<button class="btn btn-primary" data-cy="' +
+      contactStepId +
+      '-button" onclick="startStep(\'' +
+      contactStepId +
+      "')\" disabled>" +
+      "📞 Call Emergency Contact" +
+      "</button>" +
+      '<div class="step-outcome" id="' +
+      contactStepId +
+      '-outcome" data-cy="' +
+      contactStepId +
+      '-outcome" style="display: none; margin-top: 15px;">' +
+      '<select id="' +
+      contactStepId +
+      '-select" data-cy="' +
+      contactStepId +
+      '-select" onchange="autoPopulateNote(\'' +
+      contactStepId +
+      '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+      getEmergencyContactDropdownOptions() +
+      "</select>" +
+      '<textarea id="' +
+      contactStepId +
+      '-note" data-cy="' +
+      contactStepId +
+      '-note" placeholder="Document the result..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; box-sizing: border-box;" oninput="validatePostButton(\'' +
+      contactStepId +
+      "')\"></textarea>" +
+      '<button class="btn btn-secondary" data-cy="' +
+      contactStepId +
+      '-post-btn" onclick="postNote(\'' +
+      contactStepId +
+      '\')" style="margin-top: 8px;" disabled id="' +
+      contactStepId +
+      '-post-btn">✅ Post Note</button>' +
+      "</div>" +
+      "</div>";
+  });
 
-      protocolHTML +=
-        '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;" data-cy="' +
-        step.id +
-        '-instruction">' +
-        "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
-        "</div>";
+  protocolHTML +=
+    '<div style="margin: 15px 0; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; font-size: 0.9em; color: #1565c0; font-weight: 500;" data-cy="' +
+    step.id +
+    '-instruction">' +
+    "📍 If valid location not available, repeat STEPS 1, 2, 3 & 4 until someone is reached." +
+    "</div>";
 
       // Close main step div
       protocolHTML += "</div>";
@@ -7243,41 +7304,29 @@ function addAlertSequenceLogs(userConfig) {
           '-outcome" style="display: none; margin-top: 15px;">';
 
         // Add appropriate dropdown based on sub-step action
-        if (subStep.action === "call-device") {
-          protocolHTML +=
-            '<select id="' +
-            subStepId +
-            '-select" data-cy="' +
-            subStepId +
-            '-select" onchange="autoPopulateFromDropdown(\'' +
-            subStepId +
-            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-            '<option value="">Select outcome</option>' +
-            '<option value="confirmed-ok">Spoke with ' +
-            userConfig.name +
-            ". Confirmed they are okay. Resolving alert.</option>" +
-            '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-            '<option value="no-answer">No answer.</option>' +
-            '<option value="unable-to-call">Unable to call, device offline.</option>' +
-            "</select>";
-        } else if (subStep.action === "call-user") {
-          protocolHTML +=
-            '<select id="' +
-            subStepId +
-            '-select" data-cy="' +
-            subStepId +
-            '-select" onchange="autoPopulateFromDropdown(\'' +
-            subStepId +
-            '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-            '<option value="">Select outcome</option>' +
-            '<option value="confirmed-ok">Spoke with ' +
-            userConfig.name +
-            ", confirmed they are okay</option>" +
-            '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-            '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-            '<option value="unable-to-connect">Unable to connect</option>' +
-            "</select>";
-        }
+if (subStep.action === "call-device") {
+  protocolHTML +=
+    '<select id="' +
+    subStepId +
+    '-select" data-cy="' +
+    subStepId +
+    '-select" onchange="autoPopulateFromDropdown(\'' +
+    subStepId +
+    '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+    getCallDeviceDropdownOptions(userConfig.name) +
+    "</select>";
+} else if (subStep.action === "call-user") {
+  protocolHTML +=
+    '<select id="' +
+    subStepId +
+    '-select" data-cy="' +
+    subStepId +
+    '-select" onchange="autoPopulateFromDropdown(\'' +
+    subStepId +
+    '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+    getCallUserDropdownOptions(userConfig.name) +
+    "</select>";
+}
 
         protocolHTML +=
           '<textarea id="' +
@@ -7405,60 +7454,40 @@ function addAlertSequenceLogs(userConfig) {
     }
 
     // Outcome dropdown
-    protocolHTML +=
-      '<select id="' +
-      step.id +
-      '-select" data-cy="' +
-      step.id +
-      '-select" onchange="autoPopulateFromDropdown(\'' +
-      step.id +
-      "'); validatePostButton('" +
-      step.id +
-      '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
-      '<option value="">Select outcome</option>';
+protocolHTML +=
+  '<select id="' +
+  step.id +
+  '-select" data-cy="' +
+  step.id +
+  '-select" onchange="autoPopulateFromDropdown(\'' +
+  step.id +
+  "'); validatePostButton('" +
+  step.id +
+  '\')" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">' +
+  '<option value="">Select outcome</option>';
 
-    // Action-based dropdown options
-    if (step.action === "call-device") {
-      protocolHTML +=
-        '<option value="confirmed-ok">Spoke with ' +
-        userConfig.name +
-        ". Confirmed they are okay. Resolving alert.</option>" +
-        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-        '<option value="no-answer">No answer.</option>' +
-        '<option value="unable-to-call">Unable to call, device offline.</option>';
-    } else if (step.action === "message-device") {
-      protocolHTML +=
-        '<option value="no-response">No response</option>' +
-        '<option value="unable-to-send">Unable to send text message, device offline</option>' +
-        '<option value="device-no">Received "No" - User confirmed okay</option>' +
-        '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
-        '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
-        '<option value="understood">Received "Understood" - User confirmed okay</option>' +
-        '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
-        '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
-    } else if (step.action === "call-user") {
-      protocolHTML +=
-        '<option value="confirmed-ok">Spoke with ' +
-        userConfig.name +
-        ", confirmed they are okay</option>" +
-        '<option value="ec-callback">Emergency contact called in and confirmed user is okay</option>' +
-        '<option value="user-callback">User called in. Confirmed they are okay</option>' +
-        '<option value="ec-callback-30min">EC called in, will check on user and call back within 30 minutes</option>' +
-        '<option value="no-answer-voicemail">No answer. Left voicemail</option>' +
-        '<option value="no-answer-already-left">No answer. Voicemail had already been left</option>' +
-        '<option value="no-answer-mailbox-full">No answer. Unable to leave voicemail, mailbox full</option>' +
-        '<option value="no-answer-unable-voicemail">No answer. Unable to leave voicemail</option>' +
-        '<option value="no-answer-mailbox-not-setup">No answer. Unable to leave voicemail, mailbox not set up yet</option>' +
-        '<option value="no-phone-number">Unable to call, user has no phone number assigned</option>' +
-        '<option value="number-disconnected">Number has been changed, disconnected or no longer in service</option>' +
-        '<option value="unable-to-connect">Unable to connect</option>';
-    } else {
-      protocolHTML +=
-        '<option value="completed">Action completed</option>' +
-        '<option value="no-answer">No answer</option>';
-    }
+// Action-based dropdown options
+if (step.action === "call-device") {
+  protocolHTML += getCallDeviceDropdownOptions(userConfig.name);
+} else if (step.action === "message-device") {
+  protocolHTML +=
+    '<option value="no-response">No response</option>' +
+    '<option value="unable-to-send">Unable to send text message, device offline</option>' +
+    '<option value="device-no">Received "No" - User confirmed okay</option>' +
+    '<option value="issue-resolved">Received "Issue resolved" - User confirmed okay</option>' +
+    '<option value="false-alarm">Received "False alarm" - User confirmed okay</option>' +
+    '<option value="understood">Received "Understood" - User confirmed okay</option>' +
+    '<option value="device-yes">Received "Yes" - User confirmed okay</option>' +
+    '<option value="send-help">Received "Send help" - Immediate assistance requested</option>';
+} else if (step.action === "call-user") {
+  protocolHTML += getCallUserDropdownOptions(userConfig.name);
+} else {
+  protocolHTML +=
+    '<option value="completed">Action completed</option>' +
+    '<option value="no-answer">No answer</option>';
+}
 
-    protocolHTML += "</select>";
+protocolHTML += "</select>";
 
     // Note textarea
     protocolHTML +=
@@ -8375,28 +8404,38 @@ function handleIntelligentActions(analysis, noteText) {
         );
       }
 
-      // Handle callback timer notes
-function handleCallbackNote(noteText, timeframeMinutes) {
-  // Extract contact name from note
+      // Handle callback timer notes (dynamic detection)
+function handleCallbackNote(noteText, timeframeMinutes = 30) {
   const contactName = extractContactName(noteText);
-  const timeframeSeconds = timeframeMinutes * 60;
-  
-  // Start callback timer
+
+  // --- Dynamic detection of callback time ---
+  const timeMatch = noteText.match(/(\d+)\s*(?:min|minute|minutes)\b/i);
+  let minutes = timeframeMinutes; // default fallback (usually 30)
+
+  if (timeMatch) {
+    const value = parseInt(timeMatch[1], 10);
+    if (value >= 1 && value <= 60) minutes = value; // sane bounds
+  }
+
+  const seconds = minutes * 60;
+  const label = `${minutes}min follow-up`;
+
+  // --- Start callback timer ---
   if (typeof startGlobalTimer === "function") {
     startGlobalTimer(
       "ec-callback",
-      "EC Callback Timer",
+      label,
       contactName || "Emergency Contact",
-      timeframeSeconds,
+      seconds,
       "callback"
     );
   }
-  
-  // Add timer confirmation to log
-  const logMessage = contactName 
-    ? `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started (${contactName})`
-    : `AUTO-TIMER: ${timeframeMinutes} minute EC callback timer started`;
-    
+
+  // --- Log confirmation ---
+  const logMessage = contactName
+    ? `AUTO-TIMER: ${minutes} minute EC callback timer started (${contactName})`
+    : `AUTO-TIMER: ${minutes} minute EC callback timer started`;
+
   addLogEntry(logMessage, "system");
 }
 

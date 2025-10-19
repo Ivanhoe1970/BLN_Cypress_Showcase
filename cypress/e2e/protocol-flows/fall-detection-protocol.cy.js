@@ -60,4 +60,31 @@ describe("Non-gas protocol — Message Test", () => {
 
     Page.validateLogEntry("Resolving alert");
   });
+
+  it("should continue to step 1-2 when unable to call device (option disabled)", () => {
+    Page.loadAlertById("fall-detection");
+    Page.employeeName.should("contain.text", "Marcus");
+  
+    // Start Step 1-1: Call device sub-step
+    cy.get('[data-cy="step-1-1-button"]').click();
+    cy.get('[data-cy="step-1-1-select"]').select('unable-to-call-disabled');
+    cy.get('[data-cy="step-1-1-post-btn"]').click();
+  
+    // Verify correct behavior:
+    // 1. Step 1-1 should be completed
+    cy.get('[data-cy="step-1-1-status"]').should('contain.text', 'Completed');
+    
+    // 2. Step 1-2 button should be enabled (not "active" class, but clickable)
+    cy.get('[data-cy="step-1-2-button"]').should('not.be.disabled');
+    cy.get('[data-cy="step-1-2-button"]').should('be.visible');
+    
+    // 3. Main step should still be active
+    cy.get('[data-cy="step-1-status"]').should('contain.text', 'Active');
+    
+    // 4. Log should show the action
+    Page.validateLogEntry('Unable to call, option unavailable/disabled');
+    
+    // 5. Step 1-2 should be ready for interaction
+    cy.get('[data-cy="step-1-2"]').should('be.visible');
+  });
 });
