@@ -3,7 +3,7 @@ import EmergencyProtocolPage from '../../pages/EmergencyProtocolPage.js';
 import { mock } from '../../support/apiMocks.js';
 import { TIMEOUTS, LOG_PATTERNS } from '../../support/constants.js';
 
-describe('API — Request Formation (Foundation)', () => {
+describe('API Integration — Frontend to Backend', () => {
   beforeEach(() => {
     // Control time for consistent testing
     cy.clock(Date.now(), ['Date', 'setTimeout', 'clearTimeout']);
