@@ -1,77 +1,58 @@
-🏗️ SYSTEM ARCHITECTURE
-Emergency Response Automation Suite – Technical Design Documentation
+# 🏗️ System Architecture
 
-This document provides a complete technical overview of the Emergency Response Automation Suite, including the architecture, core subsystems, safety logic, and rationale behind the 21 critical functions that power protocol execution, gas safety, timers, device communication, and resolution workflows.
+**Emergency Response Automation Suite – Technical Design Documentation**
 
-Table of Contents
+This document provides a complete technical overview of the Emergency Response Automation Suite, including the architecture, core subsystems, safety logic, and the 21 critical functions that power protocol execution, gas safety, timers, device communication, and resolution workflows.
 
-System Overview
+---
 
-Architecture Diagram
+## Table of Contents
 
-Core Architecture Components
+- [System Overview](#system-overview)
+- [Architecture Diagram](#architecture-diagram)
+- [Core Architecture Components](#core-architecture-components)
+- [Protocol Factory](#protocol-factory)
+- [Timer Management System](#timer-management-system)
+- [Gas Safety Subsystem](#gas-safety-subsystem)
+- [Message Classification Engine](#message-classification-engine)
+- [Resolution Engine](#resolution-engine)
+- [Error Handling Architecture](#error-handling-architecture)
+- [Security Considerations](#security-considerations)
+- [Client–Server Boundaries](#clientserver-boundaries)
+- [Integration Points](#integration-points)
+- [The 21 Critical Functions](#the-21-critical-functions)
+- [Design Principles](#design-principles)
+- [Performance Characteristics](#performance-characteristics)
+- [Future Enhancements](#future-enhancements)
 
-Protocol Factory
+---
 
-Timer Management System
+## System Overview
 
-Gas Safety Subsystem
+The Emergency Response Automation Suite uses a **modular, configuration-driven architecture** designed to:
 
-Message Classification Engine
+- Decouple protocol definition from execution  
+- Eliminate repetitive manual tasks in Blackline Live workflows  
+- Preserve specialist control for all safety-critical decisions  
+- Fail safely under uncertainty  
+- Scale horizontally using configuration-only protocols  
+- Improve auditability through deterministic logs and timestamps  
 
-Resolution Engine
+The system simulates the full Blackline Live alert lifecycle, including:
 
-Error Handling Architecture
+- Protocol step sequencing  
+- Timer-driven escalation  
+- Gas monitoring and normalization detection  
+- Device messaging and response classification  
+- Dispatch decision validation  
+- Safety-gated resolution logic  
+- Full protocol restart cycles  
 
-Security Considerations
+---
 
-Client–Server Boundaries
+## Architecture Diagram
 
-Integration Points
-
-The 21 Critical Functions
-
-Design Principles
-
-Performance Characteristics
-
-Future Enhancements
-
-1. System Overview
-
-The Emergency Response Automation Suite follows a modular, configuration-driven architecture designed to:
-
-Decouple protocol definition from logic
-
-Eliminate repetitive manual steps in Blackline Live workflows
-
-Preserve specialist control for all safety-critical decisions
-
-Fail safely under every uncertainty
-
-Scale horizontally by loading new protocols via configuration
-
-Improve auditability with deterministic logging
-
-The system accurately simulates Blackline Live alert handling, including:
-
-Protocol step sequencing
-
-Timer-driven escalation
-
-Gas monitoring & normalization detection
-
-Device messaging & response classification
-
-Dispatch decision validation
-
-Safety-gated resolution logic
-
-Full protocol restart cycles
-
-2. Architecture Diagram
-
-The following simplified diagram is the official architecture representation.
+Below is the simplified GitHub-compatible Mermaid architecture diagram:
 
 ```mermaid
 flowchart TD
@@ -85,17 +66,15 @@ flowchart TD
     H[GitHub Actions CI/CD<br>Deploy + Test Pipeline] --> G
 
     A --> I[Protocol UI<br>Dynamic Step Workflows]
-```
+Core Architecture Components
 
-3. Core Architecture Components
+The system consists of three major layers, each with clear responsibilities.
 
-The architecture consists of three major layers.
+UI Layer
 
-3.1 UI Layer
+Handles all direct user interaction:
 
-Responsible for all visible user interaction:
-
-Protocol step UI (dynamic 5-step flows)
+Dynamic 5-step protocol workflows
 
 Gas telemetry panel
 
@@ -105,53 +84,57 @@ Device messaging interface
 
 Timer display
 
-Resolution controls & override workflow
+Resolution controls and override workflow
 
-3.2 Automation Engine
+Automation Engine
 
-Contains the 21 critical functions, grouped into:
+Implements the 21 critical functions:
 
-Protocol loading & step execution
+Protocol loading and execution
 
-Timer management
+Timer management and expiration routing
 
-Gas safety & normalization
+Gas safety validation and normalization detection
 
-Message classification
+Context-aware message classification
 
 Dispatch evaluation
 
 Resolution enforcement
 
-Audit log generation
+Deterministic audit log generation
 
-3.3 Data & Integration Layer
+Data & Integration Layer
 
 Maintains:
 
-Current alert data
+Current alert metadata
 
 Protocol configuration objects
 
 User configuration
 
-Full audit log
+Audit log entries
 
-Future integration points for the BLN Live API
+Provides future integration with:
 
-4. Protocol Factory
+BLN Live API
 
-The Protocol Factory selects, loads, and constructs the full protocol flow.
+WebSocket telemetry streams
+
+Protocol Factory
+
+The Protocol Factory dynamically loads and constructs protocol flows based on alert type.
 
 Purpose
 
-Provide a data-driven definition of workflows
+Provide a configuration-driven definition of workflows
 
-Remove all hardcoded logic
+Remove all hardcoded step sequences
 
 Enable customer-specific variations
 
-Permit new protocols without code deployment
+Allow new protocols without touching engine code
 
 Example Protocol Object
 {
@@ -169,27 +152,25 @@ Benefits
 
 Full configurability
 
-Instant support for new alert types
+Immediate support for new alert types
 
-Powers the future Protocol Configuration Manager (PCM)
+Enables advanced configuration tooling (PCM)
 
-5. Timer Management System
+Timer Management System
 
-A single global timer ensures predictable behavior and prevents confusion or overlap.
+A single global timer ensures predictable, safe, and conflict-free time-driven behavior.
 
 Core Features
 
-Centralized global state
+Centralized timer state
 
-Accurate 1-second countdown
+1-second countdown updates
 
-Audio + visual alerts
+Visual + audio expiration alerts
 
-Expiration-triggered step routing
+Clean cancellation logic
 
-Clean cancellation behavior
-
-Prevention of overlapping or “ghost timers”
+Prevention of overlapping timers
 
 Timer Metadata Example
 {
@@ -201,173 +182,178 @@ Timer Metadata Example
   "isRunning": true
 }
 
-6. Gas Safety Subsystem
+Gas Safety Subsystem
 
-Gas safety is a safety-critical subsystem enforcing:
+The gas engine enforces all safety-critical constraints before allowing workflow progression.
 
-Real-time H₂S, CO, LEL, O₂ rendering
+Responsibilities
+
+Real-time rendering of H₂S, CO, LEL, O₂
 
 HIGH vs NORMAL classification
 
-O₂ depletion & enrichment detection
+O₂ depletion/enrichment detection
 
-2-minute automatic monitoring windows
+Automatic 2-minute monitoring windows
 
 Normalization detection
 
 Resolution blocking while gas HIGH
 
-Override workflow requiring explicit reasoning
+Override workflow requiring explicit justification
 
 Gas Classification Rules
-If O₂ < 19.5% or > 23.5% → DANGEROUS  
-If H₂S > 10ppm or CO > 35ppm or LEL > 10% → HIGH  
-Else → NORMAL  
 
+If O₂ < 19.5% or > 23.5% → DANGEROUS
 
-Fail-safe default:
-Missing or invalid gas data → HIGH
+If H₂S > 10 ppm, CO > 35 ppm, or LEL > 10% → HIGH
 
-7. Message Classification Engine
+Otherwise → NORMAL
 
-A context-aware engine interpreting incoming device messages.
+Fail-safe default: Missing gas data → HIGH.
 
+Message Classification Engine
+
+The message classifier interprets device replies based on prompt context, not keyword matching.
+
+Examples
 Prompt Sent	Reply	Meaning	Action
 Do you need help?	No	User is OK	Resolve
-Are you OK?	Yes	User is OK	Resolve
+Are you OK?	Yes	User OK	Resolve
 Any	Send help	Emergency	Dispatch
-Any	Unknown	Ambiguous	Manual review
+Any	Unknown	Ambiguous	Manual
 
-The engine uses stateful context, not simple keyword matching.
+The classification engine is stateful, tracking the last prompt sent.
 
-8. Resolution Engine
+Resolution Engine
 
-Uses deterministic logic:
+A deterministic algorithm governs all resolution outcomes.
 
-If gas HIGH → block resolution  
-If dispatch occurred → incident-with-dispatch  
-Else → incident-without-dispatch  
+Logic
 
+If gas HIGH → block resolution
 
-Additional rules:
+If dispatch occurred → incident-with-dispatch
 
-Pre-alert detection (≥24 hours old)
+Else → incident-without-dispatch
+
+Additional Rules
+
+Pre-alert detection (≥ 24 hours)
 
 Override required for HIGH gas
 
-Automatic log entries with MST timestamps
+Full MST timestamped audit logging
 
-Full audit chain preserved
+No ambiguous resolution states
 
-9. Error Handling Architecture
+Error Handling Architecture
 
-A multi-layer safety strategy:
+A multi-layer safety architecture ensures every workflow transition is valid.
 
-9.1 UI Layer Errors
+UI Layer Errors
 
-Disabled buttons prevent unsafe interactions
+Disabled buttons prevent unsafe actions
 
-Warning states for missing data
+Inline warnings for missing or invalid data
 
-Clear visual states
+Clear visual error indicators
 
-9.2 State Machine Guards
+State Machine Guards
 
 Steps cannot run out of order
 
-Steps cannot double-execute
+Steps cannot run twice
 
-Illegal transitions blocked
+Illegal transitions are blocked
 
-9.3 Timer Safety
+Timer Safety
 
-Only one timer can run
+Only one timer active at any time
 
-Expiration and cancellation behavior standardized
+Clean cancellation
 
-Automatic cleanup
+Controlled expiration routing
 
-9.4 Gas Safety Defaults
+Gas Safety Defaults
 
-Missing gas data = HIGH
+Missing data = HIGH
 
 Normalization requires all gases NORMAL
 
-9.5 Message Classification Errors
+Message Classification Errors
 
-Unknown messages → no automation
+Unknown, garbled, or ambiguous messages → manual handling only
 
-9.6 Resolution Errors
+Resolution Errors
 
-Blocking premature resolution
+Resolution blocked during HIGH gas
 
-Blocking invalid workflow states
+Invalid workflow states prevented
 
-Requiring override reasons
+Override reasoning enforced
 
-10. Security Considerations
-Prototype Security
+Security Considerations
+Current (Prototype)
 
-The current implementation is fully client-side:
+Fully client-side
 
 No external API calls
 
-No stored credentials
-
-No backend dependencies
+No credential storage
 
 Sanitized input handling
 
-Clear separation of UI & logic
+UI logic separation
 
-CSP-friendly structure
+CSP-friendly
 
-Production Security Requirements
+Future (Production)
 
-Future API integration must support:
+Requires:
 
 OAuth2 / JWT authentication
 
-Signed & encrypted resolution logs
+Signed/secure resolution logs
 
-Secure message dispatch
+Encrypted device messaging
 
-WebSocket/SSE for gas telemetry
+WebSocket/SSE gas telemetry
 
-Strict server-side validation
+Server-side validation
 
-Rate limiting & schema validation
+Rate limiting
 
-11. Client–Server Boundaries
+Client–Server Boundaries
 Current Architecture
 
 100% client-side
 
-All data from static fixtures
+All alert data from static fixtures
 
-No network dependencies
+No network or backend dependencies
 
 Future Architecture
 
-Alerts loaded via API
+Alert retrieval via API
 
-Gas telemetry from WebSockets
+Live gas data streamed via WebSocket
 
 Resolution + dispatch logs POSTed to backend
 
-CI/CD deployment untouched
+CI/CD pipeline unchanged
 
-12. Integration Points
+Integration Points
 
-Modeled for future use (fixtures mirror these):
+Fixtures mirror these future endpoints:
 
-GET /api/alerts/{id}  
-POST /api/alerts/{id}/resolve  
-POST /api/alerts/{id}/logs  
-POST /api/devices/{id}/message  
+GET /api/alerts/{id}
+POST /api/alerts/{id}/resolve
+POST /api/alerts/{id}/logs
+POST /api/devices/{id}/message
 
-13. The 21 Critical Functions
-13.1 Core Protocol Functions
+The 21 Critical Functions
+Core Protocol Functions
 
 ProtocolFactory
 
@@ -379,7 +365,7 @@ startStep
 
 restartProtocolCycle
 
-13.2 Gas Safety Functions
+Gas Safety Functions
 
 startTwoMinuteMonitoring
 
@@ -389,7 +375,7 @@ triggerGasNormalization
 
 isGasCurrentlyNormalized
 
-13.3 Timer Functions
+Timer Functions
 
 startGlobalTimer
 
@@ -397,7 +383,7 @@ cancelGlobalTimer
 
 handleGlobalTimerCancellation
 
-13.4 Automation Functions
+Automation Functions
 
 postNote
 
@@ -405,7 +391,7 @@ autoPopulateFromDropdown
 
 addLogEntry
 
-13.5 Intelligence Functions
+Intelligence Functions
 
 classifyIncomingMessage
 
@@ -413,62 +399,62 @@ handleMessageClassification
 
 evaluateDispatchConditionsFromConnectivity
 
-13.6 Resolution Functions
+Resolution Functions
 
 resolveAlert
 
 determineResolutionType
 
-13.7 Pre-Alert Functions
+Pre-Alert Functions
 
 21a. isPreAlert
 21b. addPreAlertLogEntry
 21c. setupPreAlertResolution
 
-14. Design Principles
+Design Principles
 
-Configuration over Code
+Configuration over code
 
-Fail-Safe Defaults
+Fail-safe defaults
 
 Idempotency
 
-Single Source of Truth
+Single source of truth
 
-Progressive Disclosure
+Progressive UI disclosure
 
-Conservative Thresholds
+Conservative safety thresholds
 
-Full Auditability
+Full auditability
 
-15. Performance Characteristics
+Performance Characteristics
 
-Protocol load: <50ms
+Protocol loading: <50 ms
 
-Step execution: <10ms
+Step execution: <10 ms
 
-Gas rendering: <100ms
+Gas panel updates: <100 ms
 
-Timer interval: 1s
+Timer updates: 1 second
 
-Runtime memory: <1MB
+Runtime memory footprint: <1 MB
 
-Zero timer leaks with enforced cleanup
+Zero timer leaks (guaranteed cleanup)
 
-16. Future Enhancements
+Future Enhancements
 
 Protocol Configuration Manager (PCM)
 
-Enhanced Alerts Page with visual urgency
+Enhanced Alerts Page (urgency indicators, live gas)
 
 Intelligent Alert Assignment System
 
-API-integrated dispatch & resolution
+API-integrated dispatch and resolution
 
-WebSocket telemetry for real-time gas
+WebSocket real-time gas telemetry
 
-Persistent server-side audit logs
+Server-side persistent audit logging
 
-Document Version: 3.2
+Document Version: 3.3
 Last Updated: November 28, 2025
 Author: Ivan Ferrer (Op 417)
