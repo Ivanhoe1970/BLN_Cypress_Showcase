@@ -1,0 +1,393 @@
+═══════════════════════════════════════════════════════════════════
+ANNOTATION TEMPLATE FOR EMERGENCY RESPONSE AUTOMATION FUNCTIONS
+═══════════════════════════════════════════════════════════════════
+
+Use this template when annotating your 20 priority functions on Saturday.
+Each function should have a comprehensive JSDoc header following this structure.
+
+═══════════════════════════════════════════════════════════════════
+TEMPLATE STRUCTURE
+═══════════════════════════════════════════════════════════════════
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * [FUNCTION NAME IN CAPS] - [ONE-LINE PURPOSE]
+ * ════════════════════════════════════════════════════════════════════
+ * 
+ * PROBLEM SOLVED:
+ * [Describe the manual process this automates. Be SPECIFIC about:
+ * - How many seconds/minutes specialists spent doing this manually
+ * - How many context switches required (e.g., "4 switches to Clock app")
+ * - What errors occurred (e.g., "specialists forgot to set timer 15% of time")
+ * - Pain points and frustration (e.g., "frantic checking during 2-min window")]
+ * 
+ * SOLUTION:
+ * [Explain what this function does, how it works, key logic flow.
+ * Keep it concise but complete. Focus on WHAT and WHY, not just HOW.]
+ * 
+ * BUSINESS IMPACT:
+ * - Time savings: [X seconds → Y seconds] ([Z%] reduction)
+ * - Error reduction: [manual approach] → [automated approach]
+ * - Capacity freed: [equivalent to X specialist hours/day]
+ * - Safety improvement: [specific benefit if applicable]
+ * 
+ * TECHNICAL DESIGN:
+ * [Architecture decisions, patterns used, why this approach vs alternatives.
+ * What makes this solution robust and reliable?]
+ * 
+ * SAFETY CONSIDERATIONS: (if applicable for safety-critical functions)
+ * [Why this design is safe, fail-safes built in, validation logic.
+ * How does this prevent errors or dangerous situations?]
+ * 
+ * @param {type} paramName - Description of parameter
+ * @param {type} paramName2 - Description of second parameter
+ * @returns {type} Description of return value
+ * 
+ * TESTING:
+ * Covered by: cypress/e2e/[test-file-name].cy.js
+ * Test scenarios:
+ * - [List key test scenarios that validate this function]
+ * - [Include both happy path and edge cases]
+ * - [Mention any safety-critical test coverage]
+ * 
+ * DEPENDENCIES:
+ * - [List key functions this depends on]
+ * - [List global variables used]
+ * 
+ * CALLED BY:
+ * - [List functions that call this one]
+ * - [Helps understand integration points]
+ */
+function exampleFunction(param1, param2) {
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 1: [WHAT THIS SECTION DOES]
+  // Critical for: [Why this matters]
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Inline comment explaining this specific line or block
+  // Rationale: [Why this approach was chosen]
+  const example = "code here";
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 2: [NEXT SECTION PURPOSE]
+  // Critical for: [Why this matters]
+  // ──────────────────────────────────────────────────────────────────
+  
+  // More code with inline comments explaining the "why" not just "what"
+  return result;
+}
+
+
+═══════════════════════════════════════════════════════════════════
+EXAMPLE 1: TIMER FUNCTION (COMPLETE ANNOTATION)
+═══════════════════════════════════════════════════════════════════
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * STARTGLOBALTIMER - CENTRALIZED TIMER MANAGEMENT SYSTEM
+ * ════════════════════════════════════════════════════════════════════
+ * 
+ * PROBLEM SOLVED:
+ * Specialists manually set timers using Clock app, requiring 4 context switches
+ * (portal→Clock→set timer→portal), consuming 30-45 seconds per setup. During
+ * high-stress gas alerts, specialists forgot to check timer expiration 15% of
+ * time, risking safety protocol violations. Manual tracking required checking
+ * Clock app every 30-60 seconds during 2-minute monitoring windows.
+ * 
+ * SOLUTION:
+ * Automatically starts countdown timer when protocol step requires waiting
+ * (2-min gas monitoring, 30-min EC callback, 30-min dispatch follow-up).
+ * Displays visual countdown in dedicated timer panel. Triggers audio alert
+ * on expiration. Logs all timer events to protocol log with timestamps.
+ * Prevents multiple simultaneous timers to avoid specialist confusion.
+ * 
+ * BUSINESS IMPACT:
+ * - Time savings: 45 seconds → 0 seconds (100% reduction - fully automated)
+ * - Error reduction: 15% missed checks → 0% (perfect reliability)
+ * - Capacity freed: 12.5 minutes/day per specialist (860 alerts × 45 sec ÷ 60)
+ * - Safety improvement: Zero timer expiration misses during 2-min safety window
+ * - Context switches eliminated: 13 switches per alert → 0 (Clock app eliminated)
+ * 
+ * TECHNICAL DESIGN:
+ * Uses single global timer (not multiple simultaneous) to prevent specialist
+ * confusion about which timer is active. Stores timer metadata in activeTimerData
+ * object for state management. Implements visual countdown + audio alert for
+ * reliability. Browser tab flashing added for cases where specialist switches
+ * applications during monitoring period. Timer persists across page navigation
+ * within same session.
+ * 
+ * SAFETY CONSIDERATIONS:
+ * For gas alerts, timer continues even if specialist navigates away or loses
+ * focus. Beeping notification (3 beeps) prevents missed expirations during
+ * multi-tasking. All timer events logged to audit trail for compliance.
+ * Manual override always available (specialist control preserved). Timer
+ * cancellation requires explicit action (no accidental cancellations).
+ * 
+ * @param {string} stepId - Step identifier (e.g., "step-2", "ec-callback")
+ * @param {string} label - Display label for timer (e.g., "Gas Monitoring")
+ * @param {string} description - Additional context (e.g., "Emergency Contact")
+ * @param {number} durationSeconds - Timer duration in seconds (e.g., 120 for 2 min)
+ * @param {string} timerType - Optional type: "monitoring", "callback", "dispatch"
+ * @returns {void} Updates global timer display, starts countdown
+ * 
+ * TESTING:
+ * Covered by: cypress/e2e/timer-management.cy.js
+ * Test scenarios:
+ * - Timer starts correctly with proper duration
+ * - Visual countdown updates every second
+ * - Audio alert triggers on expiration
+ * - Timer cancellation works properly
+ * - Multiple timer scenarios (gas monitoring, EC callback, dispatch)
+ * - Timer persists during page operations
+ * - Beeping stops when timer cancelled
+ * 
+ * DEPENDENCIES:
+ * - globalTimerInterval (global variable)
+ * - activeTimerData (global state object)
+ * - globalTimerEndTime (global timestamp)
+ * - addLogEntry() for audit trail
+ * - startTabFlashing() for visual alerts
+ * 
+ * CALLED BY:
+ * - startStep() when message-device action triggered
+ * - startTwoMinuteMonitoring() for gas alerts
+ * - handleGlobalTimerCancellation() for EC callback timers
+ * - Various protocol step handlers
+ */
+function startGlobalTimer(stepId, label, description, durationSeconds, timerType) {
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 1: TIMER VALIDATION & STATE CLEANUP
+  // Critical for: Preventing duplicate timers, ensuring clean state
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Cancel any existing timer before starting new one
+  // Rationale: Only one timer should be active to avoid specialist confusion
+  // about which countdown is relevant to current protocol step
+  if (globalTimerInterval) {
+    clearInterval(globalTimerInterval);
+    globalTimerInterval = null;
+  }
+  
+  // Store timer metadata for expiration handling
+  // Used by: handleTimerExpiry() to know which step triggered timer
+  // and what action to take when time expires
+  activeTimerData = {
+    stepId: stepId,
+    label: label,
+    description: description,
+    duration: durationSeconds,
+    startTime: Date.now(),
+    timerType: timerType || 'standard',
+    isRunning: true
+  };
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 2: VISUAL COUNTDOWN DISPLAY SETUP
+  // Critical for: Specialist awareness of time remaining
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Calculate end time for countdown calculation
+  // Using timestamp instead of duration counter prevents drift from
+  // setInterval timing inaccuracies over long durations
+  globalTimerEndTime = Date.now() + (durationSeconds * 1000);
+  
+  // Update display every second using setInterval
+  // Note: setInterval (not setTimeout) for continuous countdown display
+  // Timer function checks remaining time and updates MM:SS display
+  globalTimerInterval = setInterval(() => {
+    updateTimerDisplay();
+  }, 1000);
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 3: INITIAL DISPLAY UPDATE & LOGGING
+  // Critical for: Immediate visual feedback when timer starts
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Show timer panel with initial countdown value immediately
+  // Don't wait for first interval tick (would create 1-second delay)
+  updateTimerDisplay();
+  
+  // Log timer start to protocol log for audit trail
+  // Format: [HH:mm:ss MST] Timer started: [Label] ([duration] seconds)
+  const minutes = Math.floor(durationSeconds / 60);
+  addLogEntry(`⏱ Timer started: ${label} (${minutes} minutes)`, "timer");
+  
+  // Scroll timer into view so specialist sees it immediately
+  const timerElement = document.getElementById("globalTimer");
+  if (timerElement) {
+    timerElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+
+═══════════════════════════════════════════════════════════════════
+EXAMPLE 2: GAS SAFETY FUNCTION (COMPLETE ANNOTATION)
+═══════════════════════════════════════════════════════════════════
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ISGASCURRENTLYNORMALIZED - GAS SAFETY VALIDATION
+ * ════════════════════════════════════════════════════════════════════
+ * 
+ * PROBLEM SOLVED:
+ * Specialists manually check gas readings every 30-60 seconds during 2-minute
+ * monitoring window to determine if gas has normalized. This requires 4-6
+ * context switches to gas panel, reading values, comparing to thresholds,
+ * and remembering which gases are dangerous. Human error in threshold
+ * comparison could lead to incorrect resolution while gas still dangerous.
+ * 
+ * SOLUTION:
+ * Automatically evaluates all 4 gas types (H₂S, CO, LEL, O₂) against NORMAL
+ * thresholds. Returns single boolean: true if ALL gases safe, false if ANY
+ * gas dangerous. Used by multiple functions to make safety decisions
+ * (resolution blocking, auto-resolution, message classification).
+ * 
+ * BUSINESS IMPACT:
+ * - Time savings: 60-90 seconds of manual checking → 0 seconds (automated)
+ * - Error reduction: Eliminates threshold comparison errors (human vs automated)
+ * - Safety improvement: Prevents resolution while gas dangerous (zero false clears)
+ * - Capacity freed: ~30% of gas alert processing time eliminated
+ * 
+ * TECHNICAL DESIGN:
+ * Uses NORMAL threshold (not LOW) for conservative safety margin. Checks
+ * O₂ separately (depletion AND enrichment are dangerous). Uses DOM query
+ * to get current status from gas panel (single source of truth). Returns
+ * false if ANY gas dangerous (fail-safe design). Called frequently but
+ * lightweight (no heavy computation).
+ * 
+ * SAFETY CONSIDERATIONS:
+ * CRITICAL: Conservative thresholds ensure gas has fully normalized before
+ * allowing resolution. O₂ requires special handling (both too low AND too
+ * high are dangerous). False negative (says dangerous when actually safe)
+ * is acceptable - false positive (says safe when dangerous) would be critical
+ * failure. Status text comparison uses uppercase normalization to prevent
+ * case-sensitivity bugs.
+ * 
+ * @returns {boolean} true if all gases NORMAL, false if any gas dangerous
+ * 
+ * TESTING:
+ * Covered by: cypress/e2e/gas-normalization.cy.js
+ * Test scenarios:
+ * - Returns false when H₂S HIGH
+ * - Returns false when CO HIGH
+ * - Returns false when LEL HIGH
+ * - Returns false when O₂ DEPLETED
+ * - Returns false when O₂ ENRICHED
+ * - Returns true only when ALL gases NORMAL
+ * - Edge case: Mixed gas readings (some normal, some high)
+ * 
+ * DEPENDENCIES:
+ * - Gas panel DOM elements (#h2s-status, #co-status, #lel-status, #o2-status)
+ * - GAS_THRESHOLDS constant (defines NORMAL levels)
+ * 
+ * CALLED BY:
+ * - resolveAlert() - blocks resolution if gas dangerous
+ * - checkGasNormalization() - triggers auto-resolution when normalized
+ * - handleMessageClassification() - validates gas safe before resolution
+ * - autoPopulateFromDropdown() - determines message text based on gas state
+ */
+function isGasCurrentlyNormalized() {
+  // ──────────────────────────────────────────────────────────────────
+  // HELPER: GET GAS STATUS TEXT
+  // Critical for: Single source of truth for current gas levels
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Internal helper to extract status text from DOM element
+  // Rationale: Avoids repeating DOM query and uppercase normalization
+  // Returns: "NORMAL", "HIGH", "DEPLETED", "ENRICHED", or empty string
+  function _gasStatus(id) {
+    const element = document.getElementById(id);
+    return element ? (element.textContent || "").toUpperCase() : "";
+  }
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 1: OXYGEN DANGER DETECTION
+  // Critical for: O₂ requires special handling (both extremes dangerous)
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Check if O₂ is in dangerous range (depletion OR enrichment)
+  // Rationale: O₂ is unique - both too low (<19.5%) and too high (>23.5%)
+  // are dangerous. Other gases only have upper thresholds.
+  const o2Status = _gasStatus("o2-status");
+  const dangerO2 = /ENRICHED|ENRICHMENT|DEPLETED|DEPLETION/.test(o2Status);
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 2: OTHER GASES DANGER DETECTION
+  // Critical for: H₂S, CO, LEL only have upper thresholds
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Check if H₂S, CO, or LEL are HIGH (dangerous)
+  // Rationale: Uses regex word boundary \b to match exactly "HIGH" and
+  // not accidentally match "HIGHER" or "HIGH-NORMAL" if those existed
+  const h2sStatus = _gasStatus("h2s-status");
+  const coStatus = _gasStatus("co-status");
+  const lelStatus = _gasStatus("lel-status");
+  
+  const dangerOthers = 
+    /\bHIGH\b/.test(h2sStatus) ||
+    /\bHIGH\b/.test(coStatus) ||
+    /\bHIGH\b/.test(lelStatus);
+  
+  // ──────────────────────────────────────────────────────────────────
+  // SECTION 3: RETURN OVERALL SAFETY STATUS
+  // Critical for: Fail-safe logic - ANY danger = NOT normalized
+  // ──────────────────────────────────────────────────────────────────
+  
+  // Return true ONLY if BOTH O₂ is safe AND other gases are safe
+  // Rationale: Conservative approach - return false if ANY gas dangerous
+  // This prevents resolution when gas still poses risk
+  return !(dangerO2 || dangerOthers);
+}
+
+
+═══════════════════════════════════════════════════════════════════
+QUICK ANNOTATION CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+For each of your 20 functions on Saturday, ensure you have:
+
+□ Clear function purpose in header
+□ PROBLEM SOLVED section with specific metrics
+□ SOLUTION section explaining how it works
+□ BUSINESS IMPACT with quantified savings
+□ TECHNICAL DESIGN explaining why this approach
+□ SAFETY CONSIDERATIONS (if safety-critical)
+□ @param and @returns documentation
+□ TESTING section with test file reference
+□ DEPENDENCIES list
+□ CALLED BY list
+□ Section dividers for major code blocks
+□ Inline comments explaining "why" not just "what"
+
+═══════════════════════════════════════════════════════════════════
+ANNOTATION TIPS
+═══════════════════════════════════════════════════════════════════
+
+1. Focus on WHY, not just WHAT
+   - Bad:  "This function starts a timer"
+   - Good: "Eliminates 13 Clock app switches per alert by automating timer"
+
+2. Include specific metrics
+   - Bad:  "Saves time"
+   - Good: "Saves 45 seconds per alert (30-45 sec setup → 0 sec automated)"
+
+3. Explain design decisions
+   - Bad:  "Uses setInterval"
+   - Good: "Uses setInterval (not setTimeout) for continuous countdown display"
+
+4. Document safety rationale
+   - Bad:  "Checks gas levels"
+   - Good: "Uses NORMAL threshold (not LOW) for conservative safety margin"
+
+5. Link to business value
+   - Bad:  "Automates logging"
+   - Good: "Reduces typing from 90-120 sec to 10-15 sec (85-90% reduction)"
+
+═══════════════════════════════════════════════════════════════════
+END OF TEMPLATE
+═══════════════════════════════════════════════════════════════════
+
+Save this template and refer to it on Saturday when annotating your 20 functions.
+Each annotation should take 20-30 minutes per function for comprehensive coverage.
+
+Good luck with your annotation work!
