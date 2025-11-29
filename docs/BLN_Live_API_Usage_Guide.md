@@ -1,7 +1,5 @@
 # BLN Live API Usage Guide  
 ### Emergency Response Automation Suite  
-**Version 1.0 — November 2025**  
-**Author:** Ivan Ferrer – Alerts Specialist (Op 417)
 
 ---
 
