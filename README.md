@@ -665,20 +665,9 @@ flowchart TD
 }
 ```
 
-#### **5. Cross-Specialist Coordination API**
-**Endpoint:** `POST /api/alerts/{id}/coordination`  
-**Purpose:** Real-time cross-specialist coordination  
-**Payload:**
-```json
-{
-  "alertId": "string",
-  "sourceSpecialist": "417",
-  "action": "CANCEL_TIMERS",
-  "confidence": 0.95,
-  "patternDetected": "RESOLUTION_INTENT",
-  "timestamp": "2025-11-28T19:30:00Z"
-}
-```
+#### **5. No New APIs Required**
+The Emergency Response Automation System requires **no new backend APIs**. All functionality—alert loading, device messaging, notes, logs, gas readings, dispatch documentation, and resolution—operates fully using existing BLN Live APIs.
+
 
 ---
 
@@ -736,6 +725,7 @@ flowchart TD
 - **[ROADMAP.md](./docs/ROADMAP.md)** - Future features and timeline
 - **[DEPLOYMENT_APPROACH.md](./docs/DEPLOYMENT_APPROACH.md)** - Production deployment strategy
 - **[WORKFLOW_AUTOMATION.md](./docs/WORKFLOW_AUTOMATION.md)** - Manual vs automated workflow analysis
+
 
 ---
 

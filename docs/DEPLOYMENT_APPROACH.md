@@ -422,15 +422,6 @@ Future integration can include:
    - API endpoint: `POST /api/alerts/{id}/logs`
    - Persist logs to BLN Live database
 
-5. **Dispatch Initiation Hook**
-   - API endpoint: `POST /api/dispatch/initiate`
-   - Trigger actual emergency service dispatch
-
-6. **Cross-Specialist Coordination API**
-   - API endpoint: `POST /api/alerts/{id}/coordination`
-   - Real-time coordination notifications across specialist sessions
-   - Server-side timer state synchronization
-
 **⚠️ None of these are required to deploy or demo the tool today.**
 
 ---
