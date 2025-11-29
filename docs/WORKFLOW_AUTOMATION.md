@@ -293,5 +293,5 @@ Planned expansion includes:
 **Document:** Workflow Automation Approach  
 **Version:** 4.0  
 **Last Updated:** November 28, 2025  
-**Author:** Ivan Ferrer (Op 417)
+**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
 

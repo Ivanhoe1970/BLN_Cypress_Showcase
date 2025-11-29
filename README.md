@@ -617,4 +617,4 @@ flowchart TD
 
 **Document Version:** 1.0  
 **Last Updated:** November 28, 2024  
-**Author:** Ivan Capistran - Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
