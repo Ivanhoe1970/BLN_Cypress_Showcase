@@ -725,7 +725,7 @@ The Emergency Response Automation System requires **no new backend APIs**. All f
 - **[ROADMAP.md](./docs/ROADMAP.md)** - Future features and timeline
 - **[DEPLOYMENT_APPROACH.md](./docs/DEPLOYMENT_APPROACH.md)** - Production deployment strategy
 - **[WORKFLOW_AUTOMATION.md](./docs/WORKFLOW_AUTOMATION.md)** - Manual vs automated workflow analysis
-
+- **[ROI_Analysis.pdf](./docs/ROI_Analysis.pdf)** – ROI calculations, time savings, and economic impact analysis
 
 ---
 
