@@ -1,452 +1,391 @@
-# 📦 Deployment Approach
-
-**Emergency Response Automation Suite - Setup & Deployment Instructions**
-
-**Prepared by:** Ivan Ferrer, Emergency Response Automation Lead  
-**Audience:** BIT, Development Team, Senior Product Manager
+# DEPLOYMENT_APPROACH.md  
+## Production Deployment Specification  
+### Emergency Response Automation Platform
 
 ---
 
-## 📋 Table of Contents
+## 1. Purpose
 
-- [Purpose of This Document](#purpose-of-this-document)
-- [Current System Status](#current-system-status)
-- [Project Structure Overview](#project-structure-overview)
-- [Local Setup Instructions](#local-setup-instructions)
-- [How to Load Demo Alerts](#how-to-load-demo-alerts)
-- [How to Run a Full Demo](#how-to-run-a-full-demo)
-- [Staging/Production Deployment](#stagingproduction-deployment)
-- [Post-Deployment Smoke Test](#post-deployment-smoke-test)
-- [Optional Future Integration](#optional-future-integration)
-- [Support](#support)
+This document defines the production-ready deployment approach for the Emergency Response Automation Platform.  
+It specifies the required file structure, build artifacts, hosting model, environment configuration, integration points with Blackline Live, and ongoing operational requirements.
 
----
+This is a deployment-focused document. It complements (but does not duplicate):
 
-## 🎯 Purpose of This Document
+- ARCHITECTURE.md  
+- ROADMAP.md  
+- README.md  
+- TESTING.md  
 
-This document provides simple, practical setup and deployment instructions for running the Emergency Response Automation Suite. It is designed for stakeholders, BIT, and developers who need to:
-
-- **Run the system locally** for development or testing
-- **Demo the system** to stakeholders or customers
-- **Deploy it safely** into staging or production environments
-- **Validate functionality** after deployment
-
-**This is NOT a deep technical architecture document.**  
-**This IS a step-by-step guide for setup, operation, and safe rollout.**
+Its purpose is to give BIT/Dev/SOC stakeholders a unified reference for installing, hosting, validating, and maintaining the platform.
 
 ---
 
-## ✅ Current System Status
+## 2. Deployment Model
 
-### **Operational Features (7 of 19)**
+The platform is deployed as a **static web application** containing:
 
-✅ Automated 2-minute gas monitoring with normalization detection  
-✅ Centralized timer management (eliminates Clock app)  
-✅ Context-aware device message classification  
-✅ **Intelligent notes analysis with cross-specialist coordination**  
-✅ Pre-alert detection and UI lockdown (>24h stale alerts)  
-✅ Automated resolution classification (100% accuracy)  
-✅ Dynamic protocol engine (configuration-driven)
+- A single HTML execution environment (main runtime)
+- An optional configuration builder (PCM)
+- Supporting JavaScript utilities (log hydrator, incident report formatter)
+- Local fixtures (for demo/staging only)
 
-### **Workflow Support**
+No backend server, database, or container infrastructure is required to run the local execution environment.  
+Production hosting (internal Blackline environment) must supply:
 
-- Supports gas and non-gas alert workflows
-- 5-step protocol engine active (device call, message flow, EC calls, dispatch, resolution)
-- Built-in safety logic (gas HIGH blocking, override modal)
-- **Real-time pattern recognition for specialist coordination (75-85% time reduction)**
-- Fully functional demo mode for internal presentations and testing
+- HTTPS hosting  
+- CORS permissions from BLN Live  
+- Authentication via the user’s existing BLN Live session  
+- Access to messaging and notes endpoints  
 
-### **Cross-Specialist Coordination**
-
-The newly integrated Intelligent Notes Analysis Engine eliminates manual Teams coordination by detecting resolution intent in specialist notes. When Specialist A sets a 30-minute timer but Specialist B receives a user callback confirming safety, the system automatically detects patterns like "user called in, confirmed okay" and cancels active timers across all specialist sessions. This reduces coordination time from 2-3 minutes to 30 seconds while maintaining complete audit trails and safety validation.
-
-### **Testing Status**
-
-- 200+ automated Cypress tests (optional for BIT deployment)
-- 100% test pass rate
-- CI/CD pipeline via GitHub Actions
-- **Pattern recognition accuracy >95% for high-confidence scenarios**
+All protocol execution, timers, logic, and UI state run on the client side.
 
 ---
 
-## 📁 Project Structure Overview
+## 3. Required File Structure
 
-The system runs as a **self-contained HTML/JavaScript application**.
+Only the following files inside the `automated-gas-alert-protocol/` directory are required for production deployment:
 
-### **Key Folders and Files**
+```
+automated-gas-alert-protocol/
+│
+├── emergency-protocol-clean.html      ← Main execution environment (gas + non-gas)
+├── protocol-config-manager.html        ← PCM (admin-side protocol generator)
+├── protocol-log-hydrator-v22.js        ← Log hydration + timeline inference engine
+├── incident-report-v22.js              ← (Optional) Incident report auto-generation
+│
+└── fixtures/                           ← Only used for demo/staging; not required for production
+      └── *.json
+```
 
-| Folder / File | Description |
-|---------------|-------------|
-| `automated-basic-gas-alert-protocol/` | Gas alert version of the protocol engine |
-| `automated-basic-non-gas-alert-protocol/` | Non-gas alert version |
-| `emergency-protocol-clean.html` | Main application file (entry point) |
-| `fixtures/alerts.json` | Demo alert data for testing |
-| `intelligent-notes/` | Pattern recognition and coordination engine |
-| `cypress/` | Automation test suite (optional for deployment) |
-| `docs/` | Documentation (README, ARCHITECTURE, etc.) |
+Everything outside this folder (tests, CI files, docs, Cypress, screenshots) is **not included** in production deployment.
 
-**To run the app, all you need is:**
-- The root folder
-- The HTML file
-- A local web server (or static hosting)
+### 3.1 Main Runtime: emergency-protocol-clean.html
+
+Contains:
+
+- Protocol engine (Steps 1–5)  
+- Device messaging  
+- Gas safety subsystem  
+- Location gating  
+- Dispatch flow  
+- Resolution engine  
+- Timer management  
+- Note Intelligence Engine  
+- UI layout with BLN branding  
+
+Used by specialists during live alert handling.
+
+### 3.2 Protocol Configuration Manager (PCM)
+
+`protocol-config-manager.html`  
+Used only by internal configuration staff to generate JSON-based protocol templates for:
+
+- Organizations  
+- Alert types  
+- Device types  
+- Language preferences (EN/FR/ES – future)  
+
+PCM output JSON files can be loaded by the main app in future modular versions of the system.
+
+### 3.3 protocol-log-hydrator-v22.js
+
+Hydrates:
+
+- currentAlert timestamps  
+- Dispatch snapshots  
+- Address / LSD / lat/lng extraction  
+- Missing or malformed time formats (MST/MDT/CST/UTC, etc.)
+
+Used during:
+
+- Incident report generation  
+- Retrospective analysis  
+- Multi-step dispatch reconstruction  
+
+### 3.4 Incident Report Generator
+
+`incident-report-v22.js`  
+Generates a fully BLN-aligned incident report with:
+
+- Timeline  
+- Dispatch section  
+- Challenges section (auto-filled or blank)  
+- Correct Mountain Time handling  
+
+Not required for protocol execution but included for completeness.
 
 ---
 
-## 🖥️ Local Setup Instructions
+## 4. Hosting Requirements
 
-### **Step 1: Install Node.js**
+### 4.1 HTTPS Required
 
-**Download from:** [https://nodejs.org](https://nodejs.org)
+All hosting must occur on HTTPS.  
+Required to:
 
-Required for running a lightweight local server.
+- Access BLN Live authenticated APIs  
+- Enable device messaging  
+- Enable resolution posting  
+- Support upcoming File System API features (PCM exports)
 
-**Verify installation:**
-```bash
-node --version
-npm --version
+Local development may use:  
+`http://127.0.0.1` or `http://localhost:<port>`.
+
+### 4.2 CORS Requirements
+
+To allow the app to send messages and resolutions through BLN Live’s API:
+
+The BLN Live backend must allow:
+
 ```
+Access-Control-Allow-Origin: https://<deployment-domain>
+Access-Control-Allow-Credentials: true
+```
+
+Example deployment:
+
+```
+https://internal-tools.blacklinesafety.com/protocol/
+```
+
+This domain must be explicitly added to BLN Live’s CORS allowlist.
+
+### 4.3 Authentication Model
+
+The Emergency Response Automation Platform uses the operator’s existing BLN Live session.
+
+Requirements:
+
+- User must already be logged into BLN Live  
+- Cookies/session tokens must remain accessible  
+- No separate auth flow required  
+
+If session expires → messaging, resolution, and profile fetches fail gracefully.
 
 ---
 
-### **Step 2: Start the Local Server**
+## 5. Integration Requirements
 
-Open terminal in the project folder and run:
-```bash
-npx http-server -p 5500 -c-1 .
-```
+### 5.1 BLN Live Device Messaging API
 
-**What this does:**
-- Starts a local web server on port 5500
-- Disables caching (`-c-1`) for development
-- Serves files from current directory (`.`)
+Used for:
 
-**Server will be available at:**
-```
-http://127.0.0.1:5500/
-```
+- Sending messages to G7c or G7x devices  
+- Replaying incoming device replies  
+- Simulating message classification  
+- Triggering Step 2 timers
 
----
+Requirements:
 
-### **Step 3: Open the Application**
+- Valid BLN session  
+- CORS allowlist  
+- Device must be online for real messages
 
-Navigate to either:
+### 5.2 Notes & Resolution API
 
-**Non-Gas Alert Version:**
-```
-http://127.0.0.1:5500/automated-basic-non-gas-alert-protocol/emergency-protocol-clean.html
-```
+Used for:
 
-**Gas Alert Version:**
-```
-http://127.0.0.1:5500/automated-basic-gas-alert-protocol/emergency-protocol-clean.html
-```
+- Posting specialist notes  
+- Logging Steps 1–5  
+- Posting the final resolution  
+- Recording overrides
 
-**The application will load instantly with:**
-- Alert details panel
-- Gas and connectivity panels
-- 5-step protocol workflow
-- Timer system
-- Protocol log with MST timestamps
-- Device messaging interface
-- **Intelligent notes analysis interface with pattern detection**
+Requirements:
 
----
+- Valid BLN session  
+- CORS allowlist  
+- Correct alert ID in runtime state
 
-## 📥 How to Load Demo Alerts
+### 5.3 Location API (Optional in current version)
 
-### **Option A: Use Built-in Demo Buttons** (if present)
+A future enhancement may query:
 
-Click one of the **Demo/Test** buttons to load sample alerts.
+- Last known GPS  
+- Location freshness  
+- Address normalization  
+
+Today, the system uses the fixture or BLN-provided alert payload.
 
 ---
 
-### **Option B: Load Alerts Manually via Console**
+## 6. Deployment Environments
 
-1. Open Chrome DevTools (`F12` or `Cmd+Option+I` on Mac)
-2. Go to the **Console** tab
-3. Run one of these commands:
+### 6.1 Local Development Environment
 
-**Load H₂S Gas Alert:**
-```javascript
-loadAlert("demo-h2s");
+No build step required.
+
+Served via:
+
+```
+live-server
+python -m http.server
+VS Code Live Preview
 ```
 
-**Load Fall Detection Alert:**
-```javascript
-loadAlert("fall-detection-demo");
-```
+### 6.2 Internal Staging / Demo Deployment
 
-**Load CO Gas Alert:**
-```javascript
-loadAlert("demo-co");
-```
+Hosted on an internal BLN HTTPS environment.
 
-This populates the UI with complete alert data for safe testing and demos.
+Used for:
+
+- Internal demos  
+- Validation by BIT/Dev  
+- Stakeholder reviews  
+
+### 6.3 Production Deployment
+
+Hosted in BLN-controlled infrastructure.
+
+Requirements:
+
+- HTTPS  
+- CORS allowlist applied  
+- Static file hosting (NGINX, S3+CloudFront, or internal host)  
+- Version foldering (v1, v1.1, v2, etc.)  
+- Access restricted to authenticated BLN accounts  
 
 ---
 
-## 🎬 How to Run a Full Demo
+## 7. Operational Responsibilities
 
-### **Gas Alert Demo**
+### 7.1 SOC Specialists
 
-1. **Open the gas alert HTML file**
-```
-   http://127.0.0.1:5500/automated-basic-gas-alert-protocol/emergency-protocol-clean.html
-```
+- Perform all protocol actions  
+- Confirm Note Intelligence suggestions  
+- Handle alerts end-to-end (ack → resolution)  
+- No supervisor approval gates involved  
 
-2. **Click "Send Message" (Step 2)**
-   - Timer starts automatically (2-minute gas monitoring)
-   - Gas panel shows H₂S, CO, LEL, O₂ readings
+### 7.2 BIT / Dev Team
 
-3. **Simulate a device response:**
-   - Open Console (F12)
-   - Run:
-```javascript
-     simulateDeviceResponse("I'm OK");
-```
+- Apply CORS updates  
+- Maintain hosting environment  
+- Provide API status monitoring  
+- Support future modular deployments (PCM → App runtime)
 
-4. **Watch the system:**
-   - Updates gas readings in real-time
-   - Evaluates resolution logic (blocks if gas HIGH)
-   - Shows override modal if needed
+### 7.3 Automation Owner (you)
 
-5. **Show full audit log** at the end
-   - Every step logged with MST timestamps
-   - Gas data snapshots included
+- Update codebase when features evolve  
+- Maintain documentation (architecture, testing, roadmap)  
+- Validate feature stability through Cypress CI  
+- Support configuration teams using the PCM  
 
 ---
 
-### **Non-Gas Alert Demo**
+## 8. Deployment Steps
 
-1. **Open the non-gas HTML file**
+### 8.1 Prepare Production Bundle
+
+Copy only:
+
 ```
-   http://127.0.0.1:5500/automated-basic-non-gas-alert-protocol/emergency-protocol-clean.html
+emergency-protocol-clean.html
+protocol-config-manager.html
+protocol-log-hydrator-v22.js
+incident-report-v22.js (optional)
+fixtures/ (optional for demos)
 ```
 
-2. **Click Step 1 → Post Note**
-   - Select outcome from dropdown
-   - Note auto-populates
-   - Post to log
+### 8.2 Configure Hosting Environment
 
-3. **Progress through Steps 2-5:**
-   - Send device message
-   - Call user phone
-   - Contact emergency contacts
-   - Evaluate dispatch conditions
+- Serve files via HTTPS  
+- Apply correct MIME types (HTML/JS/JSON)  
+- Ensure caching is disabled or versioned  
 
-4. **Show the dispatch decision dropdown**
-   - System evaluates location, connectivity, movement
-   - Provides pass/fail recommendation
+### 8.3 Update BLN Live CORS Allowlist
 
-5. **Start the 30-minute follow-up timer** (if dispatch made)
+Add the deployment domain:
 
-6. **Resolve the alert**
-   - System determines resolution type automatically
-   - Logs final resolution with timestamp
+```
+https://<your-internal-hosting-domain>
+```
 
-**The system logs every step with MST timestamps.**
+### 8.4 Validate API Connectivity
+
+1. Confirm operator login persists  
+2. Open the app  
+3. Trigger a device message  
+4. Confirm it is delivered  
+5. Trigger a resolution note  
+6. Confirm BLN Live accepts the POST request
+
+### 8.5 Validate Specialist Workflow
+
+Run:
+
+- A full non-gas alert  
+- A full gas alert (HIGH → NORMAL → resolution)  
+- A dispatch scenario  
+- A location-invalid scenario  
+- An incoming message classification scenario  
 
 ---
 
-### **Cross-Specialist Coordination Demo**
+## 9. Monitoring & Observability
 
-**Demonstrate the intelligent notes analysis feature:**
+Because the system is client-side:
 
-1. **Start a timer** (Step 4 EC callback - 30 minutes)
-   - Shows active countdown timer
-   - Timer visible and running
+- No backend logs by default  
+- Browser console logs used for diagnostics  
+- BLN Live audit trail captures:
+  - Notes  
+  - Steps  
+  - Resolution  
+  - Dispatch events  
 
-2. **Type a resolution note in manual notes section:**
-   ```
-   User called in. Confirmed they are okay. Resolving alert.
-   ```
+Future options:
 
-3. **Click "Analyze Note"**
-   - System detects RESOLUTION_INTENT pattern
-   - Shows 95% confidence level
-   - Recommends: Cancel Timer + Setup Resolution
-
-4. **Execute coordination actions**
-   - Timer automatically cancelled
-   - Resolution auto-populated with "callback-confirmed"
-   - Full audit trail logged
-
-**Key demo points:**
-- **Pattern recognition in real-time** (<100ms analysis)
-- **Confidence-based actions** (>85% auto-execute, >95% require confirmation)
-- **Safety integration** (HIGH gas blocks automatic resolution)
-- **Complete audit trail** (all coordination actions logged)
+- Internal JS telemetry endpoint  
+- Error reporting service  
+- Page load analytics  
 
 ---
 
-## 🚀 Staging/Production Deployment
+## 10. Versioning Strategy
 
-### **Requirements for BIT**
+Use semantic versioning:
 
-The system only needs a **static web host** capable of serving:
-- HTML
-- JavaScript
-- JSON
-- CSS (if present)
-
-**Examples of supported hosting:**
-- AWS S3 + CloudFront
-- NGINX internal server
-- Apache static folder
-- GitHub Pages
-- Any internal static hosting solution
-
-### **Intelligent Notes Analysis Deployment Considerations**
-
-The pattern recognition engine runs entirely client-side with no backend dependencies. However, production deployment should consider:
-
-**Configuration Management:** The NOTE_PATTERNS configuration object can be customized per customer or environment. For production, consider externalizing pattern definitions to a JSON configuration file that can be updated without code deployment. This enables pattern tuning and customer-specific coordination rules without touching the core engine.
-
-**Performance Monitoring:** The pattern recognition engine processes notes in <100ms, but production deployments should monitor analysis performance, especially during high-volume periods. Consider implementing client-side performance logging to track pattern recognition accuracy and response times for optimization.
-
----
-
-### **Deployment Steps**
-
-#### **1. Copy the entire folder:**
-
-**For non-gas alerts:**
 ```
-automated-basic-non-gas-alert-protocol/
+v1.0 – Initial stable deployment
+v1.1 – PCM enhancements
+v2.0 – Modular runtime (JSON-based protocol loading)
+v2.1 – G7x/G7c adaptive logic
 ```
 
-**For gas alerts:**
+Each version should reside in a dedicated folder:
+
 ```
-automated-basic-gas-alert-protocol/
-```
-
-#### **2. Upload to hosting location**
-
-Upload it **exactly as-is** to the hosting location.
-
-**⚠️ Important:** Preserve folder structure (don't flatten directories).
-
-#### **3. Verify the URL**
-
-Ensure the URL for the file looks like:
-```
-https://<internal-host>/automated-basic-non-gas-alert-protocol/emergency-protocol-clean.html
+/protocol/v1/
+/protocol/v1.1/
+/protocol/v2/
 ```
 
-#### **4. Smoke Test**
-
-Open this URL and confirm:
-- ✅ Page loads without errors
-- ✅ Panels appear (gas, connectivity, protocol steps)
-- ✅ Steps and logs function correctly
-- ✅ **Intelligent notes analysis UI appears**
-- ✅ **Pattern recognition responds to test notes**
-- ✅ No console errors appear (F12 → Console)
-
-#### **5. Provide Link to SOC**
-
-Provide SOC specialists with the final link for internal use or demos.
+Avoid overwriting live production files.
 
 ---
 
-## ✅ Post-Deployment Smoke Test Checklist
+## 11. Known Limitations
 
-### **Gas Alerts**
-
-- [ ] UI loads without errors
-- [ ] Gas readings appear (H₂S, CO, LEL, O₂)
-- [ ] Timer starts after Step 1 or device message
-- [ ] Resolution is blocked when gas = HIGH
-- [ ] Override modal works correctly
-- [ ] Gas normalization triggers auto-resolution
-
-### **Non-Gas Alerts**
-
-- [ ] Steps 1-5 work end-to-end
-- [ ] EC contact fields appear correctly
-- [ ] Dispatch flow shows decision logic
-- [ ] Timer starts when dispatch is posted
-- [ ] Resolution dropdown works
-- [ ] Pre-alert detection works (>24h alerts)
-
-### **Intelligent Notes Analysis**
-
-- [ ] **Manual notes textarea appears with analysis controls**
-- [ ] **"Analyze Note" button becomes enabled when typing**
-- [ ] **Pattern detection works with test phrases**
-  - Type: `"User called in. Confirmed they are okay."`
-  - Verify: RESOLUTION_INTENT pattern detected with 95% confidence
-- [ ] **Cross-specialist coordination simulation**
-  - Start a timer, then trigger resolution note
-  - Verify: Timer cancellation and resolution auto-population
-- [ ] **Safety validation integration**
-  - Test with HIGH gas conditions
-  - Verify: Automatic resolution blocked, supervisor confirmation required
-- [ ] **Audit trail completeness**
-  - All pattern detection and coordination actions logged with MST timestamps
-
-### **General**
-
-- [ ] Logs generate correctly with MST timestamps
-- [ ] Buttons are clickable and visible
-- [ ] No missing icons, images, or text
-- [ ] No console errors (F12 → Console)
-- [ ] Timer countdown updates every second
-- [ ] Audio alerts work on timer expiration
-- [ ] **Pattern recognition performance <100ms**
-- [ ] **Cross-specialist coordination <200ms**
+- No server-side state  
+- Requires BLN Live session to function  
+- PCM does not yet auto-load generated JSON into runtime (planned v2.0)  
+- Gas analytics work entirely client-side  
+- Dispatch requires valid location snapshot  
+- G7x cannot receive calls (device awareness included)  
 
 ---
 
-## 🔮 Optional Future Integration
+## 12. Future Deployment Enhancements
 
-The system currently works **fully offline** with demo data.
-
-### **Future Integration with Blackline Live**
-
-Future integration can include:
-
-1. **Live Alert Metadata Feed**
-   - API endpoint: `GET /api/alerts/{id}`
-   - Replace fixture data with real-time alerts
-
-2. **Device Message Gateway**
-   - API endpoint: `POST /api/devices/{id}/message`
-   - Send messages to actual G7 devices
-
-3. **Gas Telemetry Stream**
-   - WebSocket connection for live gas readings
-   - Real-time H₂S, CO, LEL, O₂ updates
-
-4. **Audit Log Write Endpoint**
-   - API endpoint: `POST /api/alerts/{id}/logs`
-   - Persist logs to BLN Live database
-
-**⚠️ None of these are required to deploy or demo the tool today.**
+- Server-hosted JSON protocol registry (PCM → runtime)
+- Per-customer protocol profiles
+- Multi-language device messages (EN/FR/ES)
+- Secure audit export endpoints
+- Alert ingestion API for standalone demo environments
 
 ---
 
-## 🆘 Support
+## Metadata
 
-For setup, deployments, or integration questions:
-
-**Contact:** Ivan Ferrer  
-**Email:** iferrer@blacklinesafety.com  
-**Role:** Alerts Specialist & Emergency Response Automation Lead  
-**GitHub:** [https://github.com/ivanhoe1970/BLN_Cypress_Showcase](https://github.com/ivanhoe1970/BLN_Cypress_Showcase)
-
----
-
-## 📚 Related Documentation
-
-- **[README.md](../README.md)** - Project overview and quick start
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical design and 22 critical functions
-- **[ROADMAP.md](./ROADMAP.md)** - Future features and strategic vision
-- **[TESTING.md](./TESTING.md)** - Test coverage and quality assurance
-- **[WORKFLOW_AUTOMATION.md](./WORKFLOW_AUTOMATION.md)** - Manual vs automated workflows
-
----
-
-**Document Version:** 1.1  
-**Last Updated:** November 29, 2025  
+**Document Version:** 1.0  
+**Last Updated:** November 30, 2025  
 **Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
