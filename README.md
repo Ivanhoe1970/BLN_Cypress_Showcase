@@ -1,181 +1,222 @@
-# Emergency Response Automation Suite
-
+# Emergency Response Automation Suite  
 Technical Architecture and Prototype Overview
 
-This repository contains the complete technical architecture, prototype implementation, and and testing framework for the Emergency Response Automation Suite. The system replicates and automates the core steps of Blackline Safety’s emergency alert workflows for both gas and non-gas alerts, including device messaging, real-time gas safety gating, dispatch logic, intelligent coordination, and protocol resolution.
+The Emergency Response Automation Suite is a fully functional prototype that automates the core emergency-response workflows used by Blackline Safety's SOC.  
+It models gas and non-gas alert handling, protocol execution, messaging logic, safety gating, dispatch validation, intelligent notes analysis, and deterministic resolution.
 
-The prototype is fully client-side, configuration-driven, and aligned with all BLN safety requirements. It demonstrates how automation reduces manual actions, eliminates coordination bottlenecks, and improves response consistency across the SOC.
+This repository contains:
+
+- Full system architecture  
+- End-to-end prototype (HTML + JavaScript)  
+- 22-function Automation Engine  
+- Intelligent coordination subsystem  
+- Comprehensive Cypress test suite  
+- Complete technical documentation for stakeholder review  
+
+The system is entirely client-side and configuration-driven.
 
 ---
 
 ## Table of Contents
 
-1. System Overview
-2. High-Level Architecture
-3. Core Architecture Components
-4. Protocol Factory
-5. Timer Management System
-6. Gas Safety Subsystem
-7. Message Classification Engine
-8. Intelligent Notes Analysis Engine
-9. Resolution Engine
-10. The 22 Critical Functions
-11. Design Principles
-12. Integration Points
-13. Performance Characteristics
-14. Future Architecture Enhancements
-15. Additional Resources
+- [Global Documentation Index (/docs)](#global-documentation-index-docs)
+- [1. System Overview](#1-system-overview)
+- [2. Architecture Summary](#2-architecture-summary)
+- [3. Core Subsystems](#3-core-subsystems)
+- [4. Protocol Engine](#4-protocol-engine)
+- [5. Timer Management](#5-timer-management)
+- [6. Gas Safety Engine](#6-gas-safety-engine)
+- [7. Messaging Engine](#7-device-messaging-engine)
+- [8. Intelligent Notes Analysis](#8-intelligent-notes-analysis-engine)
+- [9. Dispatch Logic](#9-dispatch-logic)
+- [10. Resolution Engine](#10-resolution-engine)
+- [11. The 22 Critical Functions](#11-the-22-critical-functions)
+- [12. Design Principles](#12-design-principles)
+- [13. Integration Points](#13-integration-points)
+- [14. Performance Characteristics](#14-performance-characteristics)
+- [15. File and Folder Structure](#15-file-and-folder-structure)
+- [16. Related Documentation](#16-related-documentation)
+- [17. Document Information](#17-document-information)
 
 ---
 
-## System Overview
+## Global Documentation Index (/docs)
 
-### Architecture Philosophy
+Below is a complete Table of Contents for **all Markdown files in `/docs`**, with correct GitHub anchor links.
 
-The Emergency Response Automation Suite follows a configuration-driven, modular design based on the following principles:
-
-- Protocols are data, not hardcoded logic
-- Automation guides workflow but never bypasses safety-critical decision points
-- Gas safety rules enforce conservative thresholds
-- Single global timer prevents confusion and eliminates Clock app dependency
-- Intelligent coordination eliminates manual Teams messaging
-- New protocols can be added through configuration only
-
-### Scope
-
-The prototype simulates the complete alert lifecycle:
-
-- Step-based protocol execution
-- Timer-driven escalation
-- Gas monitoring and safety gating
-- Device message classification
-- Cross-specialist coordination automation
-- Dispatch logic validation
-- Resolution enforcement
-- Full restart handling
-- Pre-alert detection (greater than 24 hours)
-
----
-
-## High-Level Architecture
-
-```mermaid
-flowchart TB
-    subgraph "User Interface Layer"
-        A[Protocol Steps UI]
-        B[Timer Display]
-        C[Gas Panel]
-        D[Message Interface]
-        E[Resolution Controls]
-        F[Intelligent Notes UI]
-    end
-
-    subgraph "Automation Engine - 22 Critical Functions"
-        G[Protocol Factory]
-        H[Timer System]
-        I[Gas Safety Engine]
-        J[Message Classifier]
-        K[Notes Analysis Engine]
-        L[Resolution Engine]
-        M[Dispatch Logic]
-    end
-
-    subgraph "Data Layer"
-        N[Alert Data]
-        O[User Config]
-        P[Protocol Config]
-        Q[Audit Log]
-    end
-
-    A --> G
-    B --> H
-    C --> I
-    D --> J
-    E --> L
-    F --> K
-
-    G --> P
-    H --> Q
-    I --> N
-    J --> N
-    K --> Q
-    L --> Q
-    M --> N
-
-    G -.-> H
-    H -.-> I
-    I -.-> L
-    J -.-> L
-    K -.-> H
-    K -.-> L
+```
+docs/
+├── ARCHITECTURE.md
+├── BLN_Live_API_Usage_Guide.md
+├── DEPLOYMENT_APPROACH.md
+├── ROADMAP.md
+├── ROI_Analysis.md
+├── TESTING.md
+└── WORKFLOW_AUTOMATION.md
 ```
 
----
+### ARCHITECTURE.md
+- [System Overview](docs/ARCHITECTURE.md#system-overview)
+- [Architecture Diagram](docs/ARCHITECTURE.md#architecture-diagram)
+- [Core Architecture Components](docs/ARCHITECTURE.md#core-architecture-components)
+- [Protocol Factory](docs/ARCHITECTURE.md#protocol-factory)
+- [Timer Management System](docs/ARCHITECTURE.md#timer-management-system)
+- [Gas Safety Subsystem](docs/ARCHITECTURE.md#gas-safety-subsystem)
+- [Message Classification Engine](docs/ARCHITECTURE.md#message-classification-engine)
+- [Resolution Engine](docs/ARCHITECTURE.md#resolution-engine)
+- [The 22 Critical Functions](docs/ARCHITECTURE.md#the-22-critical-functions)
 
-# Core Architecture Components
+### BLN_Live_API_Usage_Guide.md
+- [API Overview](docs/BLN_Live_API_Usage_Guide.md#api-overview)
+- [Endpoints](docs/BLN_Live_API_Usage_Guide.md#endpoints)
+- [Device Messaging](docs/BLN_Live_API_Usage_Guide.md#device-messaging)
+- [Alert Resolution](docs/BLN_Live_API_Usage_Guide.md#alert-resolution)
+- [Authentication](docs/BLN_Live_API_Usage_Guide.md#authentication)
 
-## 1. Protocol Factory (Configuration Engine)
+### DEPLOYMENT_APPROACH.md
+- [Local Setup](docs/DEPLOYMENT_APPROACH.md#local-setup)
+- [Prototype Execution](docs/DEPLOYMENT_APPROACH.md#prototype-execution)
+- [Production Deployment](docs/DEPLOYMENT_APPROACH.md#production-deployment)
+- [Integration Requirements](docs/DEPLOYMENT_APPROACH.md#integration-requirements)
 
-**Purpose:**  
-Transforms JSON configurations into runnable protocol workflows.
+### ROADMAP.md
+- [Current State](docs/ROADMAP.md#current-state)
+- [Strategic Vision](docs/ROADMAP.md#strategic-vision)
+- [Core Strategic Features](docs/ROADMAP.md#core-strategic-features)
+- [Implementation Timeline](docs/ROADMAP.md#implementation-timeline)
 
-**Rationale:**  
-Protocols must be customer-specific and dynamic. Hardcoded logic would block scalability and increase engineering cost.
+### ROI_Analysis.md
+- [Executive Summary](docs/ROI_Analysis.md#executive-summary)
+- [Cost Breakdown](docs/ROI_Analysis.md#cost-breakdown)
+- [Time Savings](docs/ROI_Analysis.md#time-savings)
+- [ROI Calculation](docs/ROI_Analysis.md#roi-calculation)
 
-**Pattern:**  
-Static registry and factory method.
+### TESTING.md
+- [Testing Strategy](docs/TESTING.md#testing-strategy)
+- [Test Architecture](docs/TESTING.md#test-architecture)
+- [Deterministic Simulation](docs/TESTING.md#deterministic-simulation)
+- [Cypress Structure](docs/TESTING.md#cypress-structure)
 
-**Benefits:**
-
-- Unlimited protocol variations
-- Enables the Protocol Configuration Manager (PCM)
-- Configuration-only deployments
-
----
-
-## 2. Timer Management System
-
-**Purpose:**  
-Eliminates Clock app usage and prevents multi-timer confusion.
-
-**Key Features:**
-
-- Single global timer
-- Visual countdown with audio alerts
-- Context-aware cancellation
-- Full audit logging
-- Supports monitoring, callback, and dispatch timers
-
-**State Model:**
-
-```json
-{
-  "stepId": "step-2",
-  "label": "Gas Monitoring",
-  "duration": 120,
-  "startTime": "Date.now()",
-  "timerType": "monitoring",
-  "isRunning": true
-}
-```
+### WORKFLOW_AUTOMATION.md
+- [Workflow Automation Overview](docs/WORKFLOW_AUTOMATION.md#workflow-automation-overview)
+- [Manual Action Elimination](docs/WORKFLOW_AUTOMATION.md#manual-action-elimination)
+- [Dispatch Automation](docs/WORKFLOW_AUTOMATION.md#dispatch-automation)
 
 ---
 
-## 3. Gas Safety Subsystem
+## 1. System Overview
 
-**Purpose:**  
-Automates gas monitoring and enforces safety rules.
+The Emergency Response Automation Suite simulates the complete lifecycle of an alert:
+
+- Device call attempts  
+- Device messaging  
+- Gas monitoring and normalization logic  
+- User call workflows  
+- Emergency contact escalation  
+- Dispatch readiness validation  
+- Resolution enforcement  
+- Intelligent cross-specialist coordination  
+- Fully deterministic audit logs with MST timestamps  
+
+The system eliminates large portions of the repetitive manual work in Blackline Live alert management, while preserving all safety-critical decisions for the specialist.
+
+---
+
+## 2. Architecture Summary
+
+The platform follows a modular, configuration-driven design.  
+Protocol steps, timer behavior, gas rules, message templates, escalation flows, and dispatch logic are all defined through configuration rather than hardcoded logic.
+
+The system is composed of:
+
+- Protocol Engine (Protocol Factory)  
+- 22-function Automation Engine  
+- Gas Safety Subsystem  
+- Timer Management System  
+- Device Messaging Engine  
+- Intelligent Notes Analysis Engine  
+- Dispatch Validator  
+- Resolution Engine  
+- Unified Audit Logger  
+
+All modules operate client-side and interact through a predictable state architecture.
+
+---
+
+## 3. Core Subsystems
+
+### Protocol Engine
+Loads protocol definitions and orchestrates step execution using configuration objects.
+
+### Step Execution Engine
+Ensures steps run in order, cannot be skipped, and are idempotent.
+
+### Gas Safety Engine
+Evaluates gas levels, 2-minute monitoring window (where applicable), normalization conditions, and resolution blocking rules.
+
+### Timer Manager
+Provides a single global timer for monitoring, callback, and dispatch follow-up windows.
+
+### Messaging Engine
+Handles sending device messages, interpreting replies, waiting windows, and timeout logic.
+
+### Dispatch Validator
+Validates whether dispatch is allowed using safety rules defined in ARCHITECTURE.md.
+
+### Resolution Engine
+Determines correct resolution type using deterministic rules and enforces safety boundaries.
+
+### Intelligent Notes Analysis Engine
+Analyzes specialist notes to infer resolution intent, detect callback confirmations, synchronize state, and cancel timers when appropriate.
+
+### Audit Logger
+Generates deterministic MST timestamps and enforces log contract.
+
+---
+
+## 4. Protocol Engine
+
+The Protocol Factory transforms JSON configuration into runnable workflows.
 
 **Capabilities:**
 
-- Real-time gas telemetry panel
-- 2-minute automated monitoring window
-- Auto-resolution on normalization
-- HIGH gas blocks resolution unless override provided
-- O₂ depleted/enriched detection included
+- Dynamic step sequences  
+- Conditional steps based on device type (G7c vs G7x)  
+- Configurable EC hierarchy and routing  
+- Custom message templates  
+- Customer-specific variants  
 
-**Normalization Logic:**
+The engine is the foundation for the future Protocol Configuration Manager.
 
+---
+
+## 5. Timer Management System
+
+A single global timer eliminates confusion and replaces the Clock app.
+
+**Features:**
+
+- Monitoring timer  
+- EC callback timer  
+- Dispatch follow-up timer  
+- Accurate countdown and audio alert  
+- Full logging on start, cancellation, and expiration  
+
+Timers are context-aware and directly tied to protocol steps.
+
+---
+
+## 6. Gas Safety Engine
+
+Gas alerts include an optional 2-minute gas monitoring window depending on the protocol.
+
+- If gas normalizes: alert auto-resolves  
+- If gas remains HIGH: Step 1 unlocks  
+- Every gas update appears in the telemetry panel  
+- HIGH gas blocks resolution unless override provided  
+- O₂ depleted/enriched detection supported  
+
+**Normalization rule:**
 ```
 H2S === NORMAL &&
 CO === NORMAL &&
@@ -185,219 +226,205 @@ O2 === NORMAL
 
 ---
 
-## 4. Message Classification Engine
+## 7. Device Messaging Engine
 
-**Purpose:**  
-Interprets device messages using context.
+Provides intelligent messaging control:
 
-**Key Concept:**  
-Meaning of "Yes" or "No" depends on the prompt sent.
+- Auto-populates message templates  
+- Tracks message windows  
+- Interprets device replies using context  
+- Identifies ambiguous responses  
 
-**Example Table:**
+**Examples:**
 
-| Message   | Context           | Meaning             |
-| --------- | ----------------- | ------------------- |
-| No        | Do you need help? | Safe                |
-| No        | Leave the area?   | Refusing evacuation |
-| Send help | Any               | SOS                 |
-
-**Stateful Classifier:**
-
-- Tracks last prompt
-- Handles ambiguous replies
-- Supports 2-minute timeout window
+| Message     | Meaning                     |
+|-------------|-----------------------------|
+| "I'm OK"    | User is safe                |
+| "No"        | User is safe (to help query)|
+| "Send help" | Dispatch required           |
 
 ---
 
-## 5. Intelligent Notes Analysis Engine
+## 8. Intelligent Notes Analysis Engine
 
-**Purpose:**  
-Automatically eliminates cross-specialist coordination delays.
+Automates cross-specialist coordination.
 
-**Based on:**  
-Pattern recognition, confidence scoring, safety validation.
+**Functions:**
 
-**Actions:**
+- Detects resolution intent  
+- Detects user callback confirmations  
+- Cancels timers automatically  
+- Synchronizes state across sessions  
+- Ensures consistent audit trail  
 
-- Cancel timers across all specialists
-- Suggest resolution
-- Trigger escalation
-- Synchronize alert state across sessions
-
-**Impact:**
-
-- Coordination time reduced by 75–85%
-- Zero missed synchronization events
-- Removes reliance on Teams messages
+Time savings: **75–85% reduction** in coordination overhead.
 
 ---
 
-## 6. Resolution Engine
+## 9. Dispatch Logic
 
-**Purpose:**  
-Determines the correct resolution type using deterministic rules.
+Dispatch is permitted only when all safety rules pass:
 
-**Resolution Types:**
+- GPS location age under 5 minutes  
+- Device online  
+- Movement speed under 5 km/h  
+- Connectivity valid  
 
-- incident-with-dispatch
-- incident-without-dispatch
-- false-alert-with-dispatch
-- false-alert-without-dispatch
-- pre-alert
+Automation:
 
-**Safety Gates:**
+- Auto-fills dispatch note  
+- Starts 30-minute follow-up timer  
+- Logs dispatch action deterministically  
 
-- HIGH gas blocks resolution unless override
-- Dispatch state tracked explicitly
-- Pre-alert (>24h) disables protocol steps
+If dispatch cannot proceed:
 
----
-
-# The 22 Critical Functions
-
-**Categories:**
-
-- Core Protocol Functions
-- Gas Safety Functions
-- Timer Functions
-- Automation Functions
-- Intelligence Functions
-- Resolution Functions
-- Pre-Alert Functions
-
-_(See ARCHITECTURE.md for full definitions.)_
+- Specialist selects reason  
+- System logs: “Dispatch skipped. Reason: ___.”  
+- Protocol loops back to Steps 1–4  
 
 ---
 
-# Design Principles
+## 10. Resolution Engine
 
-- Configuration over code
-- Fail-safe defaults
-- Idempotent operations
-- Single source of truth
-- Progressive disclosure
-- Conservative safety thresholds
-- Full auditability
-- Intelligent automation
+Enforces deterministic resolution logic:
 
----
-
-# Integration Points
-
-**Current Prototype:**
-
-- All data in fixtures
-- Fully client-side
-- No backend or API calls
-
-**Production Requirements:**
-
-- BLN Live Alert API
-- BLN Live Resolution API
-- Audit Log API
-- Device Messaging API
-- WebSocket gas telemetry
-
-The automation system requires no new backend APIs.
+- Gas HIGH blocks resolution until override  
+- If dispatch occurred → incident-with-dispatch  
+- If no dispatch → incident-without-dispatch  
+- False alert classification  
+- Pre-alert logic (>24h)  
+- Cancels all active timers  
+- Logs final resolution  
 
 ---
 
-# Performance Characteristics
+## 11. The 22 Critical Functions
 
-**Client-Side Performance:**
+The system implements 22 technically defined functions across:
 
-- Protocol loading: <50ms
-- Step execution: <10ms
-- Gas panel updates: <100ms
-- Pattern recognition: <100ms
-- Coordination updates: <200ms
-- Memory footprint: <2MB
+- Core protocol logic  
+- Gas safety  
+- Timer management  
+- Message classification  
+- Notes analysis  
+- Resolution logic  
+- Pre-alert handling  
 
-**Scalability:**
-
-- Unlimited protocols
-- Unlimited alert types
-- Single global timer by design
+See ARCHITECTURE.md for full function list.
 
 ---
 
-# Future Architecture Enhancements
+## 12. Design Principles
 
-## 1. Protocol Configuration Manager (PCM)
-
-**Vision:**  
-Provide a configuration-driven method for designing, validating, and deploying customer-specific emergency response protocols without requiring Blackline engineering to modify code.
-
-**Architecture:**  
-Form-based Web UI → Customer profile & device capabilities → Step Builder → Validation Engine → JSON protocol definition → Deployment into Protocol Engine
-
-**Key Responsibilities:**
-
-- Device-aware step filtering (G7c vs G7x)
-- Emergency contact hierarchy with priority and advanced contact rules
-- Time-based and location-based routing
-- Gas threshold and safety rule configuration
-- Industry-specific message templates and multi-language support
-- Validation engine (loop detection, capability enforcement, required fields)
-- JSON export/import for integration with the automated platform
-
-**Benefit:**  
-Reduces engineering workload, accelerates customer onboarding, prevents configuration errors, and enables scalable customer-specific deployments.
+- Configuration over code  
+- Fail-safe defaults  
+- Deterministic transitions  
+- Idempotent operations  
+- Safety-first logic  
+- Full auditability  
+- Minimal cognitive load  
+- Predictable performance  
 
 ---
 
-## 2. Enhanced Alerts Page (Real-Time Visual Acknowledgment Status)
+## 13. Integration Points
 
-**Vision:**  
-Introduce a real-time, color-coded urgency and acknowledgment system in the Alerts Portal.
+Prototype:
 
-**Architecture:**  
-Alert creation timestamp → elapsed timer → visual state engine → dynamic UI updates
+- Fully standalone  
+- No network dependencies  
+- Uses fixture data  
 
-**Color Model:**
+Production:
 
-- Blue (0–30 seconds): Calm
-- Yellow (31–50 seconds): Caution
-- Red (51+ seconds): SLA breach
-- Green (Acknowledged): Operator ID visible
-- Neutral (Resolved): Closed/filterable
+- BLN Live Alert API  
+- Resolution API  
+- Device Messaging API  
+- WebSocket gas telemetry  
+- Server-side audit logging  
 
-**Benefit:**  
-Eliminates manual Teams-based coordination and improves situational awareness.
-
----
-
-## 3. Intelligent Alert Assignment System
-
-**Vision:**  
-Eliminate the first-click race and route each alert to the optimal specialist.
-
-**Architecture:**  
-Alert feed → Assignment Engine → Eligibility filter → Fairness calculation → Assignment → WebSocket broadcast
-
-**Supporting Components:**
-
-- Identity Gate
-- Break/availability sync
-- Shift Lead Dashboard
-- Full audit trail
-
-**Benefit:**  
-Assigns alerts within one second, reduces response delays, and ensures fairness.
+Architecture requires no new backend endpoints.
 
 ---
 
-# Additional Resources
+## 14. Performance Characteristics
 
-ARCHITECTURE.md  
-PCM Technical Specification  
-Real-Time Visual Alert Status  
-Alert Auto-Assignment System  
-TESTING.md  
-ROADMAP.md  
-DEPLOYMENT_APPROACH.md  
-ROI_Analysis.pdf
+Performance goals:
 
-**Document Version:** 2.0  
-**Last Updated:** November 29, 2025  
-**Author:** Ivan Ferrer – Alerts Specialist (SOC Technical Innovation Lead)
+- Protocol load: <50 ms  
+- Step execution: <10 ms  
+- Gas panel: <100 ms  
+- Notes analysis: <100 ms  
+- Sync: <200 ms  
+- Memory: <2 MB  
+
+Scales to unlimited protocols and alert types.
+
+---
+
+## 15. File and Folder Structure
+
+Repository structure:
+
+```
+BLN AUTOMATION SHOWCASE/
+│
+├── .github/workflows/
+│     └── deploy-and-test.yml
+│
+├── .vscode/
+│
+├── automated-gas-alert-protocol/
+│     ├── configs/
+│     ├── cypress/
+│     ├── fixtures/
+│     ├── annotation-template.txt
+│     ├── cypress.config.js
+│     ├── emergency-protocol-clean.html
+│     ├── incident-report-v22.js
+│     ├── index.html
+│     ├── protocol-config-manager.html
+│     └── protocol-log-hydrator-v22.js
+│
+├── cypress/
+│     ├── e2e/
+│     ├── fixtures/
+│     ├── pages/
+│     ├── screenshots/
+│     └── support/
+│
+├── docs/
+│     ├── ARCHITECTURE.md
+│     ├── BLN_Live_API_Usage_Guide.md
+│     ├── DEPLOYMENT_APPROACH.md
+│     ├── ROADMAP.md
+│     ├── ROI_Analysis.md
+│     ├── ROI_Analysis.pdf
+│     ├── TESTING.md
+│     └── WORKFLOW_AUTOMATION.md
+│
+├── node_modules/
+│
+├── .gitignore
+└── package.json
+```
+
+---
+
+## 16. Related Documentation
+
+- ARCHITECTURE.md  
+- ROADMAP.md  
+- WORKFLOW_AUTOMATION.md  
+- TESTING.md  
+- DEPLOYMENT_APPROACH.md  
+- ROI_Analysis.md  
+- VERSION_HISTORY.md  
+
+---
+
+## 17. Document Information
+
+**Version:** 2.0  
+**Last Updated:** November 30, 2025  
+**Author:** Ivan Ferrer – SOC Technical Innovation Lead
