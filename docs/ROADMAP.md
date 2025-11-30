@@ -1,223 +1,240 @@
-# Emergency Response Automation Platform - Technical Roadmap
+# ROADMAP.md  
+## Emergency Response Automation Platform – Strategic Product Roadmap
 
-## Current State
+### Document Purpose
+This roadmap outlines how the Emergency Response Automation Platform evolves from a prototype into a fully deployable SOC automation system.  
+It integrates:
+- Verified manual-workflow baseline (58 actions, 3–4 minutes of non-call work)  
+- System performance validated through 207,723 alerts  
+- ROI analysis showing 7–9 month payback and $129k–$164k annual value  
+- The current state of the codebase (Protocol Engine, Timer Manager, Dispatch Validator, Messaging Engine)
 
-### Operational Features (7 of 19 planned)
-
-- Automated 2-minute gas monitoring with normalization detection  
-- Dynamic protocol display with visual step tracking  
-- Automated alert resolution system with deterministic classification  
-- Comprehensive automated logging with timestamp automation  
-- Automated emergency dispatch decisioning with readiness validation  
-- Alert management timer system with global timer and cancellation logic  
-- Intelligent notes analysis with cross-specialist coordination automation  
-
-These features form the foundation of the automation platform and are fully implemented in the local prototype.
-
-### Current BLN Live Operational Baseline
-
-Based on Blackline Analytics data:
-
-- 207,723 alerts processed with greater than 99 percent sub-1-minute response maintained  
-- Manual workflows validated as baseline for automation improvements  
-- Response time, context switching, and coordination delays used to model automation benefits  
-
-### Projected Benefits
-
-If the automation system is adopted:
-
-- Full protocol execution time reduced from approximately 540 seconds (manual) to ~60 seconds (automated)  
-- Clock app and Notes/Sticky Notes context switching eliminated; only Five9 and Teams interactions remain  
-- Multi-specialist coordination delays reduced from 45–60 seconds to approximately 30 seconds  
-- An estimated 5.4 million manual actions eliminated over 8 months  
-- Comprehensive Cypress test coverage ensures deterministic and safe behavior  
+The roadmap is aligned with:
+- ARCHITECTURE.md  
+- WORKFLOW_AUTOMATION.md  
+- DEPLOYMENT_APPROACH.md  
+- ROI_Analysis.md  
 
 ---
 
-## Strategic Features
+# 1. Current State
 
-## Feature 1: Protocol Configuration Manager (PCM)
+## 1.1 Operational Features (7 of 19)
+These features are fully implemented in the local prototype and validated with 200+ Cypress tests:
 
-### Status
-In development.
+- Automated 2-minute gas monitoring with normalization detection (when applicable per protocol)
+- Dynamic protocol display with real-time step activation  
+- Automated alert resolution engine with deterministic classification  
+- Centralized logging with MST timestamps and operator ID  
+- Automated dispatch decisioning using validated eligibility rules  
+- Global timer architecture (2-min, 30-min EC callback, 30-min dispatch follow-up)  
+- Intelligent notes analysis for detecting resolution intent and coordinating across specialists  
 
-### Purpose
-Provide a configuration-driven method for designing, validating, and deploying customer-specific emergency response protocols without requiring engineering involvement.
+These capabilities collectively eliminate **90–120 seconds of typing**, **all Clock-app use**, and **all manual timestamping**.
 
-### Core Capabilities
+---
 
-- JSON-based protocol definitions with schema validation  
+## 1.2 Baseline Operational Metrics (from BLN Analytics)
+
+- **207,723 alerts** processed (Jan 10 → Sept 9, 2025)  
+- **897 alerts/day**, all requiring the same manual workflow  
+- **>99%** alerts acknowledged within 60 seconds  
+- Manual protocol execution = **58 administrative actions** → **3–4 minutes** of non-call work  
+- Over 8 months:  
+  - **830,892 context switches**  
+  - **5.4M manual actions**  
+These values form the benchmark for automation ROI.
+
+---
+
+## 1.3 Projected Automation Gains
+Based on Workflow Automation and ROI Analysis:
+
+- Full protocol execution time reduced: **540 seconds → ~60 seconds**  
+- Administrative time per alert reduced: **3–4 minutes → 20–50 seconds**  
+- Context switching: **13 → 0**  
+- Annual capacity gain equivalent to **2.0–2.8 FTEs**  
+- Expected **7–9 month** payback  
+- **$129k–$164k** annual net benefit  
+
+These projections are derived from real alert volumes, measured timing, and validated manual workflows.
+
+---
+
+# 2. Strategic Features
+
+The roadmap centers on **three core platform features** that, together, transform SOC operations.
+
+---
+
+# Feature 1: Protocol Configuration Manager (PCM)
+
+## Status  
+**In development.**  
+UI complete, JSON builder functional, validation engine in progress.
+
+## Purpose  
+Provide a safe, configuration-driven method for designing and deploying customer-specific emergency response protocols without engineering involvement.
+
+## Key Capabilities  
+- JSON-based protocol definitions  
 - Device-aware step filtering (G7c vs G7x)  
-- Emergency contact hierarchies and routing configuration  
-- Timer configuration and dispatch policy management  
-- Multi-language message templates (English, French, Spanish)  
-- Validation engine to prevent invalid, unsafe, or non-executable protocols  
-- JSON export/import for deployment into the Protocol Engine  
+- Configurable timers (message wait, EC callback, dispatch follow-up)  
+- Dispatch policies and service selection  
+- Emergency-contact hierarchy builder  
+- Multi-language support (EN/FR/ES) for outgoing messages  
+- Validation engine preventing unsafe or invalid workflows  
+- Self-contained JSON export/import  
 
-### Architecture
-Form-based Web UI → Customer profile & device capabilities → Step Builder → Validation Engine → JSON protocol definition → Deployment into Protocol Engine
+## Architecture  
+Form UI → Step Builder → Timer/Dispatch configuration → Validation Engine → JSON → ProtocolFactory loader
 
-### Business Value
-
-- Eliminates custom engineering work for each customer variation  
-- Reduces onboarding time from weeks/months to hours/days  
-- Prevents configuration errors through built-in validation  
-- Scales to large customer sets with diverse regulatory and device-capability requirements  
-
----
-
-## Feature 2: Enhanced SOC Dashboard (Real-Time Visual Alert Status)
-
-### Status
-Foundation built; 3–6 months to complete full implementation.
-
-### Purpose
-Modernize the Alerts Portal with real-time urgency and acknowledgment visualization to eliminate coordination overhead and improve SLA performance.
-
-### Core Enhancements
-
-Replace the current three-dot urgency indicator with a real-time timer and dynamic color-coding:
-
-- 0–30 seconds: Blue (normal)  
-- 31–50 seconds: Yellow (approaching SLA)  
-- 51+ seconds: Red (SLA breach) with +MM:SS indicator  
-- Acknowledged: Green with operator ID visible  
-- Resolved: Neutral state with resolution filtering  
-
-The system is synchronized in real time across all specialists.
-
-### Architecture
-Alert creation timestamp → server-synced elapsed timer → visual state engine → dynamic UI updates across all clients
-
-### Business Value
-
-- Eliminates the need for manual Teams communication to determine alert ownership and urgency  
-- Provides immediate situational awareness during high-volume alert periods  
-- Reduces acknowledgment delays and SLA breaches  
-- Ensures all specialists share a unified view of alert priority  
+## Business Value  
+- Reduces onboarding time from **weeks/months → hours/days**  
+- Eliminates engineering bottlenecks for customer-specific workflows  
+- Ensures all protocols are safe, consistent, and deterministic  
+- Scales to large enterprise customers with diverse requirements  
 
 ---
 
-## Feature 3: Intelligent Alert Assignment System
+# Feature 2: Enhanced SOC Dashboard (Real-Time Visual Alert Status)
 
-### Status
-Design phase; expected 6–12 months with coordinated development across SOC, Dev, and Product teams.
+## Status  
+Foundational logic complete; 3–6 months to full readiness.
 
-### Purpose
-Eliminate the current “first-click race” and establish fair, transparent, and immediate alert ownership.
+## Purpose  
+Replace the current static urgency indicators with a synchronized, real-time alert timer that shows exactly how long an alert has been active and who has acknowledged it.
 
-### Core Capabilities
+## Core Enhancements  
+- Real-time timer for every alert  
+- Color-coded urgency states:
+  - **0–30 sec**: Blue  
+  - **31–50 sec**: Yellow  
+  - **51+ sec**: Red (with +MM:SS indicator)  
+- Acknowledged alerts shown in Green with operator ID  
+- Resolved alerts shown in neutral state  
+- Real-time synchronization across all specialists  
 
-- Real-time workload balancing  
-- Language-aware routing (French/Spanish/English)  
-- Availability awareness (breaks, temporary offline status)  
-- Same-device routing (alerts from same device go to the same specialist)  
-- Round-robin fallback among eligible specialists  
-- Full audit trail of assignment decisions  
-- Shift Lead override capabilities  
+## Architecture  
+Alert timestamp → Synchronized timer → Visibility Engine → UI state renderer
 
-### Architecture
-Real-time alert feed → Assignment Engine → Eligibility filter (availability, breaks, languages) → Fairness calculation → Assignment decision → WebSocket broadcast to all specialists
-
-### Business Value
-
-- Alert-to-owner time reduced from 25–40 seconds to under 2 seconds  
-- Eliminates ambiguity about who owns each acknowledged alert  
-- Strengthens SLA consistency across shifts  
-- Reduces Shift Lead interventions and improves operational efficiency  
-- Enables fair and transparent routing across all specialists  
+## Business Value  
+- Eliminates Teams messages to determine ownership  
+- Removes ambiguity during simultaneous alerts  
+- Reduces SLA breaches by improving situational awareness  
+- Strengthens team coordination under high load  
 
 ---
 
-## Implementation Timeline
+# Feature 3: Intelligent Alert Assignment System
 
-### Phase 1 (0–3 months)
-- Protocol Configuration Manager initial deployment  
-- Enhanced Dashboard core timers and color-state engine  
+## Status  
+Design phase; 6–12 months development with SOC + Product alignment.
 
-### Phase 2 (3–9 months)
-- Enhanced Dashboard team features and multi-user visibility  
-- Integration of PCM outputs into the protocol execution engine  
+## Purpose  
+Eliminate the current “first-click race” and guarantee immediate, fair, and transparent alert ownership.
 
-### Phase 3 (9–15 months)
-- Intelligent Alert Assignment system  
-- Real-time eligibility and workload balancing engine  
-- WebSocket broadcast and Shift Lead dashboard  
+## Capabilities  
+- Workload balancing based on live alert count  
+- Language-aware routing (EN/FR/ES)  
+- Availability awareness (breaks, offline time)  
+- Sticky routing for repeated alerts from same device  
+- Round-robin fallback  
+- Full audit trail for assignment decisions  
+- Shift Lead override controls  
 
-### Phase 4 (15–24 months)
-- Expanded coordination automation features  
-- Enterprise integration and deployment workflows  
-- Full operational readiness across SOC  
+## Architecture  
+Live alert feed → Eligibility Filter → Assignment Engine → Assignment decision → WebSocket broadcast → SOC Dashboard
 
----
-
-## Technical Architecture
-
-### Integration Strategy
-
-- Built on the ProtocolFactory architecture  
-- Extends global timer, message routing, gas safety logic, and resolution engine  
-- Adds real-time synchronization for dashboard and assignment systems  
-- Uses existing BLN Live APIs (no new backend endpoints required)  
-- WebSockets or server polling for live updates  
-
-### Engineering Standards
-
-- Automated test coverage: greater than 95 percent  
-- Rule-based note analysis accuracy: greater than 95 percent for high-confidence scenarios  
-- WCAG AA accessibility for dashboard and assignment UI  
-- Deterministic logs with MST timestamps and operator ID  
-- Client-side performance target: under 100ms visual updates, under 200ms coordination actions  
+## Business Value  
+- Alert-to-owner time: **25–40 seconds → under 2 seconds**  
+- Eliminates “acknowledged but unactioned” uncertainties  
+- Ensures equal workload distribution  
+- Strengthens SLA consistency and fairness  
 
 ---
 
-## Success Metrics
+# 3. Implementation Timeline
 
-### Operational Performance
+## Phase 1 (Months 0–3)
+- PCM: JSON builder, validation engine  
+- Enhanced Dashboard: real-time timer engine  
+- Test coverage expansion  
 
-- Full protocol execution time: reduced from ~540 seconds to ~60 seconds  
-- Alert-to-owner time: reduced from 25–40 seconds to under 2 seconds  
-- Multi-specialist coordination: reduced from 45–60 seconds to ~30 seconds  
-- SLA compliance improvement: 30 percent reduction in >60-second breaches  
-- System reliability: 99.9 percent uptime  
+## Phase 2 (Months 3–9)
+- PCM → ProtocolFactory integration  
+- Enhanced Dashboard: acknowledgment visualization  
+- Multi-specialist state synchronization  
 
-### Platform Adoption
+## Phase 3 (Months 9–15)
+- Alert Assignment Engine: eligibility + routing  
+- Shift Lead dashboard prototype  
+- SOC dashboard integration  
 
-- Enhanced Dashboard adoption: over 90 percent within 60 days  
-- PCM-based protocol deployment: under 48 hours  
-- Assignment accuracy: over 85 percent optimal routing  
-
-### Strategic Benefits
-
-- Workforce multiplier effect equivalent to 5–10 additional specialists  
-- Strong competitive differentiation in emergency response automation  
-- Significant protection of recurring revenue tied to SOC performance  
-- Establishes the foundation for future enterprise-scale automation  
-
----
-
-## Risk Mitigation
-
-### Technical Risks
-
-- Real-time synchronization: fallback to manual workflows if needed  
-- Alert assignment accuracy: transparent audit logs for validation  
-- Dashboard performance: ensure under 100ms client-side updates  
-
-### Operational Risks
-
-- Specialist adoption: supported by proven utility of Intelligent Notes Analysis  
-- Safety integrity: gas safety subsystem prevents unsafe resolutions  
-- Audit compliance: deterministic log structure preserves regulatory requirements  
-
-### Competitive Risks
-
-- IP protection: opportunity for provisional patent applications  
-- Market timing: delivering these three features positions Blackline ahead of competitors for 12–18 months  
-- Customer retention: automation capabilities strengthen long-term SOC value  
+## Phase 4 (Months 15–24)
+- Enterprise deployment workflows  
+- Full assignment audit trail and historical routing analytics  
+- Additional automation modules (pattern-based prediction, device-behavior analytics)
 
 ---
 
-**Document Version:** 1.2  
-**Last Updated:** November 29, 2025  
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
+# 4. Technical Architecture
+
+## 4.1 Integration Model  
+- Built on **ProtocolFactory** + **Step Execution Engine**  
+- Reuses Gas Safety, Timer Manager, Dispatch Validator, and Resolution Engine  
+- Real-time updates via WebSockets or structured polling  
+- No new backend dependencies required (static hosting sufficient for Phase 1–2)
+
+## 4.2 Engineering Standards  
+- >95% automated test coverage for core logic  
+- Deterministic log structure with MST TZ enforcement  
+- <100ms UI updates for dashboard  
+- <200ms coordination updates for assignment system  
+- WCAG AA accessibility
+
+---
+
+# 5. Success Metrics
+
+## Operational  
+- Protocol execution: **540 sec → ~60 sec**  
+- Multi-specialist coordination: **45–60 sec → ~30 sec**  
+- Alert-to-owner time: **25–40 sec → <2 sec**  
+- 30% reduction in >60-second acknowledgement breaches  
+- 99.9% reliability and uptime target  
+
+## Adoption  
+- 90%+ Dashboard adoption within 60 days  
+- PCM protocol deployment <48 hours  
+- Assignments >85% optimal routing  
+
+## Strategic  
+- Equivalent of **5–10 additional specialists** in effective capacity  
+- Competitive differentiation over all industry peers  
+- Stronger retention and service value for enterprise customers  
+
+---
+
+# 6. Risk Mitigation
+
+## Technical  
+- Real-time sync fallback to manual workflow  
+- Assignment errors mitigated via transparent audit logs  
+- Dashboard performance monitored at <100ms  
+
+## Operational  
+- Specialists remain fully in control  
+- All safety decisions (EC calls, dispatch, resolution) remain human-led  
+- Gas safety subsystem prevents unsafe resolutions  
+
+## Competitive  
+- Supports multiple provisional patent applications  
+- 12–18 months competitive advantage window  
+- Reinforces SOC as a key value driver for enterprise clients  
+
+---
+
+**Document Version:** 1.3  
+**Last Updated:** November 30, 2025  
+**Author:** Ivan Ferrer – Alerts Specialist ("Future" SOC Technical Innovation Lead)
