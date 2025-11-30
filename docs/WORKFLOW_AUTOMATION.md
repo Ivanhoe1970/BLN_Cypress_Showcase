@@ -1,297 +1,350 @@
-# Workflow Automation Approach
+# Workflow Automation Approach  
+**Emergency Response Automation Platform**
 
-**Eliminating manual actions, reducing cognitive load, and improving consistency across Blackline SOC workflows**
-
-This document explains how the Emergency Response Automation Suite replaces manual actions performed by Safety Operations Center (SOC) specialists with deterministic, repeatable, and safety-gated automation.
+This document describes how the Emergency Response Automation Platform eliminates manual actions, reduces cognitive load, and creates a deterministic and safety-gated workflow for handling Blackline emergency alerts. It aligns with `ARCHITECTURE.md`, `ROADMAP.md`, `TESTING.md`, and `DEPLOYMENT_APPROACH.md`.
 
 ---
 
-## 1. Purpose of Workflow Automation
+## 1. Purpose and Scope
 
-Alert handling currently requires extensive manual work, including:
+Manual alert handling today requires:
 
-- Switching across multiple applications (BLN Live, Clock app, Teams, Five9)
+- Switching between multiple tools (BLN Live, Clock app, Teams, Five9)
+- Copying and pasting message templates
 - Manually starting and tracking timers
-- Copying message templates
-- Logging call outcomes by hand
 - Interpreting device replies inconsistently
+- Logging call attempts by hand
+- Tracking gas normalization conditions manually
+- Managing dispatch decisions and follow-up windows
 
-A single alert can require **10–19 manual actions**.
+The Automation Platform reduces this from **10–19 manual actions** to **0–3**, without removing specialist control. The system automates:
 
-Automation reduces this to **0–3 actions** by:
+- Template population  
+- Caller notes and EC notes  
+- Timers (gas, EC callback, dispatch follow-up)  
+- Device message interpretation  
+- Safety validations  
+- Dispatch routing  
+- Resolution gating  
+- Complete deterministic logging with timestamps  
 
-- Auto-filling templates  
-- Auto-starting timers  
-- Auto-interpreting device messages  
-- Auto-routing workflow steps  
-- Auto-generating notes and logs  
-- Auto-validating gas and connectivity conditions  
-
-Specialists remain in control, but the repetitive mechanics are eliminated.
+The result is **faster**, **safer**, and **fully repeatable** alert handling.
 
 ---
 
-## 2. Architecture Overview
+## 2. Architectural Alignment
 
-Workflow automation is powered by several core subsystems:
+Automation is powered by the major subsystems defined in `ARCHITECTURE.md`:
 
-- **Protocol Engine** – loads and executes protocol configurations  
-- **Step Execution Engine** – enforces sequencing and idempotency  
-- **Gas Safety Engine** – evaluates live gas data and safety rules  
-- **Timer Manager** – runs all timers centrally  
+- **Protocol Engine** – loads protocol definitions and governs execution order  
+- **Step Execution Engine** – ensures sequencing, idempotency, and correct transitions  
+- **Gas Safety Engine** – evaluates real-time gas levels, normalization, and overrides  
+- **Connectivity Engine** – monitors last comms, GPS age, signal, battery, motion  
+- **Timer Manager** – central controller for all timers  
 - **Message Classifier** – interprets device replies contextually  
-- **Dispatch Validator** – ensures dispatch rules are met  
-- **Resolution Engine** – determines correct resolution outcome  
-- **Audit Logger** – generates deterministic operator logs  
+- **Dispatch Safety Validator** – enforces all dispatch conditions  
+- **Resolution Engine** – determines valid resolutions and blocks invalid ones  
+- **Audit Logger** – creates deterministic, timestamped, operator-identified entries  
 
-These systems correspond to the **21 critical functions** documented in the annotated source code.
+These systems collectively automate the entire protocol lifecycle.
 
 ---
 
-## 3. End-to-End Workflow Structure
+## 3. Overall Automated Workflow Structure
 
-All alert workflows follow a consistent structure:
+All automated workflows follow the same high-level structure:
 
-1. **Call the device**  
-2. **Send message to the device**  
-3. **Call the user**  
-4. **Contact EC1 & EC2**  
-5. **Dispatch decision**  
-6. **Resolution**
+1. **Pre-Step Logic (Gas Monitoring, when applicable)**  
+2. **Step 1 — Call the Device (G7c only)**  
+3. **Step 2 — Send message to the device**  
+4. **Step 3 — Call the user phone**  
+5. **Step 4 — Contact Emergency Contacts (EC1 → EC2)**  
+6. **Step 5 — Dispatch decision**  
+7. **Resolution**  
 
-Gas alerts add safety layers:
+Gas alerts introduce additional logic:
 
-- 2-minute monitoring windows  
-- Normalization detection  
-- Resolution blocking  
-- Override workflow  
+- Optional **2-minute gas-monitoring window** *before any steps begin*  
+- Automatic normalization detection (auto-resolve if gas returns to NORMAL)  
+- Resolution blocking when gas remains HIGH  
+- Override pathway for resolution under HIGH gas conditions  
+- Gas snapshots for each major step  
 
-Each step produces a timestamped log entry.
+Each action is logged with MT timestamps.
 
 ---
 
 ## 4. Automated Workflow Logic
 
-### 4.1 Step 1 — Call the Device
+## 4.1 Pre-Step Logic for Gas Alerts  
+*(Only for protocols that require it — not all gas alert types use this.)*
 
-Automation performs:
+Before any Step (1–5) becomes available:
 
-- Auto-fills standardized call note  
-- Logs the action with precise timestamp  
-- For gas alerts:  
-  - Starts the 2-minute monitoring timer  
-  - Captures initial gas snapshot  
+- A **2-minute gas-monitoring** window may run, depending on protocol type.  
+- If **gas normalizes within 2 minutes**, the alert auto-resolves.  
+- If **gas remains HIGH**, Step 1 is unlocked.  
+- No specialist action is needed during this window.  
+- A gas snapshot is recorded automatically.
+
+Specialists do not need to start timers or track normalization manually.
+
+---
+
+## 4.2 Step 1 — Call the Device
+
+Automation:
+
+- Inserts standardized call note  
+- Logs timestamp in MT  
+- Captures gas snapshot (for gas alerts)  
 - Unlocks Step 2  
+- Handles G7x device logic (no voice call capability → Step 1 auto-completed)
 
 Manual actions eliminated:
 
 - Template lookup  
-- Writing notes manually  
-- Starting gas monitoring timers  
-- Tracking normalization manually  
+- Manual note writing  
+- Gas monitoring logic  
+- Call outcome logging  
 
 ---
 
-### 4.2 Step 2 — Send Device Message
+## 4.3 Step 2 — Send Device Message
 
 Automation:
 
-- Inserts correct message template  
-- Sends message and logs outcome  
-- Begins waiting window (timer) when required  
-- Classifies any device replies:
-  - **“I’m OK” → Resolve**
-  - **“Send help” → Dispatch**
-  - Unknown text → manual decision  
-- Logs all actions  
+- Inserts correct message template (“Do you need help?” or protocol-specific copy)  
+- Logs outgoing message  
+- Starts wait window timer as required  
+- Classifies incoming device replies automatically:
 
-Manual actions eliminated:
+| Device Reply | Interpretation | Automated Action |
+|--------------|----------------|------------------|
+| "I’m OK" | User confirms safety | Offer resolution |
+| "No" | Equivalent to “I’m OK” | Offer resolution |
+| "Send help" | Emergency | Unlock dispatch path |
+| Unknown text | Ambiguous | Specialist decides |
 
-- Copy/paste templates  
-- Starting timers  
-- Manual interpretation of replies  
+Manual steps eliminated:
+
+- Copy/pasting message text  
+- Starting timers manually  
+- Interpreting ambiguous replies incorrectly  
+- Logging replies  
 
 ---
 
-### 4.3 Step 3 — Call the User
+## 4.4 Step 3 — Call the User
 
 Automation:
 
-- Inserts pre-written call attempt note  
-- Logs call outcome  
-- Adjusts logic when device connectivity is degraded  
-- Unlocks the next step  
+- Inserts standardized call attempt note  
+- Logs timestamp  
+- Handles connectivity-aware routing:
+  - If offline or no last-comm → adjusted messaging  
+  - If stale GPS > 5 minutes → warnings logged  
 
-Manual actions eliminated:
+Manual steps eliminated:
 
-- Logging call attempts  
-- Repeating call attempts inconsistently  
+- Manual call-out logging  
+- Repeated inconsistent attempts  
 
 ---
 
-### 4.4 Step 4 — Emergency Contacts (EC1 → EC2)
+## 4.5 Step 4 — Emergency Contacts (EC1 → EC2)
 
 Automation:
 
 - Prevents skipping EC1  
-- Auto-fills call notes  
-- Auto-starts a **30-minute callback timer** when EC agrees to check  
-- Logs timer start, cancellation, and expiration events  
+- Populates standardized EC call notes  
+- Logs outcomes deterministically  
+- If EC agrees to check on user → auto-starts **30-minute callback timer**  
+- Timer is centrally managed:
+  - Start logged  
+  - Cancel logged  
+  - Expiration logged (“30-minute callback window expired.”)
 
 Manual actions eliminated:
 
 - Finding EC phone numbers  
-- Tracking callback windows  
-- Logging follow-up actions  
+- Tracking 30-minute callback timer  
+- Writing EC notes  
+- Handling follow-up logic inconsistently  
 
 ---
 
-### 4.5 Step 5 — Dispatch Logic
+## 4.6 Step 5 — Dispatch Decision  
+*(Aligned with `ARCHITECTURE.md` and the real Code Base)*
 
-Dispatch is permitted only when all safety rules pass:
+Dispatch is allowed **only when all dispatch safety checks pass**:
 
-- Gas is **NORMAL**  
-- Recent location (< 5 minutes old)  
-- Device is online  
-- Speed < 5 km/h  
+**Dispatch Safety Rules (Non-Gas Alerts)**  
+All must be true:
+- GPS age < 5 minutes  
+- Device online  
+- Motion < 5 km/h  
 - Connectivity valid  
+- Location available  
 
-If dispatch is allowed:
+**Dispatch Safety Rules (Gas Alerts)**  
+All the above  
+**AND gas must be NORMAL**
 
-- Dispatch note auto-filled including services and location  
+Important clarifications:
+
+- **Gas HIGH does NOT block dispatch.**  
+  Many gas-alert protocols require dispatch even under HIGH gas.
+
+- **Gas HIGH blocks resolution, not dispatch.**  
+  If gas remains HIGH, the specialist cannot resolve until:
+  - Gas normalizes, or  
+  - Override pathway is used  
+
+Automation when dispatch is permitted:
+
+- Auto-fills dispatch note with:
+  - Selected agencies (EMS, Fire, Police, or combinations)
+  - Full location snapshot
+- Logs dispatch initiation  
 - Starts **30-minute dispatch follow-up timer**  
-- Logs all actions  
+- Logs timer start, cancel, and expiry  
 
-If dispatch is not allowed:
+If dispatch is NOT permitted (due to safety rule failure):
 
 - Specialist selects reason  
-- System logs: **“Dispatch skipped. Reason: ___.”**  
-- Protocol loops back to Steps 1–4  
+- System logs:  
+  `"Dispatch skipped. Reason: <selected reason>. Repeating Steps 1–4."`  
+- Protocol loops back to Step 1  
 
 Manual actions eliminated:
 
-- Copying dispatch note templates  
-- Managing follow-up timers manually  
+- Copying/pasting dispatch templates  
+- Managing follow-up timers  
 - Inconsistent dispatch decisions  
 
 ---
 
-## 5. Resolution Logic
+## 5. Resolution Logic (Deterministic)
 
-The Resolution Engine enforces deterministic rules:
+The Resolution Engine enforces strict rules:
 
-- **Gas HIGH → resolution blocked until override**  
-- **Dispatch → incident-with-dispatch**  
-- **No dispatch → incident-without-dispatch**  
-- **Alert >24h old → pre-alert resolution**  
+### 5.1 Gas Alerts
+- If **gas HIGH**, resolution is **blocked**  
+- Specialist must:
+  - Wait for normalization OR  
+  - Use override (documented reason required)
 
-Other automation:
+### 5.2 Dispatch Scenarios
+- If dispatch occurred → resolution must be **incident-with-dispatch**  
+- If no dispatch → **incident-without-dispatch**
 
-- Cancels active timers  
-- Logs final resolution with timestamp and operator ID  
-- Prevents invalid or unsafe resolutions  
+### 5.3 Pre-Alert Conditions
+- If alert > 24h old → marked **pre-alert resolution**
+
+Additional automation:
+
+- Active timers cancelled  
+- Resolution timestamp logged  
+- Operator ID included  
+- Invalid resolutions are blocked  
 
 ---
 
-## 6. Intelligent Message Classification
+## 6. Message Interpretation Engine
 
-Message interpretation uses contextual state:
+Incoming device replies are interpreted using contextual state:
 
-| Device Reply | Meaning | Automated Action |
-|--------------|---------|------------------|
-| "I’m OK" | User is safe | Resolve |
-| “No” (to “Do you need help?”) | User is safe | Resolve |
-| “Send help” | Emergency | Dispatch |
-| Unknown | Ambiguous | Manual handling |
+- Current protocol step  
+- Whether waiting window is active  
+- Gas alert type  
+- Messaging history  
+- Connectivity  
 
-Prevents misinterpretation of ambiguous or context-dependent replies.
+This avoids incorrect interpretations, especially for short or ambiguous replies.
 
 ---
 
 ## 7. Timer Automation
 
-The system manages:
+Three major timers are controlled centrally:
 
-- **2-minute gas monitoring**
-- **30-minute EC callbacks**
-- **30-minute dispatch follow-up**
+### 7.1 Gas Monitoring (2 minutes)
+- Runs before Step 1 (only for protocols requiring it)
+- Auto-resolve on normalization
 
-Each timer includes:
+### 7.2 EC Callback Timer (30 minutes)
+- Started automatically when EC agrees to check on user
 
-- Countdown display  
-- Audio alert  
-- Visual highlight  
-- Log entry on start  
-- Log entry on cancellation  
-- Log entry on expiration  
+### 7.3 Dispatch Follow-Up (30 minutes)
+- Started automatically after dispatch
 
-Manual actions eliminated:
+Each timer:
 
-- Using the Clock app  
-- Tracking callback windows  
-- Remembering to log follow-ups  
+- Displays countdown  
+- Issues audio/visual alerts  
+- Logs start, cancel, and expiration  
+
+Manual use of the Clock app is eliminated.
 
 ---
 
 ## 8. Manual Action Reduction Summary
 
 ### Before Automation
-
 - 10–19 manual actions  
-- 13 context switches  
+- Context switching to 3–4 apps  
 - Manual timers  
-- Manual note generation  
+- Manual note writing  
 - Inconsistent outcomes  
+- High cognitive workload  
 
 ### After Automation
-
 - 0–3 manual actions  
-- No context switching  
-- Automatic logging and routing  
-- Full safety-gated behavior  
+- No app-switching  
+- Automatic logging  
+- Automatic timers  
+- Deterministic behavior  
+- Strong safety gating  
 
 ---
 
-## 9. Stakeholder Benefits
+## 9. Benefits for Stakeholders
 
 ### SOC Management
-
+- Consistent execution  
 - Lower cognitive load  
-- Consistent, repeatable outcomes  
-- Faster alert handling  
-- Complete auditability  
+- Reduced variance  
+- Higher throughput  
 
-### Product and Engineering
-
+### Product & Engineering
 - Protocols defined by configuration  
-- High test coverage (200+ tests)  
-- Clean integration boundaries  
+- Clean client–server boundaries  
+- 200+ automated tests  
+- High reliability  
 
-### Senior Leadership
-
+### Leadership
 - Annual ROI: **$129K–$164K**  
-- Equivalent capacity gain: **5–10 specialists**  
-- Significant competitive advantage  
+- Equivalent productivity gain: **5–10 specialists**  
+- Strong competitive differentiator  
 
 ---
 
 ## 10. Future Enhancements
 
-Planned expansion includes:
-
-- Protocol Configuration Manager  
+- Protocol Configuration Manager (PCM)  
 - Enhanced Alerts Page  
 - Intelligent Alert Assignment System  
-- API-based logging and resolution  
+- Server-side audit pipeline  
 - WebSocket telemetry  
-- Server-side audit storage  
+- Externalized protocol templates  
+- Organization-level customization  
 
 ---
 
 ## Document Information
 
-**Document:** Workflow Automation Approach  
-**Version:** 4.0  
-**Last Updated:** November 28, 2025  
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
-
+**Document:** WORKFLOW_AUTOMATION.md  
+**Version:** 5.0  
+**Last Updated:** November 30, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist (“Future” SOC Technical Innovation Lead”)
