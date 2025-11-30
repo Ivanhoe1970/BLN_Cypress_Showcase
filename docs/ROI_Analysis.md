@@ -1,7 +1,6 @@
 # ROI Analysis  
 Emergency Response Automation Platform  
 **Based on operational data and workflow analysis**  
-Source: *ROI Analysis (29 Nov 2025).pdf* :contentReference[oaicite:1]{index=1}
 
 ---
 
