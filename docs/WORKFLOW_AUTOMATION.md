@@ -1,350 +1,293 @@
-# Workflow Automation Approach  
-**Emergency Response Automation Platform**
+# WORKFLOW_AUTOMATION.md  
+## Emergency Response Automation – Workflow Automation Approach  
 
-This document describes how the Emergency Response Automation Platform eliminates manual actions, reduces cognitive load, and creates a deterministic and safety-gated workflow for handling Blackline emergency alerts. It aligns with `ARCHITECTURE.md`, `ROADMAP.md`, `TESTING.md`, and `DEPLOYMENT_APPROACH.md`.
+# 1. Purpose of This Document
 
----
+This document explains, in a **clear and stakeholder-friendly** way, how the Emergency Response Automation Platform eliminates the manual steps, context switches, and cognitive load involved in current Blackline SOC workflows.
 
-## 1. Purpose and Scope
+It integrates **verbatim** manual-workflow text from internal analysis and pairs it with the **precise technical automation mechanics** implemented in the emergency-protocol-clean.html Code Base.
 
-Manual alert handling today requires:
-
-- Switching between multiple tools (BLN Live, Clock app, Teams, Five9)
-- Copying and pasting message templates
-- Manually starting and tracking timers
-- Interpreting device replies inconsistently
-- Logging call attempts by hand
-- Tracking gas normalization conditions manually
-- Managing dispatch decisions and follow-up windows
-
-The Automation Platform reduces this from **10–19 manual actions** to **0–3**, without removing specialist control. The system automates:
-
-- Template population  
-- Caller notes and EC notes  
-- Timers (gas, EC callback, dispatch follow-up)  
-- Device message interpretation  
-- Safety validations  
-- Dispatch routing  
-- Resolution gating  
-- Complete deterministic logging with timestamps  
-
-The result is **faster**, **safer**, and **fully repeatable** alert handling.
+The result: a complete picture of **the pain**, **the automation**, and **the measurable value**.
 
 ---
 
-## 2. Architectural Alignment
+# 2. Current-State Manual Workflows 
 
-Automation is powered by the major subsystems defined in `ARCHITECTURE.md`:
+## 2.1 Manual Actions Required Today to SEND A MESSAGE to a G7 Device in Blackline Live  
 
-- **Protocol Engine** – loads protocol definitions and governs execution order  
-- **Step Execution Engine** – ensures sequencing, idempotency, and correct transitions  
-- **Gas Safety Engine** – evaluates real-time gas levels, normalization, and overrides  
-- **Connectivity Engine** – monitors last comms, GPS age, signal, battery, motion  
-- **Timer Manager** – central controller for all timers  
-- **Message Classifier** – interprets device replies contextually  
-- **Dispatch Safety Validator** – enforces all dispatch conditions  
-- **Resolution Engine** – determines valid resolutions and blocks invalid ones  
-- **Audit Logger** – creates deterministic, timestamped, operator-identified entries  
+**TOTAL: 13 manual actions and 5 context switches**
 
-These systems collectively automate the entire protocol lifecycle.
-
----
-
-## 3. Overall Automated Workflow Structure
-
-All automated workflows follow the same high-level structure:
-
-1. **Pre-Step Logic (Gas Monitoring, when applicable)**  
-2. **Step 1 — Call the Device (G7c only)**  
-3. **Step 2 — Send message to the device**  
-4. **Step 3 — Call the user phone**  
-5. **Step 4 — Contact Emergency Contacts (EC1 → EC2)**  
-6. **Step 5 — Dispatch decision**  
-7. **Resolution**  
-
-Gas alerts introduce additional logic:
-
-- Optional **2-minute gas-monitoring window** *before any steps begin*  
-- Automatic normalization detection (auto-resolve if gas returns to NORMAL)  
-- Resolution blocking when gas remains HIGH  
-- Override pathway for resolution under HIGH gas conditions  
-- Gas snapshots for each major step  
-
-Each action is logged with MT timestamps.
+**1.** Switch to the Notes app (**context switch #1**)  
+**2.** Copy the pre-written message text from Notes: 'Do you need help?', for example 
+**3.** Switch back to Blackline Live (**context switch #2**)  
+**4.** Click inside the “Enter message” textbox  
+**5.** Paste the message  
+**6.** Click “Send”  
+**7.** Switch to the Clock app (**context switch #3**)  
+**8.** Start the 2-minute or 5-minute timer  
+**9.** Switch back to Blackline Live (**context switch #4**)  
+**10.** Click inside the “Add Notes” box  
+**11.** Paste (or type) the message outcome documentation  
+**12.** Click “Post Note”  
+**13.** When the timer expires, switch again to the Clock app and tap “Dismiss” (**context switch #5**)
 
 ---
 
-## 4. Automated Workflow Logic
+## 2.2 Manual Actions Required Today to CALL THE USER in Blackline Live  
 
-## 4.1 Pre-Step Logic for Gas Alerts  
-*(Only for protocols that require it — not all gas alert types use this.)*
+**TOTAL: 8 manual actions and 2 context switches**
 
-Before any Step (1–5) becomes available:
-
-- A **2-minute gas-monitoring** window may run, depending on protocol type.  
-- If **gas normalizes within 2 minutes**, the alert auto-resolves.  
-- If **gas remains HIGH**, Step 1 is unlocked.  
-- No specialist action is needed during this window.  
-- A gas snapshot is recorded automatically.
-
-Specialists do not need to start timers or track normalization manually.
+**1.** Click on the link with the user’s phone number  
+**2.** Five9 opens — click “Dial” to start the call  
+**3.** Click “End Call” when finished  
+**4.** Click to choose the correct **call disposition** in Five9  
+**5.** Click “End Interaction”  
+**6.** Switch to the Notes app (**context switch #1**) and copy the pre-written text documenting the call outcome  
+**7.** Switch back to the alert management page (**context switch #2**) and paste the text inside the “Add Notes” box  
+**8.** Click “Post Note”
 
 ---
 
-## 4.2 Step 1 — Call the Device
+## 2.3 Manual Actions Required Today to CALL a G7 Device in Blackline Live  
 
-Automation:
+**Total: 9 manual actions**
 
-- Inserts standardized call note  
-- Logs timestamp in MT  
-- Captures gas snapshot (for gas alerts)  
-- Unlocks Step 2  
-- Handles G7x device logic (no voice call capability → Step 1 auto-completed)
-
-Manual actions eliminated:
-
-- Template lookup  
-- Manual note writing  
-- Gas monitoring logic  
-- Call outcome logging  
+**1.** Click the “Call Device” link in Blackline Live  
+**2.** Switch to Five9 (**context switch #1**)  
+**3.** Enter the PIN to call that specific device  
+**4.** Click “End Call” when finished  
+**5.** Choose the correct **call disposition** in Five9  
+**6.** Click “End Interaction”  
+**7.** Switch back to Blackline Live (**context switch #2**)  
+**8.** Click inside the “Add Notes” box and document the device call outcome (typed manually or copy/paste)  
+**9.** Click “Post Note”
 
 ---
 
-## 4.3 Step 2 — Send Device Message
+## 2.4 Manual Actions Required Today to CALL EMERGENCY CONTACTS (ECs)  
 
-Automation:
+**TOTAL: 12 manual actions and 3 context switches for each EC call**
 
-- Inserts correct message template (“Do you need help?” or protocol-specific copy)  
-- Logs outgoing message  
-- Starts wait window timer as required  
-- Classifies incoming device replies automatically:
-
-| Device Reply | Interpretation | Automated Action |
-|--------------|----------------|------------------|
-| "I’m OK" | User confirms safety | Offer resolution |
-| "No" | Equivalent to “I’m OK” | Offer resolution |
-| "Send help" | Emergency | Unlock dispatch path |
-| Unknown text | Ambiguous | Specialist decides |
-
-Manual steps eliminated:
-
-- Copy/pasting message text  
-- Starting timers manually  
-- Interpreting ambiguous replies incorrectly  
-- Logging replies  
+**1.** Click on the “Contacts” tab to access the EC list  
+**2.** Click the EC’s phone number link in Blackline Live  
+**3.** Five9 opens — click “Dial” to start the call  
+**4.** Click “End Call” when finished  
+**5.** Click to choose the correct **call disposition** in Five9  
+**6.** Click “End Interaction”  
+**7.** Switch to the EC tab in the alert management page  
+**8.** Copy the EC’s name and phone number  
+**9.** Switch to the Notes app (**context switch #1**) and copy the pre-written EC call-outcome template (e.g., “They will contact the user and call back. Waiting 30 minutes… OP 417.”)  
+**10.** Switch back to Blackline Live (**context switch #2**)  
+**11.** Click inside the “Add Notes” box and paste the full EC call note (name, phone, outcome)  
+**12.** Click “Post Note”  
+**13.** If applicable: Switch to the Clock app (**context switch #3**) to start the 30-minute timer for callback follow-up
 
 ---
 
-## 4.4 Step 3 — Call the User
+## 2.5 Manual Actions Required Today to DISPATCH EMERGENCY SERVICES  
 
-Automation:
+**TOTAL: 9 manual actions and 2 context switches**
+
+**1.** Switch to Five9, type and select the dispatch phone number  
+**2.** Click “Dial” to initiate the dispatch call  
+**3.** Provide dispatch with **location + alert details verbally**  
+**4.** Click “End Call” when finished  
+**5.** Click to choose the correct **call disposition** in Five9 (e.g., “Dispatch”)  
+**6.** Click “End Interaction”  
+**7.** Switch to the Notes app (**context switch #1**) and copy the pre-written dispatch note template  
+**8.** Switch back to Blackline Live (**context switch #2**), click inside the “Add Notes” box, and paste the dispatch outcome note  
+**9.** Click “Post Note”  
+**10.** Switch to the Clock app (**context switch #3**) and start the **30-minute follow-up timer** required after dispatch
+
+---
+
+## 2.6 The Situation (Verbatim)
+
+The current BLN Live portal requires alert specialists to spend **45–50% of non-call time on manual documentation**—typing notes, copy/pasting data, switching between applications, and manually coordinating workflows. For a complete protocol execution involving all five steps (call device, message device, call user, contact emergency contacts, and dispatch), this results in **58 actions taking 3–4 minutes of non-call time per alert.**
+
+---
+
+# 3. Automated Workflow (Future-State)
+
+This section now describes how the Emergency Response Automation Platform removes the manual actions above.  
+All descriptions here are based on the actual Code Base (emergency-protocol-clean.html) and aligned with ARCHITECTURE.md.
+
+---
+
+## 3.1 System Architecture Summary
+
+Automation is driven by these core engines:
+
+- Protocol Engine  
+- Step Execution Engine  
+- Gas Safety Engine  
+- Timer Manager  
+- Messaging Engine  
+- Dispatch Validator  
+- Resolution Engine  
+- Audit Logger  
+
+These implement the **21 critical functions** documented in the Architecture file.
+
+---
+
+# 4. Automated Workflow Logic (Technical + Stakeholder Hybrid)
+
+### IMPORTANT RULE ABOUT GAS ALERTS  
+**The 2-minute gas monitoring window is *not* a protocol step.**  
+It is a *pre-step safety window*.  
+If gas normalizes → Auto-resolve.  
+If gas stays HIGH → Step 1 unlocks.  
+If the alert type is not configured for this → No gas window is applied.
+
+---
+
+## 4.1 Step 1 — Call the Device
+
+Automation performs:
 
 - Inserts standardized call attempt note  
-- Logs timestamp  
-- Handles connectivity-aware routing:
-  - If offline or no last-comm → adjusted messaging  
-  - If stale GPS > 5 minutes → warnings logged  
+- Logs action with MST timestamp  
+- For gas alerts  
+  - Captures gas snapshot at moment zero  
+- Unlocks Step 2 automatically  
 
-Manual steps eliminated:
+Manual work eliminated:
 
-- Manual call-out logging  
-- Repeated inconsistent attempts  
+- No template lookup  
+- No typing call notes  
+- No copy/paste  
+- No manual timestamps  
 
 ---
 
-## 4.5 Step 4 — Emergency Contacts (EC1 → EC2)
+## 4.2 Step 2 — Send Message to Device
+
+Automation handles:
+
+- Auto-inserting correct “Do you need help?” message  
+- Auto-starting required waiting timer  
+- Auto-classifying replies:
+
+| Device reply | Meaning | Automatically does |
+|--------------|---------|--------------------|
+| "I’m OK" | User is safe | Resolve |
+| "No" | User is safe | Resolve |
+| "Send help" | User requests help | Move to dispatch path |
+| Other text | Ambiguous | Manual decision |
+
+Manual work eliminated:
+
+- No Clock app  
+- No Notes app  
+- No interpreting free text  
+
+---
+
+## 4.3 Step 3 — Call the User
 
 Automation:
 
-- Prevents skipping EC1  
-- Populates standardized EC call notes  
-- Logs outcomes deterministically  
-- If EC agrees to check on user → auto-starts **30-minute callback timer**  
-- Timer is centrally managed:
-  - Start logged  
-  - Cancel logged  
-  - Expiration logged (“30-minute callback window expired.”)
-
-Manual actions eliminated:
-
-- Finding EC phone numbers  
-- Tracking 30-minute callback timer  
-- Writing EC notes  
-- Handling follow-up logic inconsistently  
+- Auto-generates call attempt note  
+- Logs timestamp  
+- Unlocks next step  
 
 ---
 
-## 4.6 Step 5 — Dispatch Decision  
-*(Aligned with `ARCHITECTURE.md` and the real Code Base)*
+## 4.4 Step 4 — Call EC1 → EC2
 
-Dispatch is allowed **only when all dispatch safety checks pass**:
+Automation:
 
-**Dispatch Safety Rules (Non-Gas Alerts)**  
-All must be true:
-- GPS age < 5 minutes  
+- Prevents calling EC2 before EC1  
+- Auto-inserts call templates  
+- Auto-starts and manages 30-minute callback timer  
+- Logs timer start, cancellation, and expiry events  
+
+Manual work eliminated:
+
+- No switching to Contacts tab  
+- No copying EC names/numbers  
+- No Clock app timers  
+
+---
+
+## 4.5 Step 5 — Dispatch Decision  
+(Aligned with ARCHITECTURE.md and Code Base)
+
+Dispatch is **allowed only if all rules pass**:
+
+- GPS location age < 5 minutes  
 - Device online  
-- Motion < 5 km/h  
-- Connectivity valid  
-- Location available  
+- Movement speed < 5 km/h  
+- Connectivity stable  
 
-**Dispatch Safety Rules (Gas Alerts)**  
-All the above  
-**AND gas must be NORMAL**
+Automation:
 
-Important clarifications:
+- Auto-fills dispatch note with selected services + location  
+- Starts 30-minute dispatch follow-up timer  
+- Logs all required steps  
 
-- **Gas HIGH does NOT block dispatch.**  
-  Many gas-alert protocols require dispatch even under HIGH gas.
-
-- **Gas HIGH blocks resolution, not dispatch.**  
-  If gas remains HIGH, the specialist cannot resolve until:
-  - Gas normalizes, or  
-  - Override pathway is used  
-
-Automation when dispatch is permitted:
-
-- Auto-fills dispatch note with:
-  - Selected agencies (EMS, Fire, Police, or combinations)
-  - Full location snapshot
-- Logs dispatch initiation  
-- Starts **30-minute dispatch follow-up timer**  
-- Logs timer start, cancel, and expiry  
-
-If dispatch is NOT permitted (due to safety rule failure):
+If dispatch is **not** allowed:
 
 - Specialist selects reason  
 - System logs:  
-  `"Dispatch skipped. Reason: <selected reason>. Repeating Steps 1–4."`  
-- Protocol loops back to Step 1  
-
-Manual actions eliminated:
-
-- Copying/pasting dispatch templates  
-- Managing follow-up timers  
-- Inconsistent dispatch decisions  
+  **“Dispatch skipped. Reason: _____.”**  
+- Workflow automatically loops back to Steps 1–4  
 
 ---
 
-## 5. Resolution Logic (Deterministic)
+# 5. Automated Resolution Logic
 
-The Resolution Engine enforces strict rules:
+Rules enforced automatically:
 
-### 5.1 Gas Alerts
-- If **gas HIGH**, resolution is **blocked**  
-- Specialist must:
-  - Wait for normalization OR  
-  - Use override (documented reason required)
-
-### 5.2 Dispatch Scenarios
-- If dispatch occurred → resolution must be **incident-with-dispatch**  
-- If no dispatch → **incident-without-dispatch**
-
-### 5.3 Pre-Alert Conditions
-- If alert > 24h old → marked **pre-alert resolution**
-
-Additional automation:
-
-- Active timers cancelled  
-- Resolution timestamp logged  
-- Operator ID included  
-- Invalid resolutions are blocked  
+- Gas HIGH → resolution blocked until override  
+- If dispatch occurred → “Incident with dispatch”  
+- If no dispatch → “Incident without dispatch”  
+- Timers auto-cancel on resolution  
+- All logs MST-timestamped with operator ID  
 
 ---
 
-## 6. Message Interpretation Engine
+# 6. Impact Summary 
 
-Incoming device replies are interpreted using contextual state:
+### WORKFLOW IMPROVEMENTS:
+- 50% fewer actions (58 → 29)  
+- 90% elimination of typing (90–120 sec → 10–15 sec)  
+- 65% reduction in non-call time (3–4 min → 20–50 sec)  
+- 100% elimination of context switching (15 switches → 0)
 
-- Current protocol step  
-- Whether waiting window is active  
-- Gas alert type  
-- Messaging history  
-- Connectivity  
+### QUALITY IMPROVEMENTS:
+- 85–95% reduction in documentation errors  
+- 100% consistent audit trails with automated timestamps  
+- Intelligent gas monitoring with automatic normalization detection  
+- Automated dispatch validation with readiness checks
 
-This avoids incorrect interpretations, especially for short or ambiguous replies.
+### SPECIALIST EXPERIENCE:
+- No more Clock app switching  
+- No more manual note typing  
+- No more copy/pasting gas data  
+- Better positioning for concurrent alert handling  
 
----
-
-## 7. Timer Automation
-
-Three major timers are controlled centrally:
-
-### 7.1 Gas Monitoring (2 minutes)
-- Runs before Step 1 (only for protocols requiring it)
-- Auto-resolve on normalization
-
-### 7.2 EC Callback Timer (30 minutes)
-- Started automatically when EC agrees to check on user
-
-### 7.3 Dispatch Follow-Up (30 minutes)
-- Started automatically after dispatch
-
-Each timer:
-
-- Displays countdown  
-- Issues audio/visual alerts  
-- Logs start, cancel, and expiration  
-
-Manual use of the Clock app is eliminated.
+### FINANCIAL & CAPACITY IMPACT:
+- $129K–$164K savings at current volumes (897 alerts/day)  
+- ROI: 129–164% in Year 1  
+- Payback: 7–9 months  
+- 448–627 hours saved per specialist annually (5–7 work weeks)  
+- 10–18% capacity increase per specialist  
+- Equivalent of 2.0–2.8 additional FTEs team-wide  
+- No recruitment or training costs  
 
 ---
 
-## 8. Manual Action Reduction Summary
+# 7. Document Notes
 
-### Before Automation
-- 10–19 manual actions  
-- Context switching to 3–4 apps  
-- Manual timers  
-- Manual note writing  
-- Inconsistent outcomes  
-- High cognitive workload  
-
-### After Automation
-- 0–3 manual actions  
-- No app-switching  
-- Automatic logging  
-- Automatic timers  
-- Deterministic behavior  
-- Strong safety gating  
+- All automation descriptions align with the **real Code Base** and the **Architecture** file.  
+- Dispatch logic matches the actual dispatch validator in the system.  
 
 ---
 
-## 9. Benefits for Stakeholders
+# Document Information
 
-### SOC Management
-- Consistent execution  
-- Lower cognitive load  
-- Reduced variance  
-- Higher throughput  
-
-### Product & Engineering
-- Protocols defined by configuration  
-- Clean client–server boundaries  
-- 200+ automated tests  
-- High reliability  
-
-### Leadership
-- Annual ROI: **$129K–$164K**  
-- Equivalent productivity gain: **5–10 specialists**  
-- Strong competitive differentiator  
-
----
-
-## 10. Future Enhancements
-
-- Protocol Configuration Manager (PCM)  
-- Enhanced Alerts Page  
-- Intelligent Alert Assignment System  
-- Server-side audit pipeline  
-- WebSocket telemetry  
-- Externalized protocol templates  
-- Organization-level customization  
-
----
-
-## Document Information
-
-**Document:** WORKFLOW_AUTOMATION.md  
 **Version:** 5.0  
 **Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer — Alerts Specialist (“Future” SOC Technical Innovation Lead”)
+**Author:** Ivan Ferrer — Alerts Specialist ("Future" SOC Technical Innovation Lead)
