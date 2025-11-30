@@ -131,7 +131,7 @@ These implement the **21 critical functions** documented in the Architecture fil
 
 ---
 
-# 4. Automated Workflow Logic (Technical + Stakeholder Hybrid)
+# 4. Automated Workflow Logic
 
 ### IMPORTANT RULE ABOUT GAS ALERTS  
 **The 2-minute gas monitoring window is *not* a protocol step.**  
