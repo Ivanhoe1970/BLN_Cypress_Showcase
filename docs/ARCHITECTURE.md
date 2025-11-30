@@ -91,6 +91,25 @@ Handles all direct user interaction:
 - Intelligent notes analysis interface
 - Resolution controls and override workflow
 
+## Why Google Maps Is Not Included in the Prototype
+
+The UI displays device location metadata, but the prototype intentionally does not integrate Google Maps.
+This decision is based on a practical constraint:
+
+The prototype does not have access to Blackline’s enterprise Google Maps API keys.
+Google Maps for Blackline Live is tied to the company’s enterprise Google account, which is owned and managed by the Development/IT team.
+Because the prototype is fully client-side and isolated from Blackline infrastructure, it cannot securely access or store these credentials.
+Embedding an API key directly in client-side code is insecure and violates Google usage policies.
+
+Integration is straightforward in production once Dev/IT provides the API key.
+When the system moves to production, Google Maps can be enabled quickly by:
+
+- injecting the enterprise API key through backend configuration
+- routing all map requests through a secure backend proxy
+- enabling the already-prepared location panel in the UI
+
+No architectural changes are required, and all existing alert data is compatible with Google Maps.
+
 ### Automation Engine
 
 Implements the 22 critical functions:
@@ -197,7 +216,7 @@ Implements gas-specific safety logic and monitoring requirements.
 
 ### 2-Minute Monitoring Window
 
-For gas alerts, the system automatically:
+For specific gas protocols with monitoring enabled, the system automatically:
 
 1. Starts 120-second countdown on Step 1 execution
 2. Monitors gas readings continuously
@@ -259,17 +278,18 @@ Analyzes specialist notes in real-time to identify actionable patterns and coord
 
 ### Pattern Recognition
 
-- **Contact Information:** Phone numbers, names, relationships
 - **Safety Status:** Confirmation phrases, concern indicators
-- **Location Details:** Addresses, GPS coordinates, landmarks
 - **Dispatch Requirements:** Service needs, urgency levels
 
-### Automation Triggers
+### Coordination Benefits
 
-- Auto-population of contact fields
-- Dispatch decision recommendations
-- Cross-alert correlation alerts
-- Protocol step validation
+Eliminates cross-specialist coordination delays by:
+
+- Detecting patterns in specialist notes
+- Canceling active timers
+- Populating resolution intent
+- Notifying the specialists handling that particular alert
+- Ensuring actions are synchronized
 
 ### Confidence Scoring
 
@@ -283,18 +303,39 @@ Handles safe, auditable alert closure with multi-factor validation.
 
 ### Resolution Types
 
-- **Gas Normalized:** Automatic resolution when readings return to NORMAL
-- **Confirmed Safe:** User/EC confirmation of safety status
-- **False Alert:** Verified false positive
-- **No Contact Made:** Unable to reach user after full protocol
-- **Pre-Alert:** Stale alert (>24 hours old)
+- **incident-with-dispatch:** For gas alerts or true incidents, where Emergency services dispatch
+- **incident-without-dispatch:** For gas alerts or true incidents alerts resolved without Emergency services dispatch  
+- **false-alert-with-dispatch:** For non-gas alerts resolved with Emergency services dispatch
+- **false-alert-without-dispatch:** For non-gas alerts resolved without Emergency services dispatch
+- **pre-alert:** Alert >24 hours old (stale)
+
+### Resolution Logic
+
+```javascript
+function determineResolutionType(alertData, protocolState) {
+  // Gas safety gate
+  if (gasData.isHigh && !override) {
+    return "BLOCKED"; // Resolution prevented
+  }
+  
+  // Determine type based on protocol outcome
+  if (protocolState.dispatchOccurred) {
+    return alertData.isFalseAlert ? 
+           "false-alert-with-dispatch" : 
+           "incident-with-dispatch";
+  } else {
+    return alertData.isFalseAlert ? 
+           "false-alert-without-dispatch" : 
+           "incident-without-dispatch";
+  }
+}
+```
 
 ### Safety Gates
 
-1. **Gas Level Check:** Prevents resolution with HIGH readings
-2. **Protocol Completion:** Ensures minimum steps executed
-3. **Override Authorization:** Tracks manual safety overrides
-4. **Audit Trail:** Complete logging of resolution rationale
+- **Gas Level Check:** Prevents resolution with HIGH readings unless override provided
+- **Override Authorization:** Tracks manual safety overrides with required justification
+- **Audit Trail:** Complete logging of resolution rationale and timestamp
 
 ### Pre-Alert Logic
 
@@ -345,7 +386,6 @@ System defaults to manual specialist control when automated functions fail, ensu
 
 - Operator authentication via existing BLN Live system
 - Session tokens validated on critical actions
-- Automatic logout on inactivity
 
 ### Audit Trail Integrity
 
@@ -393,9 +433,6 @@ System defaults to manual specialist control when automated functions fail, ensu
 ### Planned Integrations
 
 - **BLN Live API:** Real alert data ingestion
-- **Five9:** Voice communication integration
-- **Teams:** Notification and coordination
-- **Iridium:** Satellite device messaging
 
 ### API Design Examples
 
@@ -456,7 +493,7 @@ Body: { deviceId, message, timeout }
 
 ### Pre-Alert Functions
 
-22. **isPreAlert**, **addPreAlertLogEntry**, **setupPreAlertResolution** - Stale alert handling
+22-23. **isPreAlert**, **addPreAlertLogEntry**, **setupPreAlertResolution** - Stale alert handling
 
 ---
 
