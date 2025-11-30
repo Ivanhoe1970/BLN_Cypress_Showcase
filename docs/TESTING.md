@@ -1,48 +1,51 @@
 # Testing Strategy and Verification Framework  
 Emergency Response Automation Suite
 
-This document describes the full automated testing strategy for the Emergency Response Automation Suite. It covers the test architecture, folder structure, deterministic mocking, POM design, fixture management, regression strategy, CI integration, and contract guarantees validated through more than 200 automated tests.
+This document describes the complete automated testing strategy for the Emergency Response Automation Suite. It outlines the test architecture, execution layers, deterministic simulation model, Page Object design, Cypress folder structure, regression strategy, and CI/CD integration. More than 200 tests validate the system’s correctness, safety, and stability.
 
 ---
 
-# 1. Overview
+## 1. Overview
 
-The test suite validates the entire Emergency Response Protocol Engine:
+The automated test suite validates the full Emergency Response Protocol Engine, covering:
 
 - Protocol sequencing  
-- Message classification  
-- Device reply handling  
-- Timer behavior  
-- Gas safety logic  
-- Resolution logic  
+- Message classification and contextual interpretation  
+- Device message handling  
+- Timer management (monitoring, callback, dispatch)  
+- Gas safety subsystem  
+- Resolution engine  
 - Dispatch logic  
-- Pre-alert logic  
+- Pre-alert detection  
 - Manual notes system  
-- Protocol restart cycles  
-- Log contract validation  
-- UI consistency and error safeguards  
+- Multi-cycle protocol repetitions  
+- Log format contract validation  
+- UI safeguards and error-state protection  
 
-All tests run fully locally against static HTML/JS assets.  
-No external Blackline systems are contacted.
+All tests run locally against static HTML/JS assets.  
+No Blackline backend systems are invoked.
 
 ---
 
-# 2. Test Environment & Framework
+## 2. Test Environment and Framework
 
-Environment:
+**Environment:**
 
 - Cypress 14.x  
-- Chrome headless  
-- Local server launched via `http-server`  
-- Base URL: `http://127.0.0.1:5500`  
-- Deterministic mocks for device messages, gas readings, and resolution states  
-- Clock control via `cy.clock()` and `cy.tick()`  
+- Headless Chrome  
+- Local development server (http-server or live-server)  
+- Base URL: http://127.0.0.1:5500  
+- Deterministic mocks for device messages, gas readings, and resolution results  
+- Clock virtualization with `cy.clock()` and `cy.tick()`  
+
+All tests use predictable, deterministic inputs for fully repeatable CI execution.
 
 ---
 
-# 3. Test Folder Structure
+## 3. Test Folder Structure
 
-The full end-to-end test structure is:
+The folder structure mirrors the system architecture described in **ARCHITECTURE.md**.  
+Updated to match the current repo:
 
 ```
 cypress/
@@ -118,248 +121,240 @@ cypress/
     └── EmergencyProtocolPage.js
 ```
 
-This structure matches the subsystems in `ARCHITECTURE.md`.
+This structure provides a direct mapping to the **22 critical functions** of the Protocol Engine.
 
 ---
 
-# 4. Page Object Model Architecture
+## 4. Page Object Model Architecture
 
-Design principles:
+The Page Object Model:
 
-- One-line getters  
-- Return Cypress chainables  
-- No business logic  
-- Provide readable high-level actions  
+- Uses one-line getters  
+- Returns Cypress chainables only  
+- Contains no business logic  
+- Provides readable UI interactions  
+- Ensures stability when selectors change  
 
-Example:
+**Example:**
 
 ```javascript
 get step1Button() { return cy.get('[data-cy="step-1-btn"]'); }
 triggerStep1() { return this.step1Button.click(); }
 ```
 
-The POM centralizes all selectors and enables stable test maintenance.
+All protocol flows depend on this class for consistent, abstracted UI interactions.
 
 ---
 
-# 5. Deterministic Simulation & Mocking
+## 5. Deterministic Simulation and Mocking
 
-All device messages, gas readings, and UI behaviors are deterministic:
+The system uses deterministic inputs to ensure stable results:
 
-- Deterministic gas snapshots  
-- Forced HIGH/NORMAL values  
-- Simulated device replies (`simulateDeviceResponse()`)  
-- Mocked dispatch responses  
-- Mocked resolution outputs  
-- Mocked API success/error states  
+- Fixed gas readings  
+- Forced HIGH/NORMAL transitions  
+- Deterministic device replies via `simulateDeviceResponse()`  
+- Forced dispatch approvals/denials  
+- Mocked resolution payloads  
+- Mocked API outcomes for device messaging  
 
-This ensures fully repeatable tests.
+Nothing is randomized.  
+Every test produces identical outcomes across runs and environments.
 
 ---
 
-# 6. Fixtures & Test Data
-
-Fixtures used:
+## 6. Fixtures and Test Data
 
 ### alertsData.json  
-Contains:
-- All test users  
+Contains user and alert fixtures:
+
+- Device IDs  
+- Gas readings  
 - Emergency contacts  
-- Device conditions  
-- Gas scenarios  
 - Protocol configurations  
-- Pre-alert cases  
+- Pre-alert examples  
 
 ### apiResponses.json  
-Models:
-- Successful device message delivery  
-- Successful dispatch  
-- Successful resolution  
-- HIGH gas snapshots  
-- Resolution blocking schemas  
+Contains mocked API responses:
+
+- Device messaging  
+- Dispatch success  
+- Resolution success  
+- Gas snapshots  
+- Blocking schemas  
 
 ### non_gas_alerts.json  
 Used for:
-- Non-gas alert workflows  
-- Dispatch address insertion  
+
+- Non-gas workflows  
+- Dispatch address population  
 - Emergency contact ordering  
 - Resolution behavior  
 
-All fixtures are loaded via `cy.fixture()` and injected into the DOM at runtime.
+All fixtures load via `cy.fixture()` and are injected into the DOM.
 
 ---
 
-# 7. Component Tests
+## 7. Component Tests
 
-Examples:
+Validates:
+
 - Device messaging UI  
-- Timer management UI  
-- Protocol workflow UI  
+- Timer UI transitions  
+- Protocol step enabling/disabling  
+- DOM synchronization  
 
-Component tests validate:
-- Button enabling/disabling  
-- Proper DOM rendering  
-- Dynamic text insertion  
-- Timer visibility transitions  
+Ensures correctness of isolated components before integration.
 
 ---
 
-# 8. Integration Tests
-
-Examples:
-- Protocol workflow  
-- Step-by-step sequencing  
-- Message + timer interactions  
-- EC call behavior  
-- Gas monitoring transitions  
-
-These tests verify that the individual parts interact correctly.
-
----
-
-# 9. Gas Safety Test Suites
-
-Includes:
-- Gas monitoring sequencing  
-- Gas normalization  
-- Gas override modal  
-- Guarding resolution while HIGH  
-- Automated normalization-triggered resolution  
-
-All HIGH vs NORMAL transitions are checked.
-
----
-
-# 10. Resolution Logic Tests
+## 8. Integration Tests
 
 Covers:
+
+- Full protocol sequencing  
+- Timers linked to messaging  
+- Emergency contacts logic  
+- Gas monitoring rules  
+- Dispatch routing behavior  
+
+Ensures modules behave correctly when combined.
+
+---
+
+## 9. Gas Safety Test Suites
+
+Validates:
+
+- Gas monitoring sequences  
+- HIGH → NORMAL transitions  
+- Gas override modal  
+- Resolution blocking when gas HIGH  
+- Auto-resolution on normalization  
+
+These tests enforce safety gating rules defined in **ARCHITECTURE.md**.
+
+---
+
+## 10. Resolution Logic Tests
+
+Covers:
+
 - Incident with dispatch  
 - Incident without dispatch  
-- False alerts  
-- Gas alerts with overrides  
-- Pre-alert detection  
-- Safety gating  
+- False alert flows  
+- Gas alerts requiring override  
+- Pre-alert (>24h) lockout  
 
-These validate the deterministic algorithm described in `ARCHITECTURE.md`.
+Ensures deterministic rule-based resolution behavior.
 
 ---
 
-# 11. Timer Management Tests
+## 11. Timer Management Tests
 
-Validates:
-- Single global timer rule  
+Covers:
+
+- Single global timer behavior  
 - Start/cancel flows  
-- Visual countdown  
+- Countdown correctness  
 - Audio alert activation  
-- Timer expiration routing  
-- Message timeout flows  
-- EC callback 30-min timers (shortened for tests)  
+- Timeout routing  
+- EC callback timers (shortened for tests)  
+
+Ensures consistent centralized timing behavior.
 
 ---
 
-# 12. Regression Suite
+## 12. Regression Suite
 
-Guarantees long-term stability:
+**Purpose:**
 
-- Component reliability  
-- Critical path flows  
-- Gas emergency flows  
-- Non-gas protocols  
-- System safety validations  
-- Integration tests for dispatch + resolution  
+- Prevent regressions  
+- Protect critical flows  
+- Validate gas & non-gas workflows  
+- Guarantee dispatch correctness  
+- Preserve timer and safety behaviors  
 
-This suite prevents regressions when new features are added.
+Always runs on every push via CI.
 
 ---
 
-# 13. Protocol Cycling Tests
+## 13. Protocol Cycling Tests
 
-Simulate:
-- Device moving  
+Simulates repeated cycles triggered by:
+
+- Device motion  
 - Device offline  
-- Location stale  
-- Repeating protocol loops  
+- Stale or invalid GPS  
+- No-contact loops  
 
-Ensures consistent behavior across repeated cycles.
+Ensures the system safely restarts protocol steps when required.
 
 ---
 
-# 14. Manual Notes System Tests
+## 14. Manual Notes System Tests
 
 Validates:
-- Note editing  
+
+- Typed notes  
 - Auto-populated templates  
 - Logging behavior  
-- Resolution note overrides  
+- Resolution overrides  
+
+Ensures complete audit log fidelity.
 
 ---
 
-# 15. Log Contract Tests
+## 15. Log Contract Tests
 
-Ensures every log entry matches required format:
+Every log entry must match:
 
 ```
 [HH:mm:ss MST] Step X: <Action>. <Note> | Op 417
 ```
 
-Contract tests validate:
-- Timestamp  
-- Step number  
-- Action text  
-- Operator  
+Contract tests verify:
+
+- Time format correctness  
+- Step number accuracy  
+- Action phrasing  
+- Operator ID  
 - Gas snapshots (when applicable)  
 
-Pending tests (5) remain intentionally skipped for HIGH-gas auto-ack scenarios.
+Guarantees stable audit compliance.
 
 ---
 
-# 16. CI/CD Integration
+## 16. CI/CD Integration
 
-The GitHub Actions pipeline:
+**Pipeline steps:**
 
-```
-name: Deploy and Test
+- Install dependencies  
+- Start local server  
+- Run Cypress headless  
+- Deploy to GitHub Pages on success  
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-```
-
-Workflow:
-1. Install dependencies  
-2. Start local server  
-3. Run Cypress in Chrome headless  
-4. If tests pass → deploy GitHub Pages site  
-
-Benefits:
-- Fast  
-- Deterministic  
-- Fully automated  
-- Ensures main branch always has stable builds  
+Ensures `main` remains stable and deployable.
 
 ---
 
-# 17. Known Limitations
+## 17. Known Limitations
 
-- No true backend  
-- No persistent logs  
-- Device telemetry simulated  
-- API calls mocked  
-- Skipped auto-ack tests in HIGH gas mode (intentional)  
+- No backend persistence  
+- No real device telemetry  
+- All API calls mocked  
+- Auto-ack tests skipped in HIGH gas mode (by design)  
 
 ---
 
-# 18. Appendix: Command References
+## 18. Appendix: Command References
 
-### Run tests locally:
+**Run tests interactively:**
 ```
 npx http-server -p 5500 . &
 npx cypress open
 ```
 
-### Run CI tests locally:
+**Run headless tests:**
 ```
 npx http-server -p 5500 . &
 npx cypress run --browser chrome
@@ -367,7 +362,7 @@ npx cypress run --browser chrome
 
 ---
 
-Document Version: 2.0  
-Last Updated: November 28, 2025  
-Author: Ivan Ferrer (Op 417)
+**Document Version:** 2.0  
+**Last Updated:** November 30, 2025  
+**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
 
