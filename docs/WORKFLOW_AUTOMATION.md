@@ -5,7 +5,7 @@
 
 This document explains, in a **clear and stakeholder-friendly** way, how the Emergency Response Automation Platform eliminates the manual steps, context switches, and cognitive load involved in current Blackline SOC workflows.
 
-It integrates **verbatim** manual-workflow text from internal analysis and pairs it with the **precise technical automation mechanics** implemented in the emergency-protocol-clean.html Code Base.
+It integrates manual-workflow text from internal analysis and pairs it with the **precise technical automation mechanics** implemented in the emergency-protocol-clean.html Code Base.
 
 The result: a complete picture of **the pain**, **the automation**, and **the measurable value**.
 
@@ -101,7 +101,7 @@ The result: a complete picture of **the pain**, **the automation**, and **the me
 
 ---
 
-## 2.6 The Situation (Verbatim)
+## 2.6 The Situation
 
 The current BLN Live portal requires alert specialists to spend **45–50% of non-call time on manual documentation**—typing notes, copy/pasting data, switching between applications, and manually coordinating workflows. For a complete protocol execution involving all five steps (call device, message device, call user, contact emergency contacts, and dispatch), this results in **58 actions taking 3–4 minutes of non-call time per alert.**
 
@@ -127,7 +127,7 @@ Automation is driven by these core engines:
 - Resolution Engine  
 - Audit Logger  
 
-These implement the **21 critical functions** documented in the Architecture file.
+These implement the **22 critical functions** documented in the Architecture file.
 
 ---
 
@@ -289,5 +289,5 @@ Rules enforced automatically:
 # Document Information
 
 **Version:** 5.0  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer — Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

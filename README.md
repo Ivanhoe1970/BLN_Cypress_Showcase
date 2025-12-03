@@ -279,7 +279,7 @@ Automation:
 If dispatch cannot proceed:
 
 - Specialist selects reason  
-- System logs: “Dispatch skipped. Reason: ___.”  
+- System logs: "Dispatch skipped. Reason: ___."  
 - Protocol loops back to Steps 1–4  
 
 ---
@@ -419,12 +419,12 @@ BLN AUTOMATION SHOWCASE/
 - TESTING.md  
 - DEPLOYMENT_APPROACH.md  
 - ROI_Analysis.md  
-- VERSION_HISTORY.md  
+- BLN_Live_API_Usage_Guide.md
 
 ---
 
 ## 17. Document Information
 
-**Version:** 2.0  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer – SOC Technical Innovation Lead
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

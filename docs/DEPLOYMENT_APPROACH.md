@@ -34,7 +34,7 @@ Production hosting (internal Blackline environment) must supply:
 
 - HTTPS hosting  
 - CORS permissions from BLN Live  
-- Authentication via the user’s existing BLN Live session  
+- Authentication via the user's existing BLN Live session  
 - Access to messaging and notes endpoints  
 
 All protocol execution, timers, logic, and UI state run on the client side.
@@ -133,7 +133,7 @@ Local development may use:
 
 ### 4.2 CORS Requirements
 
-To allow the app to send messages and resolutions through BLN Live’s API:
+To allow the app to send messages and resolutions through BLN Live's API:
 
 The BLN Live backend must allow:
 
@@ -148,11 +148,11 @@ Example deployment:
 https://internal-tools.blacklinesafety.com/protocol/
 ```
 
-This domain must be explicitly added to BLN Live’s CORS allowlist.
+This domain must be explicitly added to BLN Live's CORS allowlist.
 
 ### 4.3 Authentication Model
 
-The Emergency Response Automation Platform uses the operator’s existing BLN Live session.
+The Emergency Response Automation Platform uses the operator's existing BLN Live session.
 
 Requirements:
 
@@ -262,7 +262,7 @@ Requirements:
 - Provide API status monitoring  
 - Support future modular deployments (PCM → App runtime)
 
-### 7.3 Automation Owner (you)
+### 7.3 Automation Owner
 
 - Update codebase when features evolve  
 - Maintain documentation (architecture, testing, roadmap)  
@@ -386,6 +386,6 @@ Avoid overwriting live production files.
 
 ## Metadata
 
-**Document Version:** 1.0  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

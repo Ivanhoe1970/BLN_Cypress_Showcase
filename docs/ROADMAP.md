@@ -19,11 +19,12 @@ The roadmap is aligned with:
 
 # 1. Current State
 
-## 1.1 Operational Features (7 of 19)
+## 1.1 Operational Features (8 of 19)
 These features are fully implemented in the local prototype and validated with 200+ Cypress tests:
 
 - Automated 2-minute gas monitoring with normalization detection (when applicable per protocol)
 - Dynamic protocol display with real-time step activation  
+- Intelligent message classification for device reply interpretation ("I'm OK", "Send help", "No")
 - Automated alert resolution engine with deterministic classification  
 - Centralized logging with MST timestamps and operator ID  
 - Automated dispatch decisioning using validated eligibility rules  
@@ -132,7 +133,7 @@ Alert timestamp → Synchronized timer → Visibility Engine → UI state render
 Design phase; 6–12 months development with SOC + Product alignment.
 
 ## Purpose  
-Eliminate the current “first-click race” and guarantee immediate, fair, and transparent alert ownership.
+Eliminate the current "first-click race" and guarantee immediate, fair, and transparent alert ownership.
 
 ## Capabilities  
 - Workload balancing based on live alert count  
@@ -148,7 +149,7 @@ Live alert feed → Eligibility Filter → Assignment Engine → Assignment deci
 
 ## Business Value  
 - Alert-to-owner time: **25–40 seconds → under 2 seconds**  
-- Eliminates “acknowledged but unactioned” uncertainties  
+- Eliminates "acknowledged but unactioned" uncertainties  
 - Ensures equal workload distribution  
 - Strengthens SLA consistency and fairness  
 
@@ -235,6 +236,6 @@ Live alert feed → Eligibility Filter → Assignment Engine → Assignment deci
 
 ---
 
-**Document Version:** 1.3  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer – Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

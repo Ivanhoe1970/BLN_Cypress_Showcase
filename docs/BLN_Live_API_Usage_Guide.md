@@ -23,7 +23,7 @@ It:
 - Does **not** modify backend infrastructure  
 - Does **not** require new endpoints  
 - Does **not** change database entities  
-- Does **not** alter BLN’s authentication model  
+- Does **not** alter BLN's authentication model  
 - Does **not** introduce any new API contracts  
 
 Instead, it automates and streamlines the specialist workflow by consuming the **same API calls** the portal already uses.
@@ -45,7 +45,7 @@ All additional automation logic (timers, dispatch checks, gas-gating, message in
 
 ## Existing BLN Live API Endpoints Used
 
-The endpoints listed below are inferred from BLN Live’s current portal behavior, URL patterns, and DevTools network activity. They represent existing functionality already used by the platform today. Actual request/response schemas should be confirmed with the Development Team. No new backend endpoints are required for Phase 1 of the automation layer.
+The endpoints listed below are inferred from BLN Live's current portal behavior, URL patterns, and DevTools network activity. They represent existing functionality already used by the platform today. Actual request/response schemas should be confirmed with the Development Team. No new backend endpoints are required for Phase 1 of the automation layer.
 
 ### 1. Alert Data
 **GET /api/alerts/{alertId}**  
@@ -62,14 +62,14 @@ Follows the same REST/XHR polling model currently used by BLN Live.
 
 ### 3. Device Messaging
 **POST /api/devices/{deviceId}/messages**  
-Enables the “message-device” workflow step.  
+Enables the "message-device" workflow step.  
 Triggers a 2-minute response timer and supports handling incoming messages.
 
 ---
 
 ### 4. Emergency Contacts
 **GET /api/users/{userId}/emergency-contacts**  
-Provides emergency contact lists for the “call-emergency-contacts” workflow step.
+Provides emergency contact lists for the "call-emergency-contacts" workflow step.
 
 ---
 
@@ -124,9 +124,9 @@ To integrate into BLN Live, the following are required:
 
 1. Access to existing alert, messaging, notes, and sensor endpoints  
 2. Confirmation of request/response schemas  
-3. Reuse of BLN Live’s existing session-based authentication  
+3. Reuse of BLN Live's existing session-based authentication  
 4. A staging environment for testing  
-5. Replacement of the static “Protocol” tab with the automation UI  
+5. Replacement of the static "Protocol" tab with the automation UI  
 
 No backend changes are required for Phase 1.
 
@@ -134,7 +134,7 @@ No backend changes are required for Phase 1.
 
 ## Key Assumptions
 
-- BLN Live’s REST/XHR polling pattern remains unchanged  
+- BLN Live's REST/XHR polling pattern remains unchanged  
 - Messaging and notes APIs remain accessible  
 - Resolution API behavior remains consistent  
 - All automation logic is executed in the browser  
@@ -150,6 +150,6 @@ No new API endpoints, backend development, or infrastructure changes are require
 
 ---
 
-**Document Version:** 1.1  
-**Last Updated:** November 29, 2025  
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

@@ -1,7 +1,7 @@
 # Testing Strategy and Verification Framework  
 Emergency Response Automation Suite
 
-This document describes the complete automated testing strategy for the Emergency Response Automation Suite. It outlines the test architecture, execution layers, deterministic simulation model, Page Object design, Cypress folder structure, regression strategy, and CI/CD integration. More than 200 tests validate the system’s correctness, safety, and stability.
+This document describes the complete automated testing strategy for the Emergency Response Automation Suite. It outlines the test architecture, execution layers, deterministic simulation model, Page Object design, Cypress folder structure, regression strategy, and CI/CD integration. More than 200 tests validate the system's correctness, safety, and stability.
 
 ---
 
@@ -362,7 +362,6 @@ npx cypress run --browser chrome
 
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
-
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist

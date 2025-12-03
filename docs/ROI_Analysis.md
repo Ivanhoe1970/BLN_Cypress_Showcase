@@ -36,16 +36,23 @@ This volume establishes the baseline for full workflow execution and ROI modelin
 
 The platform eliminates administrative overhead while keeping **all critical decisions fully under specialist control**.
 
-Completed and validated features include:
+The 8 operational features include:
 
-- Automated gas alert protocol with 2-minute monitoring window  
-- Dynamic step-based workflow interface for all alert types  
-- Automated call, message, EC, and dispatch note generation  
-- Automatic device-reply interpretation  
-- Automated 30-minute EC and dispatch timers  
-- Timestamped, deterministic protocol logs  
-- Dispatch-readiness validation  
-- Intelligent resolution logic  
+1. **Gas Alert Protocol Automation** - 2-minute monitoring with real-time normalization detection and auto-resolution proposals
+
+2. **Dynamic Protocol Display System** - Contextual workflow interface with visual step tracking, eliminating protocol document searching
+
+3. **Intelligent Message Classification** - Context-aware device reply interpretation with automated response handling for "Yes", "No", and emergency requests
+
+4. **Automated Resolution Engine** - Outcome-based resolution logic with safety gating and override capabilities
+
+5. **Comprehensive Logging System** - Pre-populated protocol notes with automatic timestamps and deterministic audit trails
+
+6. **Timer Management System** - Integrated countdown timers with visual indicators, audio notifications, and automated triggers
+
+7. **Dispatch Validation System** - Real-time readiness checking with clear YES/NO recommendations based on location, connectivity, and device status
+
+8. **Intelligent Notes Analysis** - Real-time pattern recognition in specialist notes to detect resolution intent and coordinate cross-specialist communication, eliminating manual Teams messaging overhead
 
 Measured improvements:
 
@@ -82,6 +89,75 @@ Three efficiency scenarios model real-world variability:
 
 ---
 
+## Methodology
+
+### Data Collection and Measurement Approach
+
+**Alert Volume Data Source:**
+Alert volume figures (207,723 alerts over 8 months) are extracted directly from Blackline Analytics dashboards covering January 10 through September 9, 2025. Daily averages calculated from actual operational data, not projections.
+
+**Time Measurement Methodology:**
+Manual workflow timing conducted through self-observation during live alert handling across regular work shifts. Each protocol step timed individually:
+
+- **Step execution time:** Direct stopwatch measurement from step initiation to completion
+- **Context switching time:** Measured time switching between BLN Live, Clock app, Notes app, Five9, and Teams
+- **Documentation time:** Measured typing duration for notes, copy/paste operations, and manual timestamp entry
+- **Administrative overhead:** Measured time for tab navigation, scrolling, and application switching
+
+**Sample Size:** 50+ complete protocol executions over multiple work shifts and alert types.
+
+**Action Count Methodology:**
+Manual action counting based on detailed workflow analysis during actual alert handling:
+
+- **Context switches:** Counted application transitions (BLN Live ↔ Clock app ↔ Notes ↔ Five9 ↔ Teams)
+- **Clicks:** Counted button clicks, link clicks, tab selections, dropdown selections
+- **Typing actions:** Counted distinct note entries, copy/paste operations, manual data entry
+- **Navigation actions:** Counted scrolling, tab switching, window management
+
+**Automation Impact Measurement:**
+Reduction calculations based on comparing current manual workflow against automated prototype:
+
+- **Before:** Manual workflow timing (current state)
+- **After:** Projected automated workflow timing (local prototype testing and workflow analysis)
+- **Difference:** Calculated time savings per alert based on automation eliminating measured manual steps
+
+### Financial Calculation Assumptions
+
+**Specialist Hourly Rate:**
+- Base calculation: $24/hour (Canadian average for emergency response specialist roles)
+- Includes: Base salary, benefits loading (30%), overhead allocation
+- Source: PayScale Canada 2025 wage data for emergency response positions
+
+**Efficiency Scenario Rationale:**
+- **75% (Conservative):** Accounts for learning curve, technical issues, occasional manual overrides
+- **85% (Moderate):** Expected steady-state efficiency after full team adoption
+- **95% (Optimistic):** Best-case scenario with full system utilization and minimal exceptions
+
+**Development and Deployment Costs:**
+- Cost estimates to be determined by BIT and management teams based on deployment scope and resource allocation
+
+### Volume and Capacity Projections
+
+**Daily Alert Volume (897/day):**
+- Based on 8-month average from Blackline Analytics
+- Accounts for seasonal variations and growth trends
+- Excludes outlier days (system outages, major incidents)
+
+**FTE Capacity Calculation:**
+- **Annual specialist capacity:** 1,920 hours (40 hours/week × 48 weeks)
+- **Time savings per specialist:** 358-537 hours annually
+- **FTE equivalent:** Time savings ÷ annual capacity = 0.19-0.28 FTE per specialist
+- **Team-wide:** 20 specialists × 0.19-0.28 = 3.8-5.6 total FTE capacity gain
+- **Conservative estimate:** 2.0-2.8 FTE (adjusted for coordination overhead)
+
+**Alert Handling Capacity Increase:**
+- **Current capacity:** ~10,750 alerts per specialist annually
+- **Time per alert reduction:** 2-3 minutes average
+- **Additional capacity:** (Time saved ÷ current time per alert) × current volume
+- **Range:** 1,075-1,505 additional alerts per specialist manageable annually
+
+---
+
 ## Why These Numbers Are Credible
 
 This analysis is based on:
@@ -111,7 +187,7 @@ With automation removing **85%** of these, Blackline gains the equivalent capaci
 ### Pre-Alert Handling
 
 ~5% of alerts are older than 24 hours when received.  
-The current UI requires 1–2 minutes to interpret vague timestamps (“a day ago”).
+The current UI requires 1–2 minutes to interpret vague timestamps ("a day ago").
 
 Automation:
 
@@ -197,7 +273,7 @@ Strategic advantages:
 ### Operational Risk — Low
 - Specialists retain 100% of final decision-making  
 - Automation removes admin overhead, not judgment  
-- Supports the SOC’s 99% sub-minute acknowledgment standard  
+- Supports the SOC's 99% sub-minute acknowledgment standard  
 
 ---
 
@@ -210,6 +286,6 @@ With full payback in **7–9 months** and a durable year-over-year efficiency ga
 ---
 
 **PDF Version:** `ROI_Analysis.pdf`  
-**Document Version:** 1.2  
-**Last Updated:** November 30, 2025  
-**Author:** Ivan Ferrer — Alerts Specialist (“Future” SOC Technical Innovation Lead)
+**Document Version:** 1.3  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist ("Future" SOC Technical Innovation Lead)

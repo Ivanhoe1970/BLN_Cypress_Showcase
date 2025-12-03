@@ -96,8 +96,8 @@ Handles all direct user interaction:
 The UI displays device location metadata, but the prototype intentionally does not integrate Google Maps.
 This decision is based on a practical constraint:
 
-The prototype does not have access to Blackline’s enterprise Google Maps API keys.
-Google Maps for Blackline Live is tied to the company’s enterprise Google account, which is owned and managed by the Development/IT team.
+The prototype does not have access to Blackline's enterprise Google Maps API keys.
+Google Maps for Blackline Live is tied to the company's enterprise Google account, which is owned and managed by the Development/IT team.
 Because the prototype is fully client-side and isolated from Blackline infrastructure, it cannot securely access or store these credentials.
 Embedding an API key directly in client-side code is insecure and violates Google usage policies.
 
@@ -621,6 +621,6 @@ The system builds on existing BLN Live infrastructure with minimal UI modificati
 
 ---
 
-**Document Version:** 3.4
-**Last Updated:** November 29, 2025
-**Author:** Ivan Ferrer - Alerts Specialist ("Future" SOC Technical Innovation Lead)
+**Version:** 5.0  
+**Last Updated:** December 2, 2025  
+**Author:** Ivan Ferrer — Alerts Specialist
