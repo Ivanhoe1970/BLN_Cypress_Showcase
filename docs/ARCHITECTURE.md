@@ -350,27 +350,88 @@ For alerts older than 24 hours:
 
 ## Error Handling Architecture
 
-### Error Categories
+### Current Implementation
 
-- **Configuration Errors:** Invalid protocol definitions
-- **Runtime Errors:** Execution failures, timeouts
-- **Data Errors:** Missing or corrupted alert metadata
-- **Integration Errors:** Communication failures with external systems
+The system employs a **pragmatic error handling approach** focused on **graceful degradation** and **operational continuity** rather than comprehensive error categorization. The actual implementation prioritizes keeping protocols functional even when individual components fail.
 
-### Recovery Strategies
+### Error Handling Patterns Actually Implemented
 
+**1. Try-Catch with Automatic Fallbacks:**
 ```javascript
-const errorHandlers = {
-  protocolLoadFailure: () => fallbackToManualMode(),
-  timerFailure: () => displayManualTimerPrompt(),
-  gasDataFailure: () => requireManualSafetyCheck(),
-  dispatchFailure: () => enableManualDispatchOverride()
-};
+// Protocol rendering with multiple fallback attempts
+let rendered = false;
+if (renderProtocolFromJSON) {
+  try { 
+    renderProtocolFromJSON(proto); 
+    rendered = true; 
+  } catch (e) {
+    console.warn('renderProtocolFromJSON failed:', e); 
+  }
+}
+if (!rendered && USE_SIMULATED_ALERT_FALLBACK && simulateCustomerAlert) {
+  try { 
+    simulateCustomerAlert(proto); 
+    rendered = true; 
+  } catch (e) {
+    console.warn('simulateCustomerAlert failed:', e); 
+  }
+}
 ```
 
-### Failsafe Behavior
+**2. Function Availability Checks:**
+```javascript
+// Safe function calls with existence validation
+if (typeof cancelGlobalTimer === 'function') {
+  try {
+    cancelGlobalTimer();
+    console.log("✓ Called cancelGlobalTimer()");
+  } catch (e) {
+    console.warn("cancelGlobalTimer() error:", e);
+  }
+}
+```
 
-System defaults to manual specialist control when automated functions fail, ensuring no safety compromise.
+**3. Alternative Implementation Fallbacks:**
+```javascript
+// Manual fallback when automated functions fail
+try {
+  if (typeof generateDispatchProtocolLog === "function") {
+    msg = generateDispatchProtocolLog(reason, reasonText, selectedService, stepId);
+  } else {
+    throw new Error("generateDispatchProtocolLog not available");
+  }
+} catch (e) {
+  // Fallback to manual log construction
+  const finalReason = /offline/i.test(reasonText) && parts.length
+    ? `device offline (${parts.join(", ")})`
+    : reasonText;
+  msg = `${stepLabel}: Unable to dispatch - ${finalReason}.`;
+}
+```
+
+### Recovery Strategies Actually Used
+
+- **Console-Based Logging:** All errors logged with `console.warn()` or `console.error()` for debugging
+- **Graceful Degradation:** Functions continue with reduced functionality when optional features fail
+- **User Alert Dialogs:** Critical failures communicated via alert dialogs
+- **State Preservation:** Core protocol execution continues even if UI rendering partially fails
+- **Default Value Fallbacks:** Safe defaults when data access fails
+
+### Safety Mechanisms
+
+**Timer System Protection:**
+- Comprehensive cleanup prevents memory leaks
+- Multiple fallback paths for timer cancellation
+- Safe state reset on protocol transitions
+
+**Gas Safety Preservation:**
+- Null-safe gas reading checks throughout codebase
+- Conservative fallbacks when gas data unavailable
+- Manual override paths always available
+
+### Failsafe Behavior Actually Implemented
+
+The system employs **defensive programming** rather than explicit manual mode switches. Core protocol logic continues even when automation fails, ensuring specialists remain in control with all safety-critical features accessible through manual override paths.
 
 ---
 
@@ -432,20 +493,31 @@ System defaults to manual specialist control when automated functions fail, ensu
 
 ### Planned Integrations
 
-- **BLN Live API:** Real alert data ingestion
+- **BLN Live API Integration:** Comprehensive analysis completed - leverages existing messaging, notes, and resolution endpoints
+
+### API Integration Analysis
+
+**Status:** Analysis completed through systematic UI and network behavior assessment  
+**Approach:** Utilizes existing BLN Live infrastructure (see DEPLOYMENT_APPROACH.md for detailed integration specifications)
 
 ### API Design Examples
 
-**Alert Ingestion:**
-```
-POST /api/alerts
-Body: { alertType, deviceId, location, gasReadings, timestamp }
-```
-
 **Device Messaging:**
 ```
-POST /api/devices/{id}/message
-Body: { deviceId, message, timeout }
+POST /api/devices/{deviceId}/messages
+Body: { message, deviceId, timeout }
+```
+
+**Notes & Protocol Logging:**
+```
+POST /api/alerts/{alertId}/notes  
+Body: { note, operatorId, timestamp }
+```
+
+**Alert Resolution:**
+```
+POST /api/alerts/{alertId}/resolve
+Body: { reason, operatorId }
 ```
 
 ---
@@ -535,25 +607,53 @@ Eliminate manual communication overhead through pattern recognition
 
 ## Performance Characteristics
 
-### Client-Side Performance
+### Design Targets and Optimization Goals
 
-*Note: Performance metrics based on local development environment testing and optimization targets*
+*Note: The following metrics represent design targets and optimization goals based on local development environment testing, not production benchmarks*
 
-- **Protocol loading:** <50ms (config lookup + UI render)
-- **Step execution:** <10ms (event handler + state update)
-- **Gas panel updates:** <100ms (real-time display)
+**Client-Side Performance Targets:**
+- **Protocol loading:** <50ms target (config lookup + UI render)
+- **Step execution:** <10ms target (event handler + state update)
+- **Gas panel updates:** <100ms target (real-time display)
 - **Timer updates:** 1 second interval (visual countdown)
-- **Pattern recognition:** <100ms (note analysis + confidence calculation)
-- **Cross-specialist coordination:** <200ms (action execution + notification)
-- **Runtime memory:** <2MB (alert data + protocol state + pattern engine)
+- **Pattern recognition:** <100ms target (note analysis + confidence calculation)
+- **Cross-specialist coordination:** <200ms target (action execution + notification)
+- **Runtime memory:** <2MB target (alert data + protocol state + pattern engine)
 
-### Quality Metrics
+### Quality Characteristics Achieved
 
-- **Zero timer leaks:** Guaranteed cleanup on resolution
-- **Zero memory leaks:** Proper interval clearing
-- **Deterministic behavior:** Same inputs = same outputs
-- **100% test coverage:** All 22 functions validated
-- **Pattern accuracy:** >95% confidence threshold for automatic actions
+**Memory Management:**
+- **Zero timer leaks:** Comprehensive cleanup implemented through `cancelGlobalTimer()` and `cancelAllActiveTimers()`
+- **Zero memory leaks:** Proper interval clearing with defensive try-catch patterns
+- **Safe state transitions:** Multiple fallback paths for component failures
+
+**Behavioral Consistency:**
+- **Deterministic behavior:** Same inputs produce same outputs through ProtocolFactory configuration
+- **Graceful degradation:** System continues operation when optional features fail
+- **Protocol reliability:** Core workflow execution maintained despite UI rendering failures
+
+**Test Coverage Metrics:**
+- **Function coverage:** All core protocol functions validated through Cypress tests
+- **Pattern accuracy:** Confidence threshold implementation for automatic actions
+- **Error resilience:** Try-catch patterns throughout critical functions
+
+### Performance Optimization Approach
+
+**Current Implementation Focuses:**
+- **Defensive programming** over raw speed
+- **Operational reliability** over theoretical performance
+- **Error resilience** over optimization
+- **Graceful degradation** over peak performance
+
+### Future Performance Monitoring
+
+When deployed to production, the system would benefit from:
+- Real-time performance monitoring integration
+- User experience metrics collection
+- Protocol execution timing analysis
+- Memory usage profiling under load
+
+*The current codebase prioritizes correctness and reliability over performance optimization, which aligns with safety-critical emergency response requirements.*
 
 ---
 
@@ -621,6 +721,6 @@ The system builds on existing BLN Live infrastructure with minimal UI modificati
 
 ---
 
-**Version:** 5.0  
-**Last Updated:** December 2, 2025  
+**Version:** 5.1  
+**Last Updated:** December 7, 2025  
 **Author:** Ivan Ferrer — Alerts Specialist
